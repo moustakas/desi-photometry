@@ -21,6 +21,11 @@ and *potential* non-sky DESI target in the EDR.
 Content & Organization
 ----------------------
 
+Data Model
+----------
+
+Includes all the possible targeting bits.
+
 
 Known Issues
 ------------
