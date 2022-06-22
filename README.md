@@ -20,10 +20,11 @@ photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS/DR9](https://www.legacysurvey.org/dr9/description) for observed and
 *potential* DESI targets (excluding sky fibers) in the DESI/EDR.
 
-> **Getting Started Quickly** The [example
+> **Getting Started Quickly:** The [example
     notebook](https://github.com/moustakas/desi-photometry/blob/main/example.ipynb)
-    shows how to quickly grab targeting and Tractor photometry for a
-    hypothetical set of DESI targets.
+    shows how to quickly grab targeting and Tractor photometry from this
+    value-added catalog for a hypothetical set of DESI targets, but be sure to
+    read the documentation below for all the details.
 
 Content, Organization, & Data Model
 -----------------------------------
@@ -111,34 +112,37 @@ ways:
   which were not necessarily targeted from LS/DR9, such as *secondary* targets,
   using positional matching. Specifically, if the `targetid` of a *secondary*
   target cannot be decoded to determine the LS/DR9 source from which that target
-  was selected, then we return the *closest* LS/DR9 source within 1 arcsec of
-  the targeted position.
+  was selected (see [Meyers et
+  al. 2022](https://desi.lbl.gov/DocDB/cgi-bin/private/ShowDocument?docid=6693)),
+  then we return the *closest* LS/DR9 source within 1 arcsec of the targeted
+  position.
 
-Because the `tractorphot` catalogs are large, they are divided into `nside=4`
+Now, because the `tractorphot` catalogs can become prohibitively large, we
+divide them into `nside=4`
 [healpixels](https://healpy.readthedocs.io/en/latest/) in a dedicated
 subdirectory. The location (relative to the top-level directory) and form of
 these files is:
 
 ```
-tractorphot/tractorphot-nside4-hp???-edr.fits
+tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-edr.fits
 ```
 
-Here, `hp???` corresponds to the `nside=4` healpixel number (using the *nested*
+Here, `hp[0-9][0-9][0-9]` corresponds to the `nside=4` healpixel number (using the *nested*
 pixelization scheme; see [this *healpy*
 tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf)). There are 71 files
 ranging in size from <1MB to roughly 0.6GB, and, for reference, an `nside=4`
 healpixel is roughly 14.7 sq. degrees.
 
-From the parent `targetphot-edr.fits` catalog of 2,005,503 objects,
-1,979,269 of these are unique and 21,361 have no LS/DR9 photometry source within
-1 arcsec of the targeted position, leaving 1,957,908 as the total number of
-unique objects with Tractor photometry.
+From the parent `targetphot-edr.fits` catalog of 2,005,503 objects, 1,979,269 of
+these are unique and 21,361 have no LS/DR9 source within 1 arcsec of the
+targeted position, leaving 1,957,908 as the total number of unique DESI targets
+with Tractor photometry.
 
 Finally, the data model of each catalog is identical to that of the [LS/DR9
 Tractor
 catalog](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 except that we add a `TARGETID` column to make it easier to cross-reference with
-the DESI targets.
+the DESI redshift catalogs.
 
 #### Potential Targets
 
@@ -151,7 +155,7 @@ documented above) for all these potential targets:
 
 ```
 targetphot-potential-edr.fits [6.3GB, N=6,191,755]
-tractorphot/tractorphot-potential-nside4-hp???-edr.fits
+tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-edr.fits
 ```
 
 Contact
