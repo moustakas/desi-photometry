@@ -45,11 +45,9 @@ for some applications, it is convenient to have a merged targeting catalog for
 all targets and with a common data model, which is precisely what this VAC
 provides.
 
-There are five relevant catalogs, one for each *survey* in the EDR: [**(1)
-Release cmx? (2) Use "edr" rather than fuji suffix? (3) Merge these into one
-catalog? Need to add a documentation link for "survey".**):
+There are five relevant catalogs, one for each *survey* in the EDR:
 
-```
+```bash
 targetphot-cmx-fuji.fits
 targetphot-special-fuji.fits
 targetphot-sv1-fuji.fits
@@ -57,16 +55,27 @@ targetphot-sv2-fuji.fits
 targetphot-sv3-fuji.fits
 ```
 
+**Questions: (1) Are we releasing cmx? (2) Should we use "edr" rather than
+"fuji" suffix? (3) Should we merge these into one single catalog? Also need to
+add a documentation link for "survey".**
 
-
-The data model of the *targetphot* catalogs is described
+The data model for each *targetphot* catalog is described
 [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
 (see also [Meyers et
 al. 2022](https://desi.lbl.gov/DocDB/cgi-bin/private/ShowDocument?docid=6693))
-with the following difference:
+with the following differences:
 
-In addition: zeros and blank strings.
+* Each catalog contains the targeting columns for *all* the possible surveys in
+the EDR, specifically: `CMX_TARGET` `DESI_TARGET`, `BGS_TARGET`, `MWS_TARGET`,
+`SV1_DESI_TARGET`, `SV1_BGS_TARGET`, `SV1_MWS_TARGET`, `SV2_DESI_TARGET`,
+`SV2_BGS_TARGET`, `SV2_MWS_TARGET`, `SV3_DESI_TARGET`, `SV3_BGS_TARGET`,
+`SV3_MWS_TARGET`, `SCND_TARGET`, `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and
+`SV3_SCND_TARGET`. These columns are included so that the various *targetphot*
+catalogs can be more easily stacked or combined.
 
+* Some targets have partial or minimal targeting information (e.g., *secondary*
+  targets). For these objects, we populate "missing" *targetphot* columns with
+  zeros or blank strings (depending on the data type of the column).
 
 #### Tractor (*tractorphot*) Catalogs
 
