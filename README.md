@@ -18,10 +18,10 @@ catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR
 (with a handful of supplemental columns) and [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS-DR9](https://www.legacysurvey.org/dr9/description) for every observed
-and *potential* non-sky DESI target in the EDR.
+and *potential* DESI target (excluding sky fibers) in the EDR.
 
-Content & Organization
-----------------------
+Content, Organization, & Data Model
+-----------------------------------
 
 This value-added catalog (VAC) can be accessed at NERSC in the following
 top-level directory:
@@ -30,19 +30,32 @@ top-level directory:
 /global/cscratch1/sd/ioannis/lsdr9-photometry/v1.0
 ```
 
+This directory contains the...
 
+The data model of the *targetphot* catalogs is described
+[here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
+(see also Meyers et al. 2022 (**add arXiv link**)) with the following difference: 
 
-Data Model
-----------
+In addition: zeros and blank strings.
 
-The targetphot catalogs nclude all the possible targeting bits.
-
+```
+targetphot-cmx-fuji.fits
+targetphot-special-fuji.fits
+targetphot-sv1-fuji.fits
+targetphot-sv2-fuji.fits
+targetphot-sv3-fuji.fits
+```
 
 Reproducibility
 ---------------
 
-To generate 
+Assuming all the relevant DESI environment variables have been set (write me),
+one can regenerate the catalogs by cloning this repository and calling:
 
+```bash
+lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outprefix fuji --mp 32 --targetphot
+
+```
 
 Known Issues
 ------------
