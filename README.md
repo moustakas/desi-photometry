@@ -11,19 +11,24 @@ Description
 -----------
 
 This document describes the content and construction of the Legacy Surveys DR9
-(LS-DR9) value-added photometric catalogs for the [DESI Early Data Release
+(LS/DR9) value-added photometric catalogs for the [DESI Early Data Release
 (DESI/EDR)](https://data.desi.lbl.gov/public/edr). In short, the delivered files
 include merged [DESI targeting
 catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
 and [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
-from [LS-DR9](https://www.legacysurvey.org/dr9/description) for observed and
-*potential* DESI targets (excluding sky fibers) in the EDR.
+from [LS/DR9](https://www.legacysurvey.org/dr9/description) for observed and
+*potential* DESI targets (excluding sky fibers) in the DESI/EDR.
+
+> **Getting Started Quickly** The [example
+    notebook](https://github.com/moustakas/desi-photometry/blob/main/example.ipynb)
+    shows how to quickly grab targeting and Tractor photometry for a
+    hypothetical set of DESI targets.
 
 Content, Organization, & Data Model
 -----------------------------------
 
-The LS-DR9 value-added catalog (VAC) can be accessed at NERSC at the following
+The LS/DR9 value-added catalog (VAC) can be accessed at NERSC at the following
 top-level directory (**TBD**):
 
 ```
@@ -70,7 +75,7 @@ specifically: `CMX_TARGET` `DESI_TARGET`, `BGS_TARGET`, `MWS_TARGET`,
 `SV2_BGS_TARGET`, `SV2_MWS_TARGET`, `SV3_DESI_TARGET`, `SV3_BGS_TARGET`,
 `SV3_MWS_TARGET`, `SCND_TARGET`, `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and
 `SV3_SCND_TARGET` (all with a `numpy.int64` data type). In addition, the merged
-catalog (`targetphot-edr.fits`) contains a `SURVEY` column.
+catalog (`targetphot-edr.fits`) contains a `SURVEY` (`<U7`) column.
 
 * Some targets have partial or minimal targeting information (e.g., *secondary*
   targets). For these objects, we populate "missing" *targetphot* columns with
@@ -90,7 +95,7 @@ information will be used, of course).
 For each unique target in the `targetphot-edr.fits` file, we retrieve [Tractor
 catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
-from [LS-DR9](https://www.legacysurvey.org/dr9/description). These catalogs are
+from [LS/DR9](https://www.legacysurvey.org/dr9/description). These catalogs are
 "value-added" compared to the information in the [official DESI/EDR targeting
 catalogs](https://data.desi.lbl.gov/public/edr/target/catalogs) in a couple
 ways:
@@ -102,13 +107,17 @@ ways:
   used to select DESI targets.
 
 * And second, the *tractorphot* catalogs in this VAC include
-  [LS-DR9](https://www.legacysurvey.org/dr9/description) photometry for targets
-  which were not necessarily targeted from LS-DR9, such as *secondary* targets,
-  using positional matching.
+  [LS/DR9](https://www.legacysurvey.org/dr9/description) photometry for targets
+  which were not necessarily targeted from LS/DR9, such as *secondary* targets,
+  using positional matching. Specifically, if the `targetid` of a *secondary*
+  target cannot be decoded to determine the LS/DR9 source from which that target
+  was selected, then we return the *closest* LS/DR9 source within 1 arcsec of
+  the targeted position.
 
 Because the `tractorphot` catalogs are large, they are divided into `nside=4`
 [healpixels](https://healpy.readthedocs.io/en/latest/) in a dedicated
-subdirectory in order to avoid cluttering the top-level directory:
+subdirectory. The location (relative to the top-level directory) and form of
+these files is:
 
 ```
 tractorphot/tractorphot-nside4-hp???-edr.fits
@@ -116,46 +125,34 @@ tractorphot/tractorphot-nside4-hp???-edr.fits
 
 Here, `hp???` corresponds to the `nside=4` healpixel number (using the *nested*
 pixelization scheme; see [this *healpy*
-tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf)), and, for reference, an
-`nside=4` healpixel is roughly 14.7 sq. degrees. There are 71 files ranging in
-size from <1MB to roughly 0.6GB.
+tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf)). There are 71 files
+ranging in size from <1MB to roughly 0.6GB, and, for reference, an `nside=4`
+healpixel is roughly 14.7 sq. degrees.
 
-The total number of unique objects with Tractor photometry is 1,957,908. From
-the parent `targetphot-edr.fits` catalog of 2,005,503 objects, 1,979,269 of
-these are unique and 21,361 are missing LS-DR9 photometry.
+From the parent `targetphot-edr.fits` catalog of 2,005,503 objects,
+1,979,269 of these are unique and 21,361 have no LS/DR9 photometry source within
+1 arcsec of the targeted position, leaving 1,957,908 as the total number of
+unique objects with Tractor photometry.
 
-Finally, the data model of each catalog is identical to that of the [LS-DR9 Tractor
+Finally, the data model of each catalog is identical to that of the [LS/DR9
+Tractor
 catalog](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 except that we add a `TARGETID` column to make it easier to cross-reference with
 the DESI targets.
 
 #### Potential Targets
 
-Write me.
+When assigning fibers to targets, DESI *fiber-assignment* (**reference?**) also
+records the *potential* targets, namely the set of targets *which could have
+been observed* by a given fiber.
+
+As part of this VAC, we include `targetphot` and `tractorphot` catalogs (as
+documented above) for all these potential targets:
 
 ```
 targetphot-potential-edr.fits [6.3GB, N=6,191,755]
+tractorphot/tractorphot-potential-nside4-hp???-edr.fits
 ```
-
-Reproducibility
----------------
-
-Assuming all the relevant DESI environment variables have been set (write me),
-one can regenerate the catalogs by cloning this repository and calling:
-
-```
-lsdr9-photometry --reduxdir /path/to/edr -o /path/to/output --outsuffix edr --mp 1 --targetphot
-
-```
-
-Known Issues
-------------
-
-* For secondary targets in SV1, the targeting catalog filenames recorded in the
-fiberassign header are inconsistent with the contents of the corresponding
-fibermap catalog for a given TILEID.
-
-* 
 
 Contact
 -------
