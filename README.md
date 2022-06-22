@@ -45,19 +45,17 @@ for some applications, it is convenient to have a merged targeting catalog for
 all targets and with a common data model, which is precisely what this VAC
 provides.
 
-There are five relevant catalogs, one for each *survey* in the EDR:
+There are five relevant catalogs, one for each *survey* (**need a documentation
+link**) in the EDR, as well as a simple stack of all five catalogs.
 
 ```bash
-targetphot-cmx-fuji.fits
-targetphot-special-fuji.fits
-targetphot-sv1-fuji.fits
-targetphot-sv2-fuji.fits
-targetphot-sv3-fuji.fits
+targetphot-cmx-edr.fits [4.4MB, N=4,146]
+targetphot-special-edr.fits [39MB, N=37,296]
+targetphot-sv1-edr.fits [712MB, N=685,884]
+targetphot-sv2-edr.fits [119MB, N=113,914]
+targetphot-sv3-edr.fits [1.2GB, N=1,164,263]
+targetphot-edr.fits [XXX, N=]
 ```
-
-**Questions: (1) Are we releasing cmx? (2) Should we use "edr" rather than
-"fuji" suffix? (3) Should we merge these into one single catalog? Also need to
-add a documentation link for "survey".**
 
 The data model for each *targetphot* catalog is described
 [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
@@ -70,12 +68,20 @@ the EDR, specifically: `CMX_TARGET` `DESI_TARGET`, `BGS_TARGET`, `MWS_TARGET`,
 `SV1_DESI_TARGET`, `SV1_BGS_TARGET`, `SV1_MWS_TARGET`, `SV2_DESI_TARGET`,
 `SV2_BGS_TARGET`, `SV2_MWS_TARGET`, `SV3_DESI_TARGET`, `SV3_BGS_TARGET`,
 `SV3_MWS_TARGET`, `SCND_TARGET`, `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and
-`SV3_SCND_TARGET`. These columns are included so that the various *targetphot*
-catalogs can be more easily stacked or combined.
+`SV3_SCND_TARGET` (all with a `numpy.int64` data type). These columns are
+included so that the various *targetphot* catalogs can be more easily stacked or
+combined.
 
 * Some targets have partial or minimal targeting information (e.g., *secondary*
   targets). For these objects, we populate "missing" *targetphot* columns with
   zeros or blank strings (depending on the data type of the column).
+
+**Note**
+In the DESI/EDR, the same object can appear in two different surveys but *with
+different targeting information*. For example, an object may be a *primary*
+target in one survey but a *secondary* target in another survey. Consequently,
+we recommend using both the `TARGETID` and `SURVEY` values when selecting
+specific samples of targets.
 
 #### Tractor (*tractorphot*) Catalogs
 
@@ -94,7 +100,7 @@ Assuming all the relevant DESI environment variables have been set (write me),
 one can regenerate the catalogs by cloning this repository and calling:
 
 ```bash
-lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outprefix fuji --mp 32 --targetphot
+lsdr9-photometry --reduxdir /path/to/edr -o /path/to/output --outsuffix edr --mp 1 --targetphot
 
 ```
 
