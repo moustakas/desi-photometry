@@ -12,10 +12,10 @@ Description
 
 This document describes the content and construction of the Legacy Surveys DR9
 (LS-DR9) value-added photometric catalogs for the [DESI Early Data Release
-(EDR)](https://data.desi.lbl.gov/public/edr). The delivered files include merged
-[DESI targeting
+(EDR)](https://data.desi.lbl.gov/public/edr). In short, the delivered files
+include merged [DESI targeting
 catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
-(with a handful of supplemental columns) and [Tractor catalog
+and [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS-DR9](https://www.legacysurvey.org/dr9/description) for observed and
 *potential* DESI targets (excluding sky fibers) in the EDR.
@@ -23,17 +23,29 @@ from [LS-DR9](https://www.legacysurvey.org/dr9/description) for observed and
 Content, Organization, & Data Model
 -----------------------------------
 
-This value-added catalog (VAC) can be accessed at NERSC in the following
-top-level directory (**update**):
+The LS-DR9 value-added catalog (VAC) can be accessed at NERSC in the following
+top-level directory (**update me**):
 
 ```bash
 /global/cscratch1/sd/ioannis/lsdr9-photometry/v1.0
 ```
 
-The VAC contains two kinds of files: **targetphot** and **tractorphot**, which
-we now describe in more detail:
+The VAC contains two basic kinds of files: targeting (*targetphot*) catalogs and
+photometric or Tractor (*tractorphot*) catalogs, which we now describe in more
+detail.
 
-### Targeting (targetphot) Catalogs
+#### Targeting (*targetphot*) Catalogs
+
+In the [DESI/EDR](https://data.desi.lbl.gov/public/edr), the targeting catalogs
+used for DESI target selection are organized in a variety of files and location
+and with a different data model depending on the kind of target observed (e.g.,
+*primary* versus *secondary* targets). 
+
+However, for some applications, it is convenient to have a merged targeting
+catalog for all targets and with a common data model, which is precisely what
+this VAC provides.
+
+The relevant files 
 
 The data model of the *targetphot* catalogs is described
 [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
@@ -49,11 +61,15 @@ targetphot-sv2-fuji.fits
 targetphot-sv3-fuji.fits
 ```
 
-### Photometric/Tractor (tractorphot) Catalogs
+#### Tractor (*tractorphot*) Catalogs
 
 Write me. Matching radius; no matches for XXX objects.
 
 [Tractor catalog photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
+
+#### Potential Targets
+
+Write me.
 
 Reproducibility
 ---------------
