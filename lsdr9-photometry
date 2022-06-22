@@ -559,6 +559,13 @@ def main():
             log.info('Reading {}'.format(zcatfile))
             zcat = Table(fitsio.read(zcatfile))
         assert(np.all(cat['TARGETID'] == zcat['TARGETID']))
+
+        # TARGETIDs can repeat in and between surveys, so select just unique
+        # targets here.
+        _, uindx = np.unique(cat['TARGETID'], return_index=True)
+        cat = cat[uindx]
+        zcat = zcat[uindx]
+        log.info('Selecting {:,} unique targets.'.format(len(cat)))
         
         # Create a mini-cat that we'll use for the searching.
         minicat = cat['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']#, 'RA', 'DEC']
@@ -580,7 +587,6 @@ def main():
             log.info('Inferring brickname for {:,} objects'.format(len(inobrickname)))
             minicat['BRICKNAME'][inobrickname] = brickname(minicat[racolumn][inobrickname],
                                                            minicat[deccolumn][inobrickname])
-
         assert(np.all(minicat['BRICKNAME'] != ''))
 
         # Loop over args.filenside healpixels and multiprocess over bricks. We
@@ -592,7 +598,7 @@ def main():
 
         missing = []
         for ipix, pixel in enumerate(set(pixels)):
-            #if ipix < 3:
+            #if ipix < 13:
             #    continue
             log.info('Working on healpix {}/{} (nside={})'.format(ipix+1, npix, args.filenside))
 
@@ -617,7 +623,7 @@ def main():
                 srt = np.hstack([np.where(tid == tractor['TARGETID'])[0] for tid in minicat['TARGETID'][I]])
                 tractor = tractor[srt]
                 assert(np.all(cat['TARGETID'][I] == tractor['TARGETID']))
-        
+                    
                 # If there are any objects with missing Tractor photometry, keep track of them here.
                 imiss = np.where(tractor['BRICKNAME'] == '')[0]
                 if len(imiss) > 0:

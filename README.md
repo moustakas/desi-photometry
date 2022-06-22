@@ -82,17 +82,20 @@ catalog (`targetphot-edr.fits`) contains a `SURVEY` column.
 but *with different targeting information*. For example, an object may be a
 *primary* target in one survey but a *secondary* target in another
 survey. Consequently, we recommend considering both `TARGETID` and `SURVEY` when
-selecting specific targets.
+retrieving the targeting information for specific targets, depending on the
+application.
 
 #### Tractor (*tractorphot*) Catalogs
 
-For each 
+For each unique target in the `targetphot-edr.fits` file, we retrieve [Tractor
+catalog
+photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
+from [LS-DR9](https://www.legacysurvey.org/dr9/description). 
 
 
 
-Write me. Matching radius; no matches for XXX objects.
+Matching radius; no matches for XXX objects.
 
-[Tractor catalog photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 
 #### Potential Targets
 
