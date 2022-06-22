@@ -54,38 +54,41 @@ targetphot-special-edr.fits [39MB, N=37,296]
 targetphot-sv1-edr.fits [712MB, N=685,884]
 targetphot-sv2-edr.fits [119MB, N=113,914]
 targetphot-sv3-edr.fits [1.2GB, N=1,164,263]
-targetphot-edr.fits [XXX, N=]
+targetphot-edr.fits [XXX, N=2,005,503]
 ```
 
-The data model for each *targetphot* catalog is described
+The data model for each *targetphot* catalog is documented
 [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
 (see also [Meyers et
 al. 2022](https://desi.lbl.gov/DocDB/cgi-bin/private/ShowDocument?docid=6693))
 with the following differences:
 
 * Each catalog contains the targeting columns for *all* the possible surveys in
-the EDR, specifically: `CMX_TARGET` `DESI_TARGET`, `BGS_TARGET`, `MWS_TARGET`,
+the EDR (making it easier for for the catalogs to be stacked or combined),
+specifically: `CMX_TARGET` `DESI_TARGET`, `BGS_TARGET`, `MWS_TARGET`,
 `SV1_DESI_TARGET`, `SV1_BGS_TARGET`, `SV1_MWS_TARGET`, `SV2_DESI_TARGET`,
 `SV2_BGS_TARGET`, `SV2_MWS_TARGET`, `SV3_DESI_TARGET`, `SV3_BGS_TARGET`,
 `SV3_MWS_TARGET`, `SCND_TARGET`, `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and
 `SV3_SCND_TARGET` (all with a `numpy.int64` data type). In addition, the merged
-catalog (*targetphot-edr.fits*) contains a `SURVEY` column. These columns are
-included so that the various *targetphot* catalogs can be more easily stacked or
-combined.
+catalog (`targetphot-edr.fits`) contains a `SURVEY` column.
 
 * Some targets have partial or minimal targeting information (e.g., *secondary*
   targets). For these objects, we populate "missing" *targetphot* columns with
-  zeros or blank strings (depending on the data type of the column).
+  zeros or blank strings (depending on the data type of the column). We
+  emphasize that the absence of this information doesn't mean the information
+  doesn't exist *somewhere*, just that it wasn't used for targeting.
 
-> **Note:**
-
-> In the DESI/EDR, the same object can appear in two different surveys but *with
-different targeting information*. For example, an object may be a *primary*
-target in one survey but a *secondary* target in another survey. Consequently,
-we recommend using both the `TARGETID` and `SURVEY` values when selecting
-specific samples of targets.
+> **Note:** In the DESI/EDR, the same object can appear in two different surveys
+but *with different targeting information*. For example, an object may be a
+*primary* target in one survey but a *secondary* target in another
+survey. Consequently, we recommend considering both `TARGETID` and `SURVEY` when
+selecting specific targets.
 
 #### Tractor (*tractorphot*) Catalogs
+
+For each 
+
+
 
 Write me. Matching radius; no matches for XXX objects.
 
@@ -120,6 +123,7 @@ Contact
 
 For questions (or problems) regarding these catalogs or its construction, please
 contact [John Moustakas](jmoustakas@siena.edu) ([Siena
-College](https://siena.edu)).
+College](https://siena.edu)). **Need to acknowledge other contributors / members
+of the DESI Data Team.**
 
 
