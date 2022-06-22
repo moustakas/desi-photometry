@@ -48,7 +48,7 @@ provides.
 There are five relevant catalogs, one for each *survey* (**need a documentation
 link**) in the EDR, as well as a simple stack of all five catalogs.
 
-```bash
+```
 targetphot-cmx-edr.fits [4.4MB, N=4,146]
 targetphot-special-edr.fits [39MB, N=37,296]
 targetphot-sv1-edr.fits [712MB, N=685,884]
@@ -68,7 +68,8 @@ the EDR, specifically: `CMX_TARGET` `DESI_TARGET`, `BGS_TARGET`, `MWS_TARGET`,
 `SV1_DESI_TARGET`, `SV1_BGS_TARGET`, `SV1_MWS_TARGET`, `SV2_DESI_TARGET`,
 `SV2_BGS_TARGET`, `SV2_MWS_TARGET`, `SV3_DESI_TARGET`, `SV3_BGS_TARGET`,
 `SV3_MWS_TARGET`, `SCND_TARGET`, `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and
-`SV3_SCND_TARGET` (all with a `numpy.int64` data type). These columns are
+`SV3_SCND_TARGET` (all with a `numpy.int64` data type). In addition, the merged
+catalog (*targetphot-edr.fits*) contains a `SURVEY` column. These columns are
 included so that the various *targetphot* catalogs can be more easily stacked or
 combined.
 
@@ -76,8 +77,9 @@ combined.
   targets). For these objects, we populate "missing" *targetphot* columns with
   zeros or blank strings (depending on the data type of the column).
 
-**Note**
-In the DESI/EDR, the same object can appear in two different surveys but *with
+> **Note:**
+
+> In the DESI/EDR, the same object can appear in two different surveys but *with
 different targeting information*. For example, an object may be a *primary*
 target in one survey but a *secondary* target in another survey. Consequently,
 we recommend using both the `TARGETID` and `SURVEY` values when selecting
