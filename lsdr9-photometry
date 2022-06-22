@@ -6,7 +6,7 @@
 Sequence of commands for a given release (here, fuji)
 1. Gather targeting photometry from the individual redshift catalogs.
 
-   time match_zcat_photo --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outprefix fuji --mp 32 --targetphot
+   time lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outprefix fuji --mp 32 --targetphot
 
    Output files:
     targetphot-fuji.fits
@@ -15,28 +15,28 @@ Sequence of commands for a given release (here, fuji)
 
 2. Gather Tractor photometry.
 
-   time match_zcat_photo --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outprefix fuji --mp 32 --tractorphot
+   time lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outprefix fuji --mp 32 --tractorphot
 
    Output files:
      tractorphot-nside4-hp???-fuji.fits
 
 3. Validate Tractor photometry
 
-   time match_zcat_photo --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outprefix fuji --validate-tractorphot
+   time lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outprefix fuji --validate-tractorphot
 
    Output files:
      tractorphot-validate-fuji.fits
 
 4. Gather targeting and Tractor photometry for *potential* targets (going back to the original fiberassign files).
 
-   time match_zcat_photo --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outprefix fuji --mp 32 --targetphot --potential-targets
-   time match_zcat_photo --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outprefix fuji --mp 32 --tractorphot --potential-targets
+   time lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outprefix fuji --mp 32 --targetphot --potential
+   time lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outprefix fuji --mp 32 --tractorphot --potential
 
    Output files:
-     targetphot-potential-targets-fuji.fits
-     targetphot-potential-targets-zcat-fuji.fits
-     targetphot-potential-targets-missing-fuji.fits
-     tractorphot-potential-targets-nside4-hp???-fuji.fits
+     targetphot-potential-fuji.fits
+     targetphot-potential-zcat-fuji.fits
+     targetphot-potential-missing-fuji.fits
+     tractorphot-potential-nside4-hp???-fuji.fits
 
 """
 import os, sys, argparse, pdb
@@ -297,7 +297,7 @@ def main():
     p.add_argument('--filenside', type=int, default=4, help='healpix nside for tractorphot catalogs.')
     p.add_argument('--no-secondarycache', action='store_true', help='Do not cache the secondary target catalogs.')
     p.add_argument('--ntest', type=int, default=None, help='Test on a randomly selected sample of NTEST objects.')
-    p.add_argument('--potential-targets', action='store_true', help='Gather photometry for the potential targets.')
+    p.add_argument('--potential', action='store_true', help='Gather photometry for the potential targets.')
     p.add_argument('--targetphot', action='store_true', help='Build the photo-targets catalogs.')
     p.add_argument('--tractorphot', action='store_true', help='Build the photo-tractor catalogs.')
     p.add_argument('--validate-tractorphot', action='store_true', help='Validate the photo-tractor catalogs.')
@@ -321,8 +321,8 @@ def main():
 
     # Build the targetphot catalog.
     if args.targetphot:
-        if args.potential_targets:        
-            outfile = os.path.join(args.outdir, 'targetphot-potential-targets-{}.fits'.format(args.outprefix))
+        if args.potential:        
+            outfile = os.path.join(args.outdir, 'targetphot-potential-{}.fits'.format(args.outprefix))
         else:
             outfile = os.path.join(args.outdir, 'targetphot-{}.fits'.format(args.outprefix))
             
@@ -337,7 +337,7 @@ def main():
         else:
             photocache = _build_secondarycache(mp=args.mp)
     
-        if args.potential_targets:
+        if args.potential:
             # Assume that the nominal/parent zcat catalog has been previously generated.
             parent_zcatfile = os.path.join(args.outdir, 'targetphot-zcat-{}.fits'.format(args.outprefix))
             if not os.path.isfile(parent_zcatfile):
@@ -385,8 +385,7 @@ def main():
             else:
                 zcat = [read_one_zcat(mparg[0]) for mparg in mpargs]
 
-            # Stack, remove negative targetids and sky fibers, and then select just
-            # the unique TARGETIDs.
+            # Stack and then remove negative targetids and sky fibers.
             zcat = vstack(zcat)
             _, _, _, _, sky, _ = decode_targetid(zcat['TARGETID'])
             keep = (sky == 0) * (zcat['TARGETID'] > 0)
@@ -395,78 +394,100 @@ def main():
                     np.sum(keep), len(zcat)))
                 zcat = zcat[keep]
 
-            # Use survey-program-tileid-targetid as a unique key; targetid is not unique, e.g.,
-            # zcat[zcat['TARGETID'] == 39627764155813825]
-            # <Table length=3>
+            log.info('Read {:,} objects from {} redshift catalogs'.format(len(zcat), len(zcatfiles)))
+
+            RACOLUMN, DECCOLUMN = 'TARGET_RA', 'TARGET_DEC'
+
+            # Unfortunately, the same TARGETID can appear in different surveys
+            # (e.g., sv1 vs sv3) with different targeting information. E.g., a
+            # target can be a secondary target in one survey but a primary
+            # (bright or dark) target in a different survey.
+
+            # Here's one example:
             #      TARGETID     PETAL_LOC     TARGET_RA          TARGET_DEC     TILEID SURVEY PROGRAM
             #       int64         int16        float64            float64       int32   str7    str6
             # ----------------- --------- ------------------ ------------------ ------ ------ -------
             # 39627764155813825         0 213.92212168463337 -1.104593197988166  80974    sv1   other
             # 39627764155813825         8 213.92212168463337 -1.104593197988166    531    sv3  bright
             # 39627764155813825         8 213.92212168463337 -1.104593197988166    521    sv3    dark
-            key = np.array(['{}-{}'.format(survey, targetid) for survey, targetid in
-                   zip(zcat['SURVEY'], zcat['TARGETID'])])
-            #key = np.array(['{}-{}-{}-{}'.format(survey, program, tileid, targetid) for survey, program, tileid, targetid in
-            #       zip(zcat['SURVEY'], zcat['PROGRAM'], zcat['TILEID'], zcat['TARGETID'])])
-            #_, uindx = np.unique(zcat['TARGETID'], return_index=True)
-            _, uindx = np.unique(key, return_index=True)
-            
-            zcat = zcat[uindx]
-            zcat = zcat[np.argsort(zcat['TARGETID'])]
 
-            if rand is not None:
-                J = rand.choice(len(zcat), size=args.ntest, replace=False)
-                zcat = zcat[J]
-            
-            log.info('Found {:,} unique TARGETIDs and {:,} unique tiles from {} redshift catalogs'.format(
-                len(zcat), len(set(zcat['TILEID'])), len(zcatfiles)))
+            #key = np.array(['{}-{}'.format(survey, targetid) for survey, targetid in
+            #       zip(zcat['SURVEY'], zcat['TARGETID'])])
+            #_, uindx = np.unique(key, return_index=True)
+            #
+            ## https://stackoverflow.com/questions/30003068/how-to-get-a-list-of-all-indices-of-repeated-elements-in-a-numpy-array
+            #idx_sort = np.argsort(key, kind='mergesort')
+            #key_sorted = key[idx_sort]
+            #vals, idx_start, count = np.unique(key_sorted, return_counts=True, return_index=True)
+            #res = np.split(idx_sort, idx_start[1:])
 
-            RACOLUMN, DECCOLUMN = 'TARGET_RA', 'TARGET_DEC'
+            # So: divide the analysis by survey.
+            allsurveys = zcat['SURVEY']
+            for survey in sorted(set(allsurveys)):
+                log.info('Working on survey {}'.format(survey))
+
+                S = np.where(survey == allsurveys)[0]
+                zcat_survey = zcat[S]
+
+                # Select unique TARGETIDs.
+                _, uindx = np.unique(zcat_survey['TARGETID'], return_index=True)
+                zcat_survey = zcat_survey[uindx]
+                zcat_survey = zcat_survey[np.argsort(zcat_survey['TARGETID'])]
     
-        # Multiprocess over tiles. Note: originally we multiprocessed the
-        # non-potential targets over nside=8 healpixels which is how the
-        # non-secondary targeting catalogs are organized on-disk. However, this
-        # is problematic because you can have the same target appear in both SV1
-        # and SV3 without enough discriminating information in
-        # desispec.io.photo.gather_targetphot to determine which object was
-        # actually targeted. Multiprocessing over tiles solves this issue.
-        log.info('Dividing the sample into {} unique tiles.'.format(len(set(zcat['TILEID']))))
-        mpargs = [[zcat[zcat['TILEID'] == tileid], photocache, RACOLUMN, DECCOLUMN] for tileid in set(zcat['TILEID'])]
+                if rand is not None:
+                    J = rand.choice(len(zcat_survey), size=args.ntest, replace=False)
+                    zcat_survey = zcat_survey[J]
+                
+                log.info('Found {:,} unique TARGETIDs and {:,} unique tiles from survey {}'.format(
+                    len(zcat_survey), len(set(zcat_survey['TILEID'])), survey))
+    
+                # Multiprocess over tiles. Note: originally we multiprocessed the
+                # non-potential targets over nside=8 healpixels which is how the
+                # non-secondary targeting catalogs are organized on-disk. However,
+                # this is problematic because you can have the same target appear in
+                # both SV1 and SV3 without enough discriminating information in
+                # desispec.io.photo.gather_targetphot to determine which object was
+                # actually targeted. Multiprocessing over tiles and surveys solves
+                # this issue.
+                #log.info('Dividing the sample into {} unique tiles.'.format(len(set(zcat_survey['TILEID']))))
+                mpargs = [[zcat_survey[zcat_survey['TILEID'] == tileid], photocache, RACOLUMN, DECCOLUMN] for tileid in set(zcat_survey['TILEID'])]
+                
+                if args.mp > 1:
+                    with multiprocessing.Pool(args.mp) as P:
+                        out = P.map(_targetphot_one, mpargs)
+                else:
+                    out = [targetphot_one(*mparg) for mparg in mpargs]
         
-        if args.mp > 1:
-            with multiprocessing.Pool(args.mp) as P:
-                out = P.map(_targetphot_one, mpargs)
-        else:
-            out = [targetphot_one(*mparg) for mparg in mpargs]
-
-        # stack, sort, and write out
-        if len(out) > 0:
-            out = vstack(out)
-            out = out[np.argsort(out['TARGETID'])]
-
-            out.meta['EXTNAME'] = 'TARGETPHOT'
-            log.info('Writing {:,} objects to {}'.format(len(out), outfile))
-            out.write(outfile, overwrite=True)
-            del out, photocache
+                # stack, sort, and write out
+                if len(out) > 0:
+                    out = vstack(out)
+                    out = out[np.argsort(out['TARGETID'])]
     
-            # Also write out the redshift catalog (with a minimal number of columns)
-            # used to generate the targetphot file. Note that this intermediate
-            # catalog is needed in order to do positional Tractor photometry
-            # gathering, below.
-            if args.potential_targets:        
-                outfile_zcat = os.path.join(args.outdir, 'targetphot-potential-targets-zcat-{}.fits'.format(args.outprefix))
-            else:
-                outfile_zcat = os.path.join(args.outdir, 'targetphot-zcat-{}.fits'.format(args.outprefix))
+                    pdb.set_trace()
+                    
+                    out.meta['EXTNAME'] = 'TARGETPHOT'
+                    log.info('Writing {:,} objects to {}'.format(len(out), outfile))
+                    out.write(outfile, overwrite=True)
+                    del out, photocache
             
-            zcat.meta['EXTNAME'] = 'ZCATALOG'
-            log.info('Writing {:,} objects to {}'.format(len(zcat), outfile_zcat))
-            zcat.write(outfile_zcat, overwrite=True)
-            del zcat
+                    # Also write out the redshift catalog (with a minimal number of columns)
+                    # used to generate the targetphot file. Note that this intermediate
+                    # catalog is needed in order to do positional Tractor photometry
+                    # gathering, below.
+                    if args.potential:
+                        outfile_zcat = os.path.join(args.outdir, 'targetphot-potential-zcat-{}.fits'.format(args.outprefix))
+                    else:
+                        outfile_zcat = os.path.join(args.outdir, 'targetphot-zcat-{}.fits'.format(args.outprefix))
+                    
+                    zcat.meta['EXTNAME'] = 'ZCATALOG'
+                    log.info('Writing {:,} objects to {}'.format(len(zcat), outfile_zcat))
+                    zcat.write(outfile_zcat, overwrite=True)
+                    del zcat
         
     # Build the tractorphot catalogs.
     if args.tractorphot:
-        if args.potential_targets:
-            any_outfile = glob(os.path.join(args.outdir, 'tractorphot', 'tractorphot-potential-targets-nside{}-hp*-{}.fits'.format(
+        if args.potential:
+            any_outfile = glob(os.path.join(args.outdir, 'tractorphot', 'tractorphot-potential-nside{}-hp*-{}.fits'.format(
                 args.filenside, args.outprefix)))
         else:
             any_outfile = glob(os.path.join(args.outdir, 'tractorphot', 'tractorphot-nside{}-hp*-{}.fits'.format(
@@ -475,9 +496,9 @@ def main():
             log.info('One or more tractorphot output files exist; use --overwrite')
             return
 
-        if args.potential_targets:        
-            zcatfile = os.path.join(args.outdir, 'targetphot-potential-targets-zcat-{}.fits'.format(args.outprefix))
-            targetfile = os.path.join(args.outdir, 'targetphot-potential-targets-{}.fits'.format(args.outprefix))
+        if args.potential:
+            zcatfile = os.path.join(args.outdir, 'targetphot-potential-zcat-{}.fits'.format(args.outprefix))
+            targetfile = os.path.join(args.outdir, 'targetphot-potential-{}.fits'.format(args.outprefix))
             racolumn, deccolumn = 'RA', 'DEC'
         else:
             zcatfile = os.path.join(args.outdir, 'targetphot-zcat-{}.fits'.format(args.outprefix))
@@ -573,8 +594,8 @@ def main():
                     
                 igood = np.where(tractor['BRICKNAME'] != '')[0]
                 if len(igood) > 0:
-                    if args.potential_targets:
-                        outfile = os.path.join(args.outdir, 'tractorphot', 'tractorphot-potential-targets-nside{}-hp{:03d}-{}.fits'.format(
+                    if args.potential:
+                        outfile = os.path.join(args.outdir, 'tractorphot', 'tractorphot-potential-nside{}-hp{:03d}-{}.fits'.format(
                             args.filenside, pixel, args.outprefix))
                     else:
                         outfile = os.path.join(args.outdir, 'tractorphot', 'tractorphot-nside{}-hp{:03d}-{}.fits'.format(
@@ -589,8 +610,8 @@ def main():
         if len(missing) > 0:
             missing = vstack(missing)
     
-            if args.potential_targets:
-                outfile_miss = os.path.join(args.outdir, 'targetphot-potential-targets-missing-{}.fits'.format(args.outprefix))
+            if args.potential:
+                outfile_miss = os.path.join(args.outdir, 'targetphot-potential-missing-{}.fits'.format(args.outprefix))
             else:
                 outfile_miss = os.path.join(args.outdir, 'targetphot-missing-{}.fits'.format(args.outprefix))
             missing.meta['EXTNAME'] = 'TARGETPHOT'
