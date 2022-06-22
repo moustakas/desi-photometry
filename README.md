@@ -1,7 +1,7 @@
 Legacy Surveys DR9 Photometric Catalogs
 =======================================
 
-DESI Value-Added Catalog
+DESI Value-Added Catalog  
 Early Data Release (Fuji)  
 2022 June XX  
 
@@ -17,24 +17,27 @@ This document describes the content and construction of the Legacy Surveys DR9
 catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
 (with a handful of supplemental columns) and [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
-from [LS-DR9](https://www.legacysurvey.org/dr9/description) for every observed
-and *potential* DESI target (excluding sky fibers) in the EDR.
+from [LS-DR9](https://www.legacysurvey.org/dr9/description) for observed and
+*potential* DESI targets (excluding sky fibers) in the EDR.
 
 Content, Organization, & Data Model
 -----------------------------------
 
 This value-added catalog (VAC) can be accessed at NERSC in the following
-top-level directory:
+top-level directory (**update**):
 
 ```bash
 /global/cscratch1/sd/ioannis/lsdr9-photometry/v1.0
 ```
 
-This directory contains the...
+The VAC contains two kinds of files: **targetphot** and **tractorphot**, which
+we now describe in more detail:
+
+### Targeting (targetphot) Catalogs
 
 The data model of the *targetphot* catalogs is described
 [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
-(see also Meyers et al. 2022 (**add arXiv link**)) with the following difference: 
+(see also Meyers et al. 2022--**add arXiv link**) with the following difference: 
 
 In addition: zeros and blank strings.
 
@@ -45,6 +48,12 @@ targetphot-sv1-fuji.fits
 targetphot-sv2-fuji.fits
 targetphot-sv3-fuji.fits
 ```
+
+### Photometric/Tractor (tractorphot) Catalogs
+
+Write me. Matching radius; no matches for XXX objects.
+
+[Tractor catalog photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 
 Reproducibility
 ---------------
