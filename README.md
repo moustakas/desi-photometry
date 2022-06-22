@@ -2,7 +2,7 @@ Legacy Surveys DR9 Photometric Catalogs
 =======================================
 
 DESI Value-Added Catalog  
-Early Data Release (EDR/Fuji)
+Early Data Release (EDR/Fuji)  
 2022 June XX  
 
 **Version: 1.0**
@@ -26,7 +26,7 @@ Content, Organization, & Data Model
 The LS-DR9 value-added catalog (VAC) can be accessed at NERSC at the following
 top-level directory (**TBD**):
 
-```bash
+```
 /global/cscratch1/sd/ioannis/lsdr9-photometry/v1.0
 ```
 
@@ -54,7 +54,7 @@ targetphot-special-edr.fits [39MB, N=37,296]
 targetphot-sv1-edr.fits [712MB, N=685,884]
 targetphot-sv2-edr.fits [119MB, N=113,914]
 targetphot-sv3-edr.fits [1.2GB, N=1,164,263]
-targetphot-edr.fits [2.1GB, N=2,005,503]
+targetphot-edr.fits [2.1GB, N=2,005,5030]
 ```
 
 The data model for each *targetphot* catalog is documented
@@ -96,21 +96,46 @@ catalogs](https://data.desi.lbl.gov/public/edr/target/catalogs) in a couple
 ways:
 
 * First, the *tractorphot* catalogs included in this VAC contain *all* the
-  measurements from the Tractor, not just the measurements included in the
-  light-weight [sweep
+  photometric quantities measured by *Tractor*, not just the measurements
+  included in the light-weight [sweep
   catalogs](https://www.legacysurvey.org/dr9/files/#sweep-catalogs-region-sweep)
-  which are used by DESI targeting.
+  used to select DESI targets.
 
-* And second, the *tractorphot* catalogs include
+* And second, the *tractorphot* catalogs in this VAC include
   [LS-DR9](https://www.legacysurvey.org/dr9/description) photometry for targets
-  which were not necessarily targeted from LS-DR9 (such as *secondary* targets),
+  which were not necessarily targeted from LS-DR9, such as *secondary* targets,
   using positional matching.
 
-No matches for 21,361 objects.
+Because the `tractorphot` catalogs are large, they are divided into `nside=4`
+[healpixels](https://healpy.readthedocs.io/en/latest/) in a dedicated
+subdirectory in order to avoid cluttering the top-level directory:
+
+```
+tractorphot/tractorphot-nside4-hp???-edr.fits
+```
+
+Here, `hp???` corresponds to the `nside=4` healpixel number (using the *nested*
+pixelization scheme; see [this *healpy*
+tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf)), and, for reference, an
+`nside=4` healpixel is roughly 14.7 sq. degrees. There are 71 files ranging in
+size from <1MB to roughly 0.6GB.
+
+The total number of unique objects with Tractor photometry is 1,957,908. From
+the parent `targetphot-edr.fits` catalog of 2,005,503 objects, 1,979,269 of
+these are unique and 21,361 are missing LS-DR9 photometry.
+
+Finally, the data model of each catalog is identical to that of the [LS-DR9 Tractor
+catalog](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
+except that we add a `TARGETID` column to make it easier to cross-reference with
+the DESI targets.
 
 #### Potential Targets
 
 Write me.
+
+```
+targetphot-potential-edr.fits [6.3GB, N=6,191,755]
+```
 
 Reproducibility
 ---------------
@@ -118,7 +143,7 @@ Reproducibility
 Assuming all the relevant DESI environment variables have been set (write me),
 one can regenerate the catalogs by cloning this repository and calling:
 
-```bash
+```
 lsdr9-photometry --reduxdir /path/to/edr -o /path/to/output --outsuffix edr --mp 1 --targetphot
 
 ```
