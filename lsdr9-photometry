@@ -348,10 +348,13 @@ def main():
                 #parent_zcat = parent_zcat[parent_zcat['TILEID'] == 81108]
                 J = rand.choice(len(parent_zcat), size=args.ntest, replace=False)
                 parent_zcat = parent_zcat[J]
+
+            log.info('Read {:,} objects from {}'.format(len(parent_zcat), parent_zcatfile))
+                
             tileids = np.unique(parent_zcat['TILEID'])
 
             # Multiprocess over tiles
-            log.info('Dividing the sample into {} unique tiles.'.format(len(tileids)))
+            #log.info('Dividing the sample into {} unique tiles.'.format(len(tileids)))
             mpargs = [[tileid] for tileid in tileids]
                     
             if args.mp > 1:
@@ -360,14 +363,44 @@ def main():
             else:
                 zcat = [read_one_potential_targets(*mparg) for mparg in mpargs]
             zcat = vstack(zcat)
-            
-            #_, uindx = np.unique(zcat['TARGETID'], return_index=True)
-            #zcat = zcat[uindx]
 
-            log.info('Read {:,} objects from {} redshift catalogs'.format(len(zcat), len(zcatfiles)))
-            
+            # Select unique TARGETIDs.
+            _, uindx = np.unique(zcat['TARGETID'], return_index=True)
+            zcat = zcat[uindx]
+            zcat = zcat[np.argsort(zcat['TARGETID'])]
+
+            log.info('Found {:,} unique TARGETIDs and {:,} unique tiles'.format(
+                len(zcat), len(set(zcat['TILEID']))))
+
             RACOLUMN, DECCOLUMN = 'RA', 'DEC'
+
+            mpargs = [[zcat[zcat['TILEID'] == tileid], photocache, RACOLUMN, DECCOLUMN] for tileid in set(zcat['TILEID'])]
             
+            if args.mp > 1:
+                with multiprocessing.Pool(args.mp) as P:
+                    out = P.map(_targetphot_one, mpargs)
+            else:
+                out = [targetphot_one(*mparg) for mparg in mpargs]
+    
+            # stack, sort, and write out
+            if len(out) > 0:
+                out = vstack(out)
+                out = out[np.argsort(out['TARGETID'])]
+
+                outfile = os.path.join(args.outdir, 'targetphot-potential-{}.fits'.format(args.outsuffix))
+                outfile_zcat = os.path.join(args.outdir, 'targetphot-potential-zcat-{}.fits'.format(args.outsuffix))
+
+                out.meta['EXTNAME'] = 'TARGETPHOT'
+                log.info('Writing {:,} objects to {}'.format(len(out), outfile))
+                out.write(outfile, overwrite=True)
+
+                zcat.meta['EXTNAME'] = 'ZCATALOG'
+                log.info('Writing {:,} objects to {}'.format(len(zcat), outfile_zcat))
+                zcat.write(outfile_zcat, overwrite=True)
+
+                pdb.set_trace()
+
+                del out, zcat
         else:
             # Read all the zpix catalogs in parallel.
             zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-*-cumulative.fits'))
@@ -461,10 +494,7 @@ def main():
                 out = vstack(out)
                 out = out[np.argsort(out['TARGETID'])]
 
-                if args.potential:
-                    outfile = os.path.join(args.outdir, 'targetphot-potential-{}-{}.fits'.format(survey, args.outsuffix))
-                else:
-                    outfile = os.path.join(args.outdir, 'targetphot-{}-{}.fits'.format(survey, args.outsuffix))
+                outfile = os.path.join(args.outdir, 'targetphot-{}-{}.fits'.format(survey, args.outsuffix))
 
                 out.meta['EXTNAME'] = 'TARGETPHOT'
                 out.meta['SURVEY'] = survey
@@ -479,10 +509,7 @@ def main():
                 # of columns) used to generate the targetphot file. Note
                 # that this intermediate catalog is needed / used to do
                 # positional Tractor photometry gathering, below.
-                if args.potential:
-                    outfile_zcat = os.path.join(args.outdir, 'targetphot-potential-zcat-{}-{}.fits'.format(survey, args.outsuffix))
-                else:
-                    outfile_zcat = os.path.join(args.outdir, 'targetphot-zcat-{}-{}.fits'.format(survey, args.outsuffix))
+                outfile_zcat = os.path.join(args.outdir, 'targetphot-zcat-{}-{}.fits'.format(survey, args.outsuffix))
                 
                 zcat_survey.meta['EXTNAME'] = 'ZCATALOG'
                 zcat_survey.meta['SURVEY'] = survey
@@ -491,10 +518,7 @@ def main():
                 allzcat.append(zcat_survey)
 
         if len(allout) > 0:
-            if args.potential:
-                outfile = os.path.join(args.outdir, 'targetphot-potential-{}.fits'.format(args.outsuffix))
-            else:
-                outfile = os.path.join(args.outdir, 'targetphot-{}.fits'.format(args.outsuffix))
+            outfile = os.path.join(args.outdir, 'targetphot-{}.fits'.format(args.outsuffix))
 
             allout = vstack(allout, metadata_conflicts='silent')
             allout.meta.pop('SURVEY')
@@ -502,17 +526,13 @@ def main():
             log.info('Writing {:,} objects to {}'.format(len(allout), outfile))
             allout.write(outfile, overwrite=True)
         
-            if args.potential:
-                outfile_zcat = os.path.join(args.outdir, 'targetphot-potential-zcat-{}.fits'.format(args.outsuffix))
-            else:
-                outfile_zcat = os.path.join(args.outdir, 'targetphot-zcat-{}.fits'.format(args.outsuffix))
+            outfile_zcat = os.path.join(args.outdir, 'targetphot-zcat-{}.fits'.format(args.outsuffix))
             
             allzcat = vstack(allzcat, metadata_conflicts='silent')
             allzcat.meta.pop('SURVEY')
             log.info('Writing {:,} objects to {}'.format(len(allzcat), outfile_zcat))
             allzcat.write(outfile_zcat, overwrite=True)
             
-        pdb.set_trace()
         del photocache, zcat, allout, allzcat
         
     # Build the tractorphot catalogs.
@@ -780,8 +800,8 @@ def main():
     if args.validate_targetphot:
         allout = []
 
-        #zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-*-cumulative.fits'))
-        zcatfiles = np.array(glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-sv1-other-cumulative.fits')))
+        zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-*-cumulative.fits'))
+        #zcatfiles = np.array(glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-sv1-other-cumulative.fits')))
         allsurveys = np.array([os.path.basename(zcatfile).split('-')[1] for zcatfile in zcatfiles])
 
         for survey in sorted(set(allsurveys)):

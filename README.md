@@ -2,7 +2,7 @@ Legacy Surveys DR9 Photometric Catalogs
 =======================================
 
 DESI Value-Added Catalog  
-Early Data Release (Fuji)  
+Early Data Release (EDR/Fuji)
 2022 June XX  
 
 **Version: 1.0**
@@ -12,7 +12,7 @@ Description
 
 This document describes the content and construction of the Legacy Surveys DR9
 (LS-DR9) value-added photometric catalogs for the [DESI Early Data Release
-(EDR)](https://data.desi.lbl.gov/public/edr). In short, the delivered files
+(DESI/EDR)](https://data.desi.lbl.gov/public/edr). In short, the delivered files
 include merged [DESI targeting
 catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
 and [Tractor catalog
@@ -23,7 +23,7 @@ from [LS-DR9](https://www.legacysurvey.org/dr9/description) for observed and
 Content, Organization, & Data Model
 -----------------------------------
 
-The LS-DR9 value-added catalog (VAC) can be accessed at NERSC in the following
+The LS-DR9 value-added catalog (VAC) can be accessed at NERSC at the following
 top-level directory (**TBD**):
 
 ```bash
@@ -54,7 +54,7 @@ targetphot-special-edr.fits [39MB, N=37,296]
 targetphot-sv1-edr.fits [712MB, N=685,884]
 targetphot-sv2-edr.fits [119MB, N=113,914]
 targetphot-sv3-edr.fits [1.2GB, N=1,164,263]
-targetphot-edr.fits [XXX, N=2,005,503]
+targetphot-edr.fits [2.1GB, N=2,005,503]
 ```
 
 The data model for each *targetphot* catalog is documented
@@ -82,20 +82,31 @@ catalog (`targetphot-edr.fits`) contains a `SURVEY` column.
 but *with different targeting information*. For example, an object may be a
 *primary* target in one survey but a *secondary* target in another
 survey. Consequently, we recommend considering both `TARGETID` and `SURVEY` when
-retrieving the targeting information for specific targets, depending on the
-application.
+retrieving the targeting information for specific targets (depending on how that
+information will be used, of course).
 
 #### Tractor (*tractorphot*) Catalogs
 
 For each unique target in the `targetphot-edr.fits` file, we retrieve [Tractor
 catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
-from [LS-DR9](https://www.legacysurvey.org/dr9/description). 
+from [LS-DR9](https://www.legacysurvey.org/dr9/description). These catalogs are
+"value-added" compared to the information in the [official DESI/EDR targeting
+catalogs](https://data.desi.lbl.gov/public/edr/target/catalogs) in a couple
+ways:
 
+* First, the *tractorphot* catalogs included in this VAC contain *all* the
+  measurements from the Tractor, not just the measurements included in the
+  light-weight [sweep
+  catalogs](https://www.legacysurvey.org/dr9/files/#sweep-catalogs-region-sweep)
+  which are used by DESI targeting.
 
+* And second, the *tractorphot* catalogs include
+  [LS-DR9](https://www.legacysurvey.org/dr9/description) photometry for targets
+  which were not necessarily targeted from LS-DR9 (such as *secondary* targets),
+  using positional matching.
 
-Matching radius; no matches for XXX objects.
-
+No matches for 21,361 objects.
 
 #### Potential Targets
 
