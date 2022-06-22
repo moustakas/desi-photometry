@@ -1,7 +1,7 @@
 Legacy Surveys DR9 Photometric Catalogs
 =======================================
 
-DESI Value-Added Catalog  
+DESI Value-Added Catalog
 Early Data Release (Fuji)  
 2022 June XX  
 
@@ -23,7 +23,12 @@ and *potential* non-sky DESI target in the EDR.
 Content & Organization
 ----------------------
 
+This value-added catalog (VAC) can be accessed at NERSC in the following
+top-level directory:
 
+```bash
+/global/cscratch1/sd/ioannis/lsdr9-photometry/v1.0
+```
 
 
 
