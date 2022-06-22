@@ -181,8 +181,10 @@ def targetphot_one(input_cat, photocache=None, racolumn='TARGET_RA', deccolumn='
 
     targetphot = gather_targetphot(input_cat, photocache=photocache,
                                    racolumn=racolumn, deccolumn=deccolumn)
-    targetphot['SURVEY'] = input_cat['SURVEY']
-    targetphot['PROGRAM'] = input_cat['PROGRAM']
+
+    ## Add these columns?
+    #targetphot['SURVEY'] = input_cat['SURVEY']
+    #targetphot['PROGRAM'] = input_cat['PROGRAM']
     
     return targetphot
 
@@ -322,12 +324,12 @@ def main():
     # Build the targetphot catalog.
     if args.targetphot:
         if args.potential:        
-            outfile = os.path.join(args.outdir, 'targetphot-potential-{}.fits'.format(args.outprefix))
+            any_outfile = glob(os.path.join(args.outdir, 'targetphot-potential-*-{}.fits'.format(args.outprefix)))
         else:
-            outfile = os.path.join(args.outdir, 'targetphot-{}.fits'.format(args.outprefix))
+            any_outfile = glob(os.path.join(args.outdir, 'targetphot-*-{}.fits'.format(args.outprefix)))
             
-        if os.path.isfile(outfile) and not args.overwrite:
-            log.info('Output file {} exists; use --overwrite'.format(outfile))
+        if len(any_outfile) > 0 and not args.overwrite:
+            log.info('One or more targetphot output files exist; use --overwrite')
             return
 
         # Optionally cache the targetids of all the secondary target
@@ -438,7 +440,7 @@ def main():
                     J = rand.choice(len(zcat_survey), size=args.ntest, replace=False)
                     zcat_survey = zcat_survey[J]
                 
-                log.info('Found {:,} unique TARGETIDs and {:,} unique tiles from survey {}'.format(
+                log.info('Found {:,} unique TARGETIDs and {:,} unique tiles from survey: {}'.format(
                     len(zcat_survey), len(set(zcat_survey['TILEID'])), survey))
     
                 # Multiprocess over tiles. Note: originally we multiprocessed the
@@ -462,27 +464,31 @@ def main():
                 if len(out) > 0:
                     out = vstack(out)
                     out = out[np.argsort(out['TARGETID'])]
+
+                    outfile = os.path.join(args.outdir, 'targetphot-{}-{}.fits'.format(survey, args.outprefix))
     
-                    pdb.set_trace()
-                    
                     out.meta['EXTNAME'] = 'TARGETPHOT'
+                    out.meta['SURVEY'] = survey
                     log.info('Writing {:,} objects to {}'.format(len(out), outfile))
                     out.write(outfile, overwrite=True)
-                    del out, photocache
+                    del out
             
-                    # Also write out the redshift catalog (with a minimal number of columns)
-                    # used to generate the targetphot file. Note that this intermediate
-                    # catalog is needed in order to do positional Tractor photometry
-                    # gathering, below.
+                    # Also write out the redshift catalog (with a minimal number
+                    # of columns) used to generate the targetphot file. Note
+                    # that this intermediate catalog is needed / used to do
+                    # positional Tractor photometry gathering, below.
                     if args.potential:
-                        outfile_zcat = os.path.join(args.outdir, 'targetphot-potential-zcat-{}.fits'.format(args.outprefix))
+                        outfile_zcat = os.path.join(args.outdir, 'targetphot-potential-zcat-{}-{}.fits'.format(survey, args.outprefix))
                     else:
-                        outfile_zcat = os.path.join(args.outdir, 'targetphot-zcat-{}.fits'.format(args.outprefix))
+                        outfile_zcat = os.path.join(args.outdir, 'targetphot-zcat-{}-{}.fits'.format(survey, args.outprefix))
                     
-                    zcat.meta['EXTNAME'] = 'ZCATALOG'
-                    log.info('Writing {:,} objects to {}'.format(len(zcat), outfile_zcat))
+                    zcat_survey.meta['EXTNAME'] = 'ZCATALOG'
+                    log.info('Writing {:,} objects to {}'.format(len(zcat_survey), outfile_zcat))
                     zcat.write(outfile_zcat, overwrite=True)
-                    del zcat
+
+            pdb.set_trace()
+                    
+        del photocache, zcat
         
     # Build the tractorphot catalogs.
     if args.tractorphot:
