@@ -6,7 +6,6 @@
 Set up the software dependencies but make sure we're using the desispec/0.53.2 tag, which is not yet part of a major release:
   source /global/common/software/desi/desi_environment.sh 22.2
   module unload desispec
-  export PATH=$HOME/code/desihub/desispec/bin:${PATH}
   export PYTHONPATH=$HOME/code/desihub/desispec/py:${PYTHONPATH}
 
 Sequence of commands for a given release (here, fuji)
@@ -318,8 +317,13 @@ def main():
 
     if not os.path.isdir(args.outdir):
         os.makedirs(args.outdir, exist_ok=True)
-    if not os.path.isdir(os.path.join(args.outdir, 'tractorphot')):
-        os.makedirs(os.path.join(args.outdir, 'tractorphot'), exist_ok=True)
+    for subdir in ['observed-targets', 'potential-targets']:
+        if not os.path.isdir(os.path.join(args.outdir, subdir)):
+            os.makedirs(os.path.join(args.outdir, subdir), exist_ok=True)
+        if not os.path.isdir(os.path.join(args.outdir, subdir, 'tractorphot')):
+            os.makedirs(os.path.join(args.outdir, subdir, 'tractorphot'), exist_ok=True)
+    if not os.path.isdir(os.path.join(args.outdir, 'ancillary')):
+        os.makedirs(os.path.join(args.outdir, 'ancillary'), exist_ok=True)
 
     if args.ntest is not None:
         rand = np.random.RandomState(seed=1)
@@ -329,9 +333,9 @@ def main():
     # Build the targetphot catalog.
     if args.targetphot:
         if args.potential:        
-            any_outfile = glob(os.path.join(args.outdir, 'targetphot-potential-*-{}.fits'.format(args.outsuffix)))
+            any_outfile = glob(os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-*-{}.fits'.format(args.outsuffix)))
         else:
-            any_outfile = glob(os.path.join(args.outdir, 'targetphot-*-{}.fits'.format(args.outsuffix)))
+            any_outfile = glob(os.path.join(args.outdir, 'observed-targets', 'targetphot-*-{}.fits'.format(args.outsuffix)))
             
         if len(any_outfile) > 0 and not args.overwrite:
             log.info('One or more targetphot output files exist; use --overwrite')
@@ -346,7 +350,7 @@ def main():
     
         if args.potential:
             # Assume that the nominal/parent zcat catalog has been previously generated.
-            parent_zcatfile = os.path.join(args.outdir, 'targetphot-zcat-{}.fits'.format(args.outsuffix))
+            parent_zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.outsuffix))
             if not os.path.isfile(parent_zcatfile):
                 errmsg = 'Targeting photometric catalog {} missing'.format(parent_zcatfile)
                 log.critical(errmsg)
@@ -484,9 +488,9 @@ def main():
                 out = out[np.argsort(out['TARGETID'])]
 
                 if args.potential:                
-                    outfile = os.path.join(args.outdir, 'targetphot-potential-{}-{}.fits'.format(survey, args.outsuffix))
+                    outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}-{}.fits'.format(survey, args.outsuffix))
                 else:
-                    outfile = os.path.join(args.outdir, 'targetphot-{}-{}.fits'.format(survey, args.outsuffix))
+                    outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.outsuffix))
 
                 add_dependencies(out.meta)
                 out.meta['SURVEY'] = (survey, 'survey name')
@@ -503,9 +507,9 @@ def main():
                 # that this intermediate catalog is needed / used to do
                 # positional Tractor photometry gathering, below.
                 if args.potential:
-                    outfile_zcat = os.path.join(args.outdir, 'targetphot-potential-zcat-{}-{}.fits'.format(survey, args.outsuffix))
+                    outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}-{}.fits'.format(survey, args.outsuffix))
                 else:
-                    outfile_zcat = os.path.join(args.outdir, 'targetphot-zcat-{}-{}.fits'.format(survey, args.outsuffix))
+                    outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}-{}.fits'.format(survey, args.outsuffix))
                     
                 add_dependencies(zcat_survey.meta)
                 zcat_survey.meta['SURVEY'] = (survey, 'survey name')
@@ -516,9 +520,9 @@ def main():
 
         if len(allout) > 0:
             if args.potential:
-                outfile = os.path.join(args.outdir, 'targetphot-potential-{}.fits'.format(args.outsuffix))
+                outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.outsuffix))
             else:
-                outfile = os.path.join(args.outdir, 'targetphot-{}.fits'.format(args.outsuffix))
+                outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}.fits'.format(args.outsuffix))
 
             allout = vstack(allout, metadata_conflicts='silent')
             allout.meta.pop('SURVEY')
@@ -527,9 +531,9 @@ def main():
             allout.write(outfile, overwrite=True)
         
             if args.potential:
-                outfile_zcat = os.path.join(args.outdir, 'targetphot-potential-zcat-{}.fits'.format(args.outsuffix))
+                outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.outsuffix))
             else:
-                outfile_zcat = os.path.join(args.outdir, 'targetphot-zcat-{}.fits'.format(args.outsuffix))
+                outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.outsuffix))
                 
             allzcat = vstack(allzcat, metadata_conflicts='silent')
             allzcat.meta.pop('SURVEY')
@@ -541,22 +545,22 @@ def main():
     # Build the tractorphot catalogs.
     if args.tractorphot:
         if args.potential:
-            any_outfile = glob(os.path.join(args.outdir, 'tractorphot', 'tractorphot-potential-nside{}-hp*-{}.fits'.format(
+            any_outfile = glob(os.path.join(args.outdir, 'potential-targets', 'tractorphot', 'tractorphot-potential-nside{}-hp*-{}.fits'.format(
                 args.filenside, args.outsuffix)))
         else:
-            any_outfile = glob(os.path.join(args.outdir, 'tractorphot', 'tractorphot-nside{}-hp*-{}.fits'.format(
+            any_outfile = glob(os.path.join(args.outdir, 'observed-targets', 'tractorphot', 'tractorphot-nside{}-hp*-{}.fits'.format(
                 args.filenside, args.outsuffix)))
         if len(any_outfile) > 0 and not args.overwrite:
             log.info('One or more tractorphot output files exist; use --overwrite')
             return
 
         if args.potential:
-            zcatfile = os.path.join(args.outdir, 'targetphot-potential-zcat-{}.fits'.format(args.outsuffix))
-            targetfile = os.path.join(args.outdir, 'targetphot-potential-{}.fits'.format(args.outsuffix))
+            zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.outsuffix))
+            targetfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.outsuffix))
             racolumn, deccolumn = 'RA', 'DEC'
         else:
-            zcatfile = os.path.join(args.outdir, 'targetphot-zcat-{}.fits'.format(args.outsuffix))
-            targetfile = os.path.join(args.outdir, 'targetphot-{}.fits'.format(args.outsuffix))
+            zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.outsuffix))
+            targetfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-{}.fits'.format(args.outsuffix))
             racolumn, deccolumn = 'TARGET_RA', 'TARGET_DEC'
             
         if not os.path.isfile(targetfile):
@@ -654,10 +658,10 @@ def main():
                 igood = np.where(tractor['BRICKNAME'] != '')[0]
                 if len(igood) > 0:
                     if args.potential:
-                        outfile = os.path.join(args.outdir, 'tractorphot', 'tractorphot-potential-nside{}-hp{:03d}-{}.fits'.format(
+                        outfile = os.path.join(args.outdir, 'potential-targets', 'tractorphot', 'tractorphot-potential-nside{}-hp{:03d}-{}.fits'.format(
                             args.filenside, pixel, args.outsuffix))
                     else:
-                        outfile = os.path.join(args.outdir, 'tractorphot', 'tractorphot-nside{}-hp{:03d}-{}.fits'.format(
+                        outfile = os.path.join(args.outdir, 'observed-targets', 'tractorphot', 'tractorphot-nside{}-hp{:03d}-{}.fits'.format(
                             args.filenside, pixel, args.outsuffix))
 
                     add_dependencies(tractor.meta)
@@ -674,9 +678,9 @@ def main():
             missing = vstack(missing)
     
             if args.potential:
-                outfile_miss = os.path.join(args.outdir, 'targetphot-potential-missing-{}.fits'.format(args.outsuffix))
+                outfile_miss = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-missing-{}.fits'.format(args.outsuffix))
             else:
-                outfile_miss = os.path.join(args.outdir, 'targetphot-missing-{}.fits'.format(args.outsuffix))
+                outfile_miss = os.path.join(args.outdir, 'ancillary', 'targetphot-missing-{}.fits'.format(args.outsuffix))
             add_dependencies(missing.meta)
             missing.meta['EXTNAME'] = 'TARGETPHOT'
             log.info('Writing {:,} objects to {}'.format(len(missing), outfile_miss))
@@ -687,7 +691,7 @@ def main():
         outcat = []
         outzcat = []
 
-        missfile = os.path.join(args.outdir, 'targetphot-missing-{}.fits'.format(args.outsuffix))
+        missfile = os.path.join(args.outdir, 'ancillary', 'targetphot-missing-{}.fits'.format(args.outsuffix))
         log.info('Reading {}'.format(missfile))
         miss = Table(fitsio.read(missfile))
         
@@ -712,7 +716,7 @@ def main():
             for pixel in set(pixels):
                 I = np.where(pixel == pixels)[0]
                 
-                catfile = os.path.join(args.outdir, 'tractorphot', 'tractorphot-nside{}-hp{:03d}-{}.fits'.format(
+                catfile = os.path.join(args.outdir, 'observed-targets', 'tractorphot', 'tractorphot-nside{}-hp{:03d}-{}.fits'.format(
                     args.filenside, pixel, args.outsuffix))
                 if not os.path.isfile(catfile):
                     log.info('No Tractor photometry found for {} objects in catalog {}'.format(len(I), catfile))
@@ -800,7 +804,7 @@ def main():
             out['SURVEY'] = _outzcat['SURVEY']
             out['PROGRAM'] = _outzcat['PROGRAM']
 
-            outfile = os.path.join(args.outdir, 'tractorphot-validate-{}.fits'.format(args.outsuffix))
+            outfile = os.path.join(args.outdir, 'ancillary', 'tractorphot-validate-{}.fits'.format(args.outsuffix))
             out.write(outfile, overwrite=True)
 
     # Validate the targeting photometry against the original redshift catalogs.
@@ -814,7 +818,7 @@ def main():
         for survey in sorted(set(allsurveys)):
             log.info('Working on survey {}'.format(survey))
             # read the appropriate targetphot catalog
-            catfile = os.path.join(args.outdir, 'targetphot-{}-{}.fits'.format(survey, args.outsuffix))
+            catfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.outsuffix))
             cat = Table(fitsio.read(catfile))
             log.info('Read {:,} objects from {}'.format(len(cat), catfile))
 
@@ -850,7 +854,7 @@ def main():
     
         if len(allout) > 0:
             allout = vstack(allout)
-            outfile = os.path.join(args.outdir, 'targetphot-validate-{}.fits'.format(args.outsuffix))
+            outfile = os.path.join(args.outdir, 'ancillary', 'targetphot-validate-{}.fits'.format(args.outsuffix))
             allout.write(outfile, overwrite=True)
 
 if __name__ == '__main__':
