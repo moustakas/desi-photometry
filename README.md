@@ -31,7 +31,7 @@ guadalupe releases.
 
 > **Note:** The VAC associated with fuji will be publicly released with the
   DESI/EDR in early 2023 (exact date TBD), and the VAC associated with guadalupe
-  will be released with DESI/DR1 (release date TBD).
+  will be publicly released with DESI/DR1 (release date TBD).
 
 Getting Started Quickly
 -----------------------
@@ -47,9 +47,9 @@ Content, Organization, & Data Model
 
 The LS/DR9 value-added catalogs (VACs) can be accessed at the following urls:
 | Data Release | url |
-|:------------:|-----|
-| fuji | [https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0) |
-| guadalupe | [https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/guadalupe/v1.0](https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/guadalupe/v1.0) |
+|------------|-----|
+| fuji (EDR) | [https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0) |
+| guadalupe (DR1 supplement) | [https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/guadalupe/v1.0](https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/guadalupe/v1.0) |
 
 > **For DESI Collaborators:** At NERSC, the catalogs can also be accessed at the
     following top-level directories:
@@ -76,8 +76,8 @@ provides.
 The data model for each *targetphot* catalog is documented
 [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
 (see also [Meyers et
-al. 2022](https://desi.lbl.gov/DocDB/cgi-bin/private/ShowDocument?docid=6693))
-with the differences documented below.
+al. 2022](https://desi.lbl.gov/DocDB/cgi-bin/private/ShowDocument?docid=6693)),
+but with some minor additional columns documented below.
 
 ##### fuji
 
@@ -94,7 +94,7 @@ simple stack of all five catalogs.
 | observed-targets/targetphot-sv3-fuji.fits     | 1.2GB | 1,164,263  | SV3             |
 | observed-targets/targetphot-fuji.fits         | 2.1GB | 2,005,5030 | Stack of the preceding five catalogs. |
 
-> **Note:**
+**Note:**
 
 * In addition to the columns defined
   [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1),
@@ -131,7 +131,7 @@ stack of these two catalogs.
 | observed-targets/targetphot-main-guadalupe.fits    | 2.7GB | 2,596,279 | Main Survey |
 | observed-targets/targetphot-guadalupe.fits         | 2.7GB | 2,612,367 | Stack of the preceding two catalogs. |
 
-> **Note:**
+**Note:**
 
 * The data model for these catalogs is defined
   [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1). In
@@ -140,12 +140,12 @@ stack of these two catalogs.
 
 * As for fuji, some targets have partial or minimal targeting information (e.g.,
   *secondary* targets), in which case we populate "missing" columns with zeros
-  *or blank strings (depending on the data type of the column).
+  or blank strings (depending on the data type of the column).
 
 #### Tractor (*tractorphot*) Catalogs
 
-For each unique target in the `targetphot-fuji.fits` file, we retrieve [Tractor
-catalog
+For each unique target in the `targetphot-fuji.fits` and
+`targetphot-guadalupe.fits` files, we retrieve [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS/DR9](https://www.legacysurvey.org/dr9/description). These catalogs are
 "value-added" compared to the information in the [official DESI/EDR targeting
@@ -169,20 +169,20 @@ ways:
   position.
 
 Now, because the `tractorphot` catalogs can become prohibitively large, we
-divide them into `nside=4`
+divide them into nested (not ring) `nside=4`
 [healpixels](https://healpy.readthedocs.io/en/latest/) in a dedicated
 subdirectory. The location (relative to the top-level directory) and form of
 these files is:
 
-```
-tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits
-```
+| Data Release | Location of *tractorphot* files | Number of files | Data volume | Total number of objects |
+|------------|-----|
+| fuji      | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits      | 71 | XX | 1,979,269 |
+| guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | XX | XX | XX |
 
-Here, `hp[0-9][0-9][0-9]` corresponds to the `nside=4` healpixel number (using the *nested*
-pixelization scheme; see [this *healpy*
-tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf)). There are 71 files
-ranging in size from <1MB to roughly 0.6GB, and, for reference, an `nside=4`
-healpixel is roughly 14.7 sq. degrees.
+In these file names, `hp[0-9][0-9][0-9]` corresponds to the `nside=4` healpixel
+number (using the *nested* pixelization scheme; see [this *healpy*
+tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf)), which corresponds to
+roughly 14.7 sq. degrees on the sky.
 
 From the parent `targetphot-fuji.fits` catalog of 2,005,503 objects, 1,979,269 of
 these are unique and 21,361 have no LS/DR9 source within 1 arcsec of the
