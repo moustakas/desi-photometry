@@ -70,8 +70,8 @@ model depending on the kind of target observed (e.g., *primary* versus
 *secondary* targets; see [Meyers et
 al. 2022](https://desi.lbl.gov/DocDB/cgi-bin/private/ShowDocument?docid=6693)). However,
 for some applications, it is convenient to have a merged targeting catalog for
-all targets and with a common data model, which is precisely what this VAC
-provides.
+all targets and with a common data model, which is precisely what our VACs
+provide.
 
 The data model for each *targetphot* catalog is documented
 [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
@@ -152,56 +152,63 @@ from [LS/DR9](https://www.legacysurvey.org/dr9/description). These catalogs are
 catalogs](https://data.desi.lbl.gov/public/edr/target/catalogs) in a couple
 ways:
 
-* First, the *tractorphot* catalogs included in this VAC contain *all* the
-  photometric quantities measured by *Tractor*, not just the measurements
-  included in the light-weight [sweep
+* First, the delivered *tractorphot* catalogs contain *all* the photometric
+  quantities measured by *Tractor* (documented
+  [here](https://datalab.noirlab.edu/query.php?name=ls_dr9.tractor)), not just
+  the measurements included in the light-weight [sweep
   catalogs](https://www.legacysurvey.org/dr9/files/#sweep-catalogs-region-sweep)
-  used to select DESI targets.
+  used to select DESI targets (see also
+  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)).
 
-* And second, the *tractorphot* catalogs in this VAC include
+* Second, the *tractorphot* catalogs include
   [LS/DR9](https://www.legacysurvey.org/dr9/description) photometry for targets
-  which were not necessarily targeted from LS/DR9, such as *secondary* targets,
-  using positional matching. Specifically, if the `targetid` of a *secondary*
-  target cannot be decoded to determine the LS/DR9 source from which that target
-  was selected (see [Meyers et
+  which were not necessarily targeted by DESI, such as *secondary* targets and
+  *targets of opportunity*, using positional matching. Specifically, if the
+  `targetid` of a *secondary* target cannot be decoded to determine the LS/DR9
+  source from which that target was selected (see [Meyers et
   al. 2022](https://desi.lbl.gov/DocDB/cgi-bin/private/ShowDocument?docid=6693)),
   then we return the *closest* LS/DR9 source within 1 arcsec of the targeted
   position.
 
+* Finally, we add two additional columns to the *tractorphot* catalogs to make
+it easier to cross-reference with the DESI redshift catalogs: `TARGETID`
+(`numpy.int64`) and `LS_ID` (`numpy.int64`), the latter of which is documented
+[here](https://datalab.noirlab.edu/query.php?name=ls_dr9.tractor).
+
 Now, because the `tractorphot` catalogs can become prohibitively large, we
 divide them into nested (not ring) `nside=4`
 [healpixels](https://healpy.readthedocs.io/en/latest/) in a dedicated
-subdirectory. The location (relative to the top-level directory) and form of
-these files is:
+subdirectory. We summarize the location (relative to the top-level directory) of
+these files as well as some additional details regarding the files in the
+following table:
 
 | Data Release | Location of *tractorphot* files | Number of files | Data volume | Total number of objects |
 |------------|-----|:-----:|:-----:|:-----:|
-| fuji      | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits      | 71 | XX | 1,979,269 |
-| guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | XX | XX | XX |
+| fuji      | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits      | 71 | 3.9GB | 1,979,269 |
+| guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 5.2GB | 2,603,942 |
 
 In these file names, `hp[0-9][0-9][0-9]` corresponds to the `nside=4` healpixel
 number (using the *nested* pixelization scheme; see [this *healpy*
 tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf)), which corresponds to
 roughly 14.7 sq. degrees on the sky.
 
-From the parent `targetphot-fuji.fits` catalog of 2,005,503 objects, 1,979,269 of
-these are unique and 21,361 have no LS/DR9 source within 1 arcsec of the
-targeted position, leaving 1,957,908 as the total number of unique DESI targets
-with Tractor photometry.
+**Note:**
 
-Finally, the data model of each catalog is identical to that of the [LS/DR9
-Tractor
-catalog](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
-except that we add a `TARGETID` column to make it easier to cross-reference with
-the DESI redshift catalogs.
+* In fuji, there are 2,005,503 observed targets but 1,979,269 objects with
+  LS/DR9 photometry; the "missing" 21,361 objects have no LS/DR9 source within 1
+  arcsec of the targeted position and therefore do not exist in any of the fuji
+  *tractorphot* files.
+
+* In guadalupe, the number of observed targets with missing LS/DR9 photometry is
+  just 626.
 
 #### Potential Targets
 
-When assigning fibers to targets, DESI *fiber-assignment* (**reference?**) also
-records the *potential* targets, namely the set of targets *which could have
-been observed* by a given fiber.
+When assigning fibers to targets, DESI *fiber-assignment* also records the
+*potential* targets, namely the set of targets *which could have been observed*
+by a given fiber (*including targets which end up being observed*).
 
-As part of this VAC, we include `targetphot` and `tractorphot` catalogs (as
+As part of these VACs, we include `targetphot` and `tractorphot` catalogs (as
 documented above) for all these potential targets:
 
 ```
@@ -209,12 +216,16 @@ targetphot-potential-fuji.fits [6.3GB, N=6,191,755]
 tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits
 ```
 
-Contact
--------
+Contact & Required Acknowledgement
+----------------------------------
 
 For questions (or problems) regarding these catalogs or its construction, please
 contact [John Moustakas](jmoustakas@siena.edu) ([Siena
-College](https://siena.edu)). **Need to acknowledge other contributors / members
-of the DESI Data Team.**
+College](https://siena.edu)). 
+
+
+
+
+**Need to acknowledge other contributors / members of the DESI Data Team.**
 
 
