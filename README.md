@@ -16,37 +16,40 @@ This document describes the content and construction of [Legacy Surveys DR9
 catalogs for the following [DESI](https://desi.lbl.gov/) data releases:
 
 1. The [DESI Early Data Release
-(DESI/EDR)](https://data.desi.lbl.gov/public/edr), also known as the **fuji**
-release; and
-2. The **guadalupe** release, a supplemental dataset to [DESI Data Release 1
+(DESI/EDR)](https://data.desi.lbl.gov/public/edr), also known as the **fuji
+release**; and
+2. The **guadalupe release**, a supplemental dataset to [DESI Data Release 1
 (DESI/DR1)](https://data.desi.lbl.gov/public/dr1).
 
 In short, the delivered files include merged [DESI targeting
 catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
 and [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
-from [LS/DR9](https://www.legacysurvey.org/dr9/description) for observed and
-*potential* DESI targets (excluding sky fibers) for both the fuji and guadalupe
-releases.
-
-> **Getting Started Quickly:** This [example
-    notebook](https://github.com/moustakas/desi-photometry/blob/v1.0/example.ipynb)
-    shows how to quickly grab targeting and Tractor photometry from this
-    value-added catalog for a hypothetical set of fuji targets; however, be sure
-    to read the documentation below for all the details.
+from [LS/DR9](https://www.legacysurvey.org/dr9/description) for both *observed*
+and *potential* DESI targets (excluding sky fibers), for both the fuji and
+guadalupe releases.
 
 > **Note:** The VAC associated with fuji will be publicly released with the
   DESI/EDR in early 2023 (exact date TBD), and the VAC associated with guadalupe
   will be released with DESI/DR1 (release date TBD).
 
+Getting Started Quickly
+-----------------------
+
+This [example
+notebook](https://github.com/moustakas/desi-photometry/blob/v1.0/example.ipynb)
+shows how to quickly grab targeting and Tractor photometry from the fuji
+value-added catalog for a hypothetical set of observed targets. However, be sure
+to read the documentation below for all the details!
+
 Content, Organization, & Data Model
 -----------------------------------
 
 The LS/DR9 value-added catalogs (VACs) can be accessed at the following urls:
-* [https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0)
-* [https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/guadalupe/v1.0](https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/guadalupe/v1.0)
-
-for fuji and guadalupe, respectively.
+| Data Release | url |
+|:------------:|-----|
+| fuji | [https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0) |
+| guadalupe | [https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/guadalupe/v1.0](https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/guadalupe/v1.0) |
 
 > **For DESI Collaborators:** At NERSC, the catalogs can also be accessed at the
     following top-level directories:
