@@ -175,7 +175,7 @@ subdirectory. The location (relative to the top-level directory) and form of
 these files is:
 
 | Data Release | Location of *tractorphot* files | Number of files | Data volume | Total number of objects |
-|------------|-----|
+|------------|-----|:-----:|:-----:|:-----:|
 | fuji      | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits      | 71 | XX | 1,979,269 |
 | guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | XX | XX | XX |
 
