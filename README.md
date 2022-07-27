@@ -44,7 +44,7 @@ Content, Organization, & Data Model
 
 The LS/DR9 value-added catalogs (VACs) can be accessed at the following urls:
 * [https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0)
-* [https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/v1.0)
+* [https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/guadalupe/v1.0](https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/guadalupe/v1.0)
 
 for fuji and guadalupe, respectively.
 
@@ -52,7 +52,7 @@ for fuji and guadalupe, respectively.
     following top-level directories:
   ```
   /global/cfs/cdirs/desi/public/edr/vac/lsdr9-photometry/v1.0
-  /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/v1.0
+  /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/guadalupe/v1.0
   ```
 
 The VAC contains two basic kinds of files: targeting (*targetphot*) catalogs,
@@ -70,6 +70,12 @@ for some applications, it is convenient to have a merged targeting catalog for
 all targets and with a common data model, which is precisely what this VAC
 provides.
 
+The data model for each *targetphot* catalog is documented
+[here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
+(see also [Meyers et
+al. 2022](https://desi.lbl.gov/DocDB/cgi-bin/private/ShowDocument?docid=6693))
+with the differences documented below.
+
 ##### fuji
 
 In fuji, there are five *targetphot* catalogs, one for each
@@ -77,28 +83,26 @@ In fuji, there are five *targetphot* catalogs, one for each
 simple stack of all five catalogs.
 
 | File Name    | File Size | Number of Objects | Notes |
-|--------------|:-----:|:-----------|-----------|
+|--------------|:-----:|:-----------:|-----------|
 | observed-targets/targetphot-cmx-fuji.fits     | 4.4MB | 4,146      | CMX Survey      |
 | observed-targets/targetphot-special-fuji.fits | 39MB  | 37,296     | Special targets |
 | observed-targets/targetphot-sv1-fuji.fits     | 712MB | 685,884    | SV1             |
 | observed-targets/targetphot-sv2-fuji.fits     | 119MB | 113,914    | SV2             |
 | observed-targets/targetphot-sv3-fuji.fits     | 1.2GB | 1,164,263  | SV3             |
-| observed-targets/targetphot-fuji.fits         | 2.1GB | 2,005,5030 | Simple stack of the preceding five catalogs. |
+| observed-targets/targetphot-fuji.fits         | 2.1GB | 2,005,5030 | Stack of the preceding five catalogs. |
 
-The data model for each *targetphot* catalog is documented
-[here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
-(see also [Meyers et
-al. 2022](https://desi.lbl.gov/DocDB/cgi-bin/private/ShowDocument?docid=6693))
-with the following differences:
+> **Note:**
 
-* Each catalog contains the targeting columns for *all* the possible surveys in
-the EDR (making it easier for for the catalogs to be stacked or combined),
-specifically: `CMX_TARGET` `DESI_TARGET`, `BGS_TARGET`, `MWS_TARGET`,
-`SV1_DESI_TARGET`, `SV1_BGS_TARGET`, `SV1_MWS_TARGET`, `SV2_DESI_TARGET`,
-`SV2_BGS_TARGET`, `SV2_MWS_TARGET`, `SV3_DESI_TARGET`, `SV3_BGS_TARGET`,
-`SV3_MWS_TARGET`, `SCND_TARGET`, `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and
-`SV3_SCND_TARGET` (all with a `numpy.int64` data type). In addition, the merged
-catalog (`targetphot-fuji.fits`) contains a `SURVEY` (`<U7`) column.
+* In addition to the columns defined
+  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1),
+  these catalogs contain the targeting columns for *all* the possible surveys in
+  the EDR (making it easier for for the catalogs to be stacked or combined),
+  specifically: `CMX_TARGET` `DESI_TARGET`, `BGS_TARGET`, `MWS_TARGET`,
+  `SV1_DESI_TARGET`, `SV1_BGS_TARGET`, `SV1_MWS_TARGET`, `SV2_DESI_TARGET`,
+  `SV2_BGS_TARGET`, `SV2_MWS_TARGET`, `SV3_DESI_TARGET`, `SV3_BGS_TARGET`,
+  `SV3_MWS_TARGET`, `SCND_TARGET`, `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and
+  `SV3_SCND_TARGET` (all with a `numpy.int64` data type). In addition, the
+  merged catalog (`targetphot-fuji.fits`) contains a `SURVEY` (`<U7`) column.
 
 * Some targets have partial or minimal targeting information (e.g., *secondary*
   targets). For these objects, we populate "missing" *targetphot* columns with
@@ -106,12 +110,12 @@ catalog (`targetphot-fuji.fits`) contains a `SURVEY` (`<U7`) column.
   emphasize that the absence of this information doesn't mean the information
   doesn't exist *somewhere*, just that it wasn't used for targeting.
 
-> **Note:** In the DESI/EDR, the same object can appear in two different surveys
-but *with different targeting information*. For example, an object may be a
-*primary* target in one survey but a *secondary* target in another
-survey. Consequently, we recommend considering both `TARGETID` and `SURVEY` when
-retrieving the targeting information for specific targets (depending on how that
-information will be used, of course).
+* In fuji, the same object can appear in two different surveys but *with
+  different targeting information*. For example, an object may be a *primary*
+  target in one survey but a *secondary* target in another survey. Consequently,
+  we recommend considering both `TARGETID` and `SURVEY` when retrieving the
+  targeting information for specific targets (depending on how that information
+  will be used, of course).
 
 ##### guadalupe
 
@@ -122,7 +126,18 @@ stack of these two catalogs.
 |--------------|:-----:|:-----------|-----------|
 | observed-targets/targetphot-special-guadalupe.fits | 17MB  | 16,088    | Special targets |
 | observed-targets/targetphot-main-guadalupe.fits    | 2.7GB | 2,596,279 | Main Survey |
-| observed-targets/targetphot-guadalupe.fits         | 2.7GB | 2,612,367 | Simple stack of the preceding two catalogs. |
+| observed-targets/targetphot-guadalupe.fits         | 2.7GB | 2,612,367 | Stack of the preceding two catalogs. |
+
+> **Note:**
+
+* The data model for these catalogs is defined
+  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1). In
+  addition, the merged catalog (`targetphot-guadalupe.fits`) contains a `SURVEY`
+  (`<U7`) column.
+
+* As for fuji, some targets have partial or minimal targeting information (e.g.,
+  *secondary* targets), in which case we populate "missing" columns with zeros
+  *or blank strings (depending on the data type of the column).
 
 #### Tractor (*tractorphot*) Catalogs
 
