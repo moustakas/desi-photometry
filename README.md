@@ -211,21 +211,43 @@ by a given fiber (*including targets which end up being observed*).
 As part of these VACs, we include `targetphot` and `tractorphot` catalogs (as
 documented above) for all these potential targets:
 
-```
-targetphot-potential-fuji.fits [6.3GB, N=6,191,755]
-tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits
-```
+##### fuji (*targetphot*)
+
+| File Name    | File Size | Number of Objects | Notes |
+|--------------|:-----:|:-----------:|-----------|
+| potential-targets/targetphot-potential-cmx-fuji.fits     | 22MB  | 20,956    | CMX Survey      |
+| potential-targets/targetphot-potential-special-fuji.fits | 220MB | 211,255   | Special targets |
+| potential-targets/targetphot-potential-sv1-fuji.fits     | 4.4GB | 4,306,326 | SV1             |
+| potential-targets/targetphot-potential-sv2-fuji.fits     | 459MB | 442,698   | SV2             |
+| potential-targets/targetphot-potential-sv3-fuji.fits     | 1.5GB | 1,420,280 | SV3             |
+| potential-targets/targetphot-potential-fuji.fits         | 6.6GB | 6,401,515 | Stack of the preceding five catalogs. |
+
+##### guadalupe (*targetphot*)
+
+| File Name    | File Size | Number of Objects | Notes |
+|--------------|:-----:|:-----------|-----------|
+| potential-targets/targetphot-potential-special-guadalupe.fits | 82MB  | 79,017    | Special targets |
+| potential-targets/targetphot-potential-main-guadalupe.fits    | 16GB | 15,800,998 | Main Survey |
+| potential-targets/targetphot-potential-guadalupe.fits         | 17GB | 15,880,015 | Stack of the preceding two catalogs. |
+
+##### *tractorphot* 
+
+| Data Release | Location of *tractorphot* files | Number of files | Data volume | Total number of objects |
+|------------|-----|:-----:|:-----:|:-----:|
+| fuji      | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits      | 71 | 12GB | 6,031,273 |
+| guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | XX | XX | 15,758,409 |
+
+Missing from fuji: 160,482.
+Missing from guadalupe: 67,026.
 
 Contact & Required Acknowledgement
 ----------------------------------
 
 For questions (or problems) regarding these catalogs or its construction, please
-contact [John Moustakas](jmoustakas@siena.edu) ([Siena
-College](https://siena.edu)). 
+file a ticket at the [desi-photometry
+repository](https://github.com/moustakas/desi-photometry/issues) and/or contact
+[John Moustakas](jmoustakas@siena.edu) ([Siena
+College](https://siena.edu)).
 
-
-
-
-**Need to acknowledge other contributors / members of the DESI Data Team.**
-
-
+Any use of the data products described in this document must include the
+following acknowledgement text: https://data.desi.lbl.gov/doc/acknowledgements.
