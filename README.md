@@ -39,23 +39,16 @@ from [LS/DR9](https://www.legacysurvey.org/dr9/description) for observed and
 Content, Organization, & Data Model
 -----------------------------------
 
-The LS/DR9 value-added catalogs (VAC) can be accessed at the following url:
-```
-[https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0)
-```
-and
-```
-[https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/v1.0)
-```
+The LS/DR9 value-added catalogs (VAC) can be accessed at the following urls:
+  [https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0)
+  [https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/v1.0)
+
 for fuji and guadalupe, respectively.
 
 > **For DESI Collaborators:** At NERSC, the catalogs can also be accessed at the
     following top-level directories:
   ```
   /global/cfs/cdirs/desi/public/edr/vac/lsdr9-photometry/v1.0
-  ```
-  and
-  ```
   /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/v1.0
   ```
 
