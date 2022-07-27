@@ -2,8 +2,9 @@ Legacy Surveys DR9 Photometric Catalogs
 =======================================
 
 DESI Value-Added Catalog  
-Early Data Release (EDR/Fuji)  
-2022 June XX  
+Fuji / Early Data Release (EDR)
+Guadalupe Data Release 
+2022 July XX
 
 **Version: 1.0**
 
@@ -11,14 +12,18 @@ Description
 -----------
 
 This document describes the content and construction of the Legacy Surveys DR9
-(LS/DR9) value-added photometric catalogs for the [DESI Early Data Release
-(DESI/EDR)](https://data.desi.lbl.gov/public/edr). In short, the delivered files
-include merged [DESI targeting
+(LS/DR9) value-added photometric catalogs for two distinct
+[DESI](https://desi.lbl.gov/) data releases: the [DESI Early Data Release
+(DESI/EDR)](https://data.desi.lbl.gov/public/edr) (also called the **fuji** data
+release), and the **guadalupe** data release, a supplemental release to the
+[DESI Data Release 1](https://data.desi.lbl.gov/public/dr1). 
+
+In short, the delivered files include merged [DESI targeting
 catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
 and [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS/DR9](https://www.legacysurvey.org/dr9/description) for observed and
-*potential* DESI targets (excluding sky fibers) in the DESI/EDR.
+*potential* DESI targets (excluding sky fibers) in the fuji and guadalupe releases. 
 
 > **Getting Started Quickly:** The [example
     notebook](https://github.com/moustakas/desi-photometry/blob/main/example.ipynb)
