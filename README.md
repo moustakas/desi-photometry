@@ -13,14 +13,18 @@ Description
 
 This document describes the content and construction of the [Legacy Surveys DR9
 (LS/DR9)](https://www.legacysurvey.org/dr9/description) value-added photometric
-catalogs for two distinct [DESI](https://desi.lbl.gov/) data releases: (1) the
-[DESI Early Data Release (DESI/EDR)](https://data.desi.lbl.gov/public/edr) (also
-called the **fuji data release**); and (2) the **guadalupe data release**, a
-supplemental release to [DESI Data Release 1
-(DESI/DR1)](https://data.desi.lbl.gov/public/dr1).
+catalogs for the following [DESI](https://desi.lbl.gov/) data releases:
 
-The fuji files will be publicly released with the DESI/EDR in early 2023 (exact
-date TBD) and the guadalupe files will be released with DESI/DR1 (release date
+1. The [DESI Early Data Release
+(DESI/EDR)](https://data.desi.lbl.gov/public/edr), also known as the **fuji**
+release); and
+
+2. The **guadalupe** release, a supplemental release to [DESI Data Release 1
+(DESI/DR1)](https://data.desi.lbl.gov/public/dr1). 
+
+The VAC associated with fuji
+will be publicly released with the DESI/EDR in early 2023 (exact date TBD), and
+the VAC associated with guadalupe will be released with DESI/DR1 (release date
 TBD).
 
 In short, the delivered files include merged [DESI targeting
@@ -30,8 +34,8 @@ photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS/DR9](https://www.legacysurvey.org/dr9/description) for observed and
 *potential* DESI targets (excluding sky fibers) in the fuji and guadalupe releases. 
 
-> **Getting Started Quickly:** The [example
-    notebook](https://github.com/moustakas/desi-photometry/blob/main/example.ipynb)
+> **Getting Started Quickly:** This [example
+    notebook](https://github.com/moustakas/desi-photometry/blob/v1.0/example.ipynb)
     shows how to quickly grab targeting and Tractor photometry from this
     value-added catalog for a hypothetical set of fuji targets, but be sure to
     read the documentation below for all the details.
@@ -40,8 +44,8 @@ Content, Organization, & Data Model
 -----------------------------------
 
 The LS/DR9 value-added catalogs (VAC) can be accessed at the following urls:
-  [https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0)
-  [https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/v1.0)
+    [https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0)
+    [https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/v1.0)
 
 for fuji and guadalupe, respectively.
 
@@ -58,17 +62,18 @@ more detail.
 
 #### Targeting (*targetphot*) Catalogs
 
-In the [DESI/EDR](https://data.desi.lbl.gov/public/edr), the targeting catalogs
-used for DESI target selection are organized in a variety of files and locations
-and with a different data model depending on the kind of target observed (e.g.,
-*primary* versus *secondary* targets; see [Meyers et
+In each DESI data release, the targeting catalogs used for DESI target selection
+are organized in a variety of files and locations and with a different data
+model depending on the kind of target observed (e.g., *primary* versus
+*secondary* targets; see [Meyers et
 al. 2022](https://desi.lbl.gov/DocDB/cgi-bin/private/ShowDocument?docid=6693)). However,
 for some applications, it is convenient to have a merged targeting catalog for
 all targets and with a common data model, which is precisely what this VAC
 provides.
 
-There are five relevant catalogs, one for each *survey* (**need a documentation
-link**) in the EDR, as well as a simple stack of all five catalogs.
+There are five relevant catalogs, one for each
+[survey](https://data.desi.lbl.gov/doc/organization) in the EDR, as well as a
+simple stack of all five catalogs.
 
 ```
 targetphot-cmx-edr.fits [4.4MB, N=4,146]
