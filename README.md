@@ -224,7 +224,7 @@ below:
 ##### guadalupe (*targetphot*)
 
 | File Name    | File Size | Number of Targets | Notes |
-|--------------|:-----:|:-----------|-----------|
+|--------------|:-----:|:-----------:|-----------|
 | potential-targets/targetphot-potential-special-guadalupe.fits | 82MB  | 79,017    | Special targets |
 | potential-targets/targetphot-potential-main-guadalupe.fits    | 16GB | 15,800,998 | Main Survey |
 | potential-targets/targetphot-potential-guadalupe.fits         | 17GB | 15,880,015 | Stack of the preceding two catalogs. |
@@ -235,6 +235,40 @@ below:
 |------------|-----|:-----:|:-----:|:-----:|
 | fuji      | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits      | 71 | 12GB | 6,031,273 |
 | guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 32GB | 15,758,409 |
+
+Reproducibility
+---------------
+
+DESI collaborators (or others with all the necessary underlying files and
+software dependencies) can reproduce either of the VACs presented here by
+invoking the following commands (illustrated here just for fuji). 
+
+1. First, set up your software environment:
+```bash
+source /global/common/software/desi/desi_environment.sh 22.2
+module unload desispec
+cd /path/to/desi/code
+git clone https://github.com/desihub/desispec.git
+cd desispec && git checkout tags/0.53.2 && cd ..
+export PYTHONPATH=/path/to/desi/code/desispec/py:${PYTHONPATH}
+git clone https://github.com/moustakas/desi-photometry.git
+cd desi-photometry && git checkout tags/v1.0 && cd ..
+```
+
+2. Next, gather targeting photometry from the individual redshift catalogs:
+```bash
+time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /path/to/output/fuji --outsuffix fuji --mp 32 --targetphot
+```
+
+3. Gather Tractor photometry:
+```bash
+time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /path/to/output/fuji --outsuffix fuji --mp 32 --tractorphot
+```
+
+4. Gather targeting and Tractor photometry for *potential* targets:
+```bash
+time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /path/to/output/fuji --outsuffix fuji --mp 32 --targetphot --tractorphot --potential
+```
 
 Contact & Required Acknowledgement
 ----------------------------------
