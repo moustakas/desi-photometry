@@ -81,7 +81,7 @@ but with a handful of additional columns documented below.
 
 In fuji, there are five *targetphot* catalogs, one for each
 [survey](https://data.desi.lbl.gov/doc/organization) in the EDR, as well as a
-simple stack of all five catalogs.
+simple stack of all five catalogs:
 
 | File Name    | File Size | Number of Targets | Notes |
 |--------------|:-----:|:-----------:|-----------|
@@ -120,8 +120,7 @@ simple stack of all five catalogs.
 
 ##### guadalupe
 
-In guadalupe, there are just two *targetphot* catalogs as well as a simple
-stack of these two catalogs.
+In guadalupe, there are just two *targetphot* catalogs as well as a stack of these two catalogs:
 
 | File Name    | File Size | Number of Targets | Notes |
 |--------------|:-----:|:-----------|-----------|
@@ -193,9 +192,9 @@ roughly 14.7 sq. degrees on the sky.
 
 * In fuji, there are 1,979,269 unique observed targets (the 2,005,503 number
   tabulated above includes duplicate targets observed in different surveys), but
-  just 1,957,908 objects with LS/DR9 photometry; the "missing" 21,361 objects
-  have no LS/DR9 source within 1 arcsec of the targeted position and therefore
-  do not exist in any of the fuji *tractorphot* files.
+  just 1,957,908 unique objects with LS/DR9 photometry; the "missing" 21,361
+  objects have no LS/DR9 source within 1 arcsec of the targeted position and
+  therefore do not exist in any of the fuji *tractorphot* files.
 
 * In guadalupe, the number of observed targets with missing LS/DR9 photometry is
   just 626.
@@ -241,7 +240,8 @@ Reproducibility
 
 DESI collaborators (or others with all the necessary underlying files and
 software dependencies) can reproduce either of the VACs presented here by
-invoking the following commands (illustrated here just for fuji). 
+invoking the following commands at [NERSC](https://nersc.gov/) (illustrated here
+just for fuji).
 
 1. First, set up your software environment:
 ```bash
@@ -255,23 +255,20 @@ git clone https://github.com/moustakas/desi-photometry.git
 cd desi-photometry && git checkout tags/v1.0 && cd ..
 ```
 
-2. Next, gather targeting photometry from the individual redshift catalogs:
+2. Next, gather targeting and Tractor photometry for *observed* targets:
 ```bash
-time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /path/to/output/fuji --outsuffix fuji --mp 32 --targetphot
+time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
+  -o /path/to/output/fuji --outsuffix fuji --mp 32 --targetphot --tractorphot
 ```
 
-3. Gather Tractor photometry:
+3. Finally gather targeting and Tractor photometry for *potential* targets:
 ```bash
-time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /path/to/output/fuji --outsuffix fuji --mp 32 --tractorphot
+time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
+  -o /path/to/output/fuji --outsuffix fuji --mp 32 --targetphot --tractorphot --potential
 ```
 
-4. Gather targeting and Tractor photometry for *potential* targets:
-```bash
-time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /path/to/output/fuji --outsuffix fuji --mp 32 --targetphot --tractorphot --potential
-```
-
-Contact & Required Acknowledgement
-----------------------------------
+Contact & Contributors
+----------------------
 
 For questions (or problems) regarding these catalogs or its construction, please
 file a ticket at the [desi-photometry
@@ -279,5 +276,19 @@ repository](https://github.com/moustakas/desi-photometry/issues) and/or contact
 [John Moustakas](jmoustakas@siena.edu) ([Siena
 College](https://siena.edu)).
 
-Any use of the data products described in this document must include the
-following acknowledgement text: https://data.desi.lbl.gov/doc/acknowledgements.
+We are grateful for important contributions to the VACs presented herein from
+the following individuals:
+
+* Stephen Bailey (Lawrence Berkeley National Lab)
+* Stephanie Juneau (NSF's NOIRLab)
+* Dustin Lang (Perimeter Institute of Theoretical Physics)
+* Adam Myers (University of Wyoming)
+* Anand Raichoor (Lawrence Berkeley National Lab)
+* Benjamin Weaver (NSF's NOIRLab)
+
+Required Acknowledgement
+------------------------
+
+Any use of the data products described in this document must include the text of
+the following acknowledgement verbatim:
+https://data.desi.lbl.gov/doc/acknowledgements.
