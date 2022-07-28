@@ -1,9 +1,9 @@
-Legacy Surveys DR9 Photometric Catalogs for DESI Targets
-========================================================
+Legacy Surveys DR9 Photometric Catalogs for Fuji and Guadalupe DESI Data Releases
+=================================================================================
 
 DESI Value-Added Catalogs  
-Fuji / Early Data Release (EDR)  
-Guadalupe supplement to Data Release 1 (DR1)  
+Fuji (Early Data Release)  
+Guadalupe (Data Release 1 Supplement)  
 
 **Version: 1.0**  
 2022 July XX
