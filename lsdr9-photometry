@@ -102,24 +102,33 @@ def read_one_potential_targets(tileid, survey, program):
     stileid = '{:06d}'.format(tileid)
     fiberfile = os.path.join(fiberassign_dir, stileid[:3], 'fiberassign-{}.fits.gz'.format(stileid))
     #log.info('Reading {}'.format(fiberfile))
-    targetid = fitsio.read(fiberfile, ext='POTENTIAL_ASSIGNMENTS', columns='TARGETID')
-    targetid = np.unique(targetid)
+
+    # old code that used POTENTIAL_ASSIGNMENTS
+    #targetid = fitsio.read(fiberfile, ext='POTENTIAL_ASSIGNMENTS', columns='TARGETID')
+    #targetid = np.unique(targetid)
+    ## remove skies
+    ##_, _, _, _, sky, _ = decode_targetid(targetid)
+    #objid, brickid, release, mock, sky, gaia = decode_targetid(targetid)
+    #keep = (sky == 0) * (targetid > 0)
+    #out = Table()
+    #if np.sum(keep) == 0:
+    #    return out
+    #out['TARGETID'] = targetid[keep]
+    #out['TILEID'] = tileid
+    #
+    #targets = Table(fitsio.read(fiberfile, ext='TARGETS', columns=['TARGETID', 'RA', 'DEC']))
+    #out = join(out, targets, keys='TARGETID', join_type='left')
+
+    out = Table(fitsio.read(fiberfile, ext='TARGETS'))
     # remove skies
-    #_, _, _, _, sky, _ = decode_targetid(targetid)
-    objid, brickid, release, mock, sky, gaia = decode_targetid(targetid)
-    keep = (sky == 0) * (targetid > 0)
-    out = Table()
-    if np.sum(keep) == 0:
-        return out
-    out['TARGETID'] = targetid[keep]
+    _, _, _, _, sky, _ = decode_targetid(out['TARGETID'])
+    keep = (sky == 0) * (out['TARGETID'] > 0)
+    out = out[keep]
+    
     out['TILEID'] = tileid
-
-    targets = fitsio.read(fiberfile, ext='TARGETS', columns=['TARGETID', 'RA', 'DEC'])
-    out = join(out, targets, keys='TARGETID', join_type='left')
-
     out['SURVEY'] = survey
     out['PROGRAM'] = program
-    
+
     # Old code to populate the brick columns. However, this procedure is not
     # correct for secondary targets, so don't do it.
     #from desitarget.io import release_to_photsys
@@ -185,9 +194,12 @@ def targetphot_one(input_cat, photocache=None, racolumn='TARGET_RA', deccolumn='
     targetphot = gather_targetphot(input_cat, photocache=photocache,
                                    racolumn=racolumn, deccolumn=deccolumn)
 
-    ## Add these columns?
-    #targetphot['SURVEY'] = input_cat['SURVEY']
-    #targetphot['PROGRAM'] = input_cat['PROGRAM']
+    # Can have the same targetid across different surveys and even within a
+    # survey, across different tiles. So we need these columns.
+    # See https://github.com/moustakas/desi-photometry/issues/3
+    targetphot['SURVEY'] = input_cat['SURVEY']
+    targetphot['PROGRAM'] = input_cat['PROGRAM']
+    targetphot['TILEID'] = input_cat['TILEID']
     
     return targetphot
 
@@ -365,6 +377,12 @@ def main():
                 parent_zcat = parent_zcat[J]
             log.info('Read {:,} objects from {}'.format(len(parent_zcat), parent_zcatfile))
                 
+            print('RESTRICTING TO SURVEY sv2!')
+            uindx = parent_zcat['SURVEY'] == 'sv2'
+            #print('RESTRICTING TO TILE 81056!! Note uindx[0]!')
+            #uindx = parent_zcat['TILEID'] == 81056
+            parent_zcat = parent_zcat[uindx]
+            
             #tileids = np.unique(parent_zcat['TILEID'])
             _, uindx = np.unique(parent_zcat['TILEID'], return_index=True)
             tileids = parent_zcat['TILEID'][uindx]
@@ -381,7 +399,7 @@ def main():
             else:
                 zcat = [read_one_potential_targets(*mparg) for mparg in mpargs]
             zcat = vstack(zcat)
-
+            
             # Do not select unique TARGETIDs because the same target can appear
             # in different surveys. We handle uniqueness below.
 
@@ -453,16 +471,19 @@ def main():
             S = np.where(survey == allsurveys)[0]
             zcat_survey = zcat[S]
 
-            # Select unique TARGETIDs.
-            _, uindx = np.unique(zcat_survey['TARGETID'], return_index=True)
-            zcat_survey = zcat_survey[uindx]
-            zcat_survey = zcat_survey[np.argsort(zcat_survey['TARGETID'])]
+            # Do not select unique TARGETIDs!
+            # See https://github.com/moustakas/desi-photometry/issues/3
+
+            ## Select unique TARGETIDs.
+            #_, uindx = np.unique(zcat_survey['TARGETID'], return_index=True)
+            #zcat_survey = zcat_survey[uindx]
+            #zcat_survey = zcat_survey[np.argsort(zcat_survey['TARGETID'])]
 
             if rand is not None:
                 J = rand.choice(len(zcat_survey), size=args.ntest, replace=False)
                 zcat_survey = zcat_survey[J]
             
-            log.info('Found {:,} unique TARGETIDs and {:,} unique tiles from survey: {}'.format(
+            log.info('Found {:,} TARGETIDs and {:,} unique tiles from survey: {}'.format(
                 len(zcat_survey), len(set(zcat_survey['TILEID'])), survey))
 
             # Multiprocess over tiles. Note: originally we multiprocessed the
@@ -481,7 +502,7 @@ def main():
                     out = P.map(_targetphot_one, mpargs)
             else:
                 out = [targetphot_one(*mparg) for mparg in mpargs]
-    
+
             # stack, sort, and write out
             if len(out) > 0:
                 out = vstack(out)
