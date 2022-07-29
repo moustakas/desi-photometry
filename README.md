@@ -25,7 +25,7 @@ and [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS/DR9](https://www.legacysurvey.org/dr9/description) for *observed* and
 *potential* DESI targets (excluding sky fibers), for both the fuji and guadalupe
-releases.
+productions.
 
 Getting Started Quickly
 -----------------------
@@ -167,20 +167,17 @@ it easier to cross-reference with the DESI redshift catalogs: `TARGETID`
 [here](https://datalab.noirlab.edu/query.php?name=ls_dr9.tractor).
 
 Now, because the `tractorphot` catalogs can become prohibitively large, we
-divide them into nested (not ring) `nside=4`
+divide them into *nested* (not ring; see [this *healpy*
+tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf))) `nside=4`
 [healpixels](https://healpy.readthedocs.io/en/latest/) in a dedicated
-subdirectory. We summarize their location (relative to the top-level directory)
+subdirectory. (One `nside=4` healpixel corresponds to roughly 14.7 sq. degrees
+on the sky.) We summarize their location (relative to the top-level directory)
 as well as some additional details regarding the files in the following table:
 
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |------------|-----|:-----:|:-----:|:-----:|
 | fuji      | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits      | 71 | 3.9GB | 1,957,908 |
 | guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 5.2GB | 2,603,942 |
-
-In these file names, `hp[0-9][0-9][0-9]` corresponds to the `nside=4` healpixel
-number (using the *nested* pixelization scheme; see [this *healpy*
-tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf)), which corresponds to
-roughly 14.7 sq. degrees on the sky.
 
 **Note:**
 
