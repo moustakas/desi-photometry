@@ -1,25 +1,23 @@
-Legacy Surveys DR9 Photometric Catalogs for Fuji and Guadalupe DESI Data Releases
-=================================================================================
+Legacy Surveys DR9 Photometric Catalogs for DESI Productions Fuji and Guadalupe
+===============================================================================
 
 DESI Value-Added Catalogs  
 Fuji (Early Data Release)  
 Guadalupe (Data Release 1 Supplement)  
 
 **Version: 1.0**  
-2022 July XX
 
 Description
 -----------
 
 This document describes the content and construction of [Legacy Surveys DR9
 (LS/DR9)](https://www.legacysurvey.org/dr9/description) value-added photometric
-catalogs for the following [DESI](https://desi.lbl.gov/) data releases:
+catalogs for the following [DESI](https://desi.lbl.gov/) spectroscopic productions:
 
-* The [DESI Early Data Release
-(DESI/EDR)](https://data.desi.lbl.gov/public/edr), also known as the **fuji
-release**; and
-* The **guadalupe release**, a supplemental dataset to [DESI Data Release 1
-(DESI/DR1)](https://data.desi.lbl.gov/public/dr1).
+* **fuji**, which will be released publicly as part of the [DESI Early Data Release
+(DESI/EDR)](https://data.desi.lbl.gov/public/edr) in early 2023 (exact date TBD); and
+* **guadalupe**, a supplemental dataset to [DESI Data Release 1
+(DESI/DR1)](https://data.desi.lbl.gov/public/dr1) (release date TBD).
 
 In short, the delivered files include merged [DESI targeting
 catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
@@ -29,15 +27,11 @@ from [LS/DR9](https://www.legacysurvey.org/dr9/description) for *observed* and
 *potential* DESI targets (excluding sky fibers), for both the fuji and guadalupe
 releases.
 
-> **Note:** The VAC associated with fuji will be publicly released with the
-  DESI/EDR in early 2023 (exact date TBD), and the VAC associated with guadalupe
-  will be publicly released with DESI/DR1 (release date TBD).
-
 Getting Started Quickly
 -----------------------
 
 This [example
-notebook](https://github.com/moustakas/desi-photometry/blob/v1.0/example.ipynb)
+notebook](https://github.com/moustakas/desi-photometry/blob/fujilupe-v1.0/example.ipynb)
 shows how to quickly grab targeting and Tractor photometry from the fuji
 value-added catalog for a hypothetical set of observed targets. However, be sure
 to read the documentation below for all the details!
@@ -48,13 +42,13 @@ Content, Organization, & Data Model
 The LS/DR9 value-added catalogs (VACs) can be accessed at the following links:
 | Data Release | URL |
 |------------|-----|
-| fuji (EDR) | [https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0](https://data.desi.lbl.gov/doc/releases/edr/vac/lsdr9-photometry/v1.0) |
-| guadalupe (DR1 supplement) | [https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/guadalupe/v1.0](https://data.desi.lbl.gov/doc/releases/dr1/vac/lsdr9-photometry/guadalupe/v1.0) |
+| fuji (EDR) | [https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v1.0](https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v1.0) |
+| guadalupe (DR1 supplement) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v1.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v1.0) |
 
 > **For DESI Collaborators:** At NERSC, the catalogs can also be accessed at the
     following top-level directories:
   ```
-  /global/cfs/cdirs/desi/public/edr/vac/lsdr9-photometry/v1.0
+  /global/cfs/cdirs/desi/public/edr/vac/lsdr9-photometry/fuji/v1.0
   /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/guadalupe/v1.0
   ```
 
@@ -123,7 +117,7 @@ simple stack of all five catalogs:
 In guadalupe, there are just two *targetphot* catalogs as well as a stack of these two catalogs:
 
 | File Name    | File Size | Number of Targets | Notes |
-|--------------|:-----:|:-----------|-----------|
+|--------------|:-----:|:-----------:|-----------|
 | observed-targets/targetphot-special-guadalupe.fits | 17MB  | 16,088    | Special targets |
 | observed-targets/targetphot-main-guadalupe.fits    | 2.7GB | 2,596,279 | Main Survey |
 | observed-targets/targetphot-guadalupe.fits         | 2.7GB | 2,612,367 | Stack of the preceding two catalogs. |
