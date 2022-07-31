@@ -119,7 +119,8 @@ def read_one_potential_targets(tileid, survey, program):
     #targets = Table(fitsio.read(fiberfile, ext='TARGETS', columns=['TARGETID', 'RA', 'DEC']))
     #out = join(out, targets, keys='TARGETID', join_type='left')
 
-    out = Table(fitsio.read(fiberfile, ext='TARGETS'))
+    out = Table(fitsio.read(fiberfile, ext='TARGETS', columns=['TARGETID', 'RA', 'DEC']))
+    
     # remove skies
     _, _, _, _, sky, _ = decode_targetid(out['TARGETID'])
     keep = (sky == 0) * (out['TARGETID'] > 0)
@@ -377,11 +378,11 @@ def main():
                 parent_zcat = parent_zcat[J]
             log.info('Read {:,} objects from {}'.format(len(parent_zcat), parent_zcatfile))
                 
-            print('RESTRICTING TO SURVEY sv2!')
-            uindx = parent_zcat['SURVEY'] == 'sv2'
+            #print('RESTRICTING TO SURVEY sv2!')
+            #uindx = parent_zcat['SURVEY'] == 'sv2'
             #print('RESTRICTING TO TILE 81056!! Note uindx[0]!')
             #uindx = parent_zcat['TILEID'] == 81056
-            parent_zcat = parent_zcat[uindx]
+            #parent_zcat = parent_zcat[uindx]
             
             #tileids = np.unique(parent_zcat['TILEID'])
             _, uindx = np.unique(parent_zcat['TILEID'], return_index=True)
@@ -465,6 +466,7 @@ def main():
         # Divide the analysis by survey.
         allout, allzcat = [], []
         allsurveys = zcat['SURVEY']
+        #for survey in ['sv3']:
         for survey in sorted(set(allsurveys)):
             log.info('Working on survey {}'.format(survey))
 
