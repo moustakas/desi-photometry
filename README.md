@@ -249,13 +249,13 @@ cd desi-photometry && git checkout tags/v1.0 && cd ..
 2. Next, gather targeting and Tractor photometry for *observed* targets:
 ```bash
 time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
-  -o /path/to/output/fuji --outsuffix fuji --mp 32 --targetphot --tractorphot
+  -o /path/to/output/fuji --specprod fuji --mp 32 --targetphot --tractorphot
 ```
 
 3. Finally gather targeting and Tractor photometry for *potential* targets:
 ```bash
 time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
-  -o /path/to/output/fuji --outsuffix fuji --mp 32 --targetphot --tractorphot --potential
+  -o /path/to/output/fuji --specprod fuji --mp 32 --targetphot --tractorphot --potential
 ```
 
 Contact & Contributors

@@ -24,24 +24,31 @@ def targets_one_tile(tileid, obstile, pottile):
     """
     print('  Checking tile {}'.format(tileid))
     # Check that the set of targetids are unique.
-    assert(len(obstile) == len(np.unique(obstile['TARGETID'])))
-    assert(len(pottile) == len(np.unique(pottile['TARGETID'])))
-    
+    try:
+        assert(len(obstile) == len(np.unique(obstile['TARGETID'])))
+        assert(len(pottile) == len(np.unique(pottile['TARGETID'])))
+        
     # Check that every target in the targetphot file is also in the
     # targetphot-potential file.
-    K = np.isin(obstile['TARGETID'], pottile['TARGETID'], assume_unique=True)
-    assert(len(K) == len(obstile['TARGETID']))
+        K = np.isin(obstile['TARGETID'], pottile['TARGETID'], assume_unique=True)
+        assert(len(K) == len(obstile['TARGETID']))
+    except:
+        print('  Problem with tile {}!'.format(tileid))
+        pdb.set_trace()        
 
     # Now, ensure that the data stored in the potential and observed catalogs
     # *for the same objects* are identical.
-    I = np.isin(pottile['TARGETID'], obstile['TARGETID'], assume_unique=True)
+    #I = np.isin(pottile['TARGETID'], obstile['TARGETID'], assume_unique=True)
+    I = np.hstack([np.where(tid == pottile['TARGETID'])[0] for tid in obstile['TARGETID']])
     pot = pottile[I]
+    assert(np.all(pot['TARGETID'] == obstile['TARGETID']))
     for col in pot.colnames:
-        diff = pot[col] != obstile[col]
-        if np.any(diff):
+        diff = np.where(pot[col] != obstile[col])[0]
+        if len(diff) > 0:
             J = ~np.isnan(obstile[col][diff]) # need to check nan separately
             if np.sum(J) > 0:
-                print(col, pot[col][diff][J], obstile[col][diff][J])
+                diff = diff[J]
+                print(col, pot[col][diff].data, obstile[col][diff].data)
 
 def fileinfo(filelist, specprod):
 
@@ -97,6 +104,23 @@ def main():
 
     # Do statistics.
     if args.statistics:
+        # targetphot files
+        for targtype, targsuffix in zip(['observed', 'potential'], ['', '-potential']):
+            print('targetphot - {} targets'.format(targtype))
+            if args.specprod == 'fuji' or args.specprod == 'guadalupe':
+                filelist = []
+                for survey in surveys:
+                    filelist.append(os.path.join(args.outdir, '{}-targets'.format(targtype),
+                                                 'targetphot{}-{}-{}.fits'.format(targsuffix, survey, args.specprod)))
+                filelist.append(os.path.join(args.outdir, '{}-targets'.format(targtype),
+                                             'targetphot{}-{}.fits'.format(targsuffix, args.specprod)))
+            else:
+                filelist = glob(os.path.join(args.outdir, '{}-targets'.format(targtype),
+                                             'targetphot{}-*{}.fits'.format(targsuffix, args.specprod)))
+            filelist = np.array(filelist)
+            fileinfo(filelist, args.specprod)
+            print()
+        
         # tractorphot files
         for targtype, targsuffix in zip(['observed', 'potential'], ['', '-potential']):
             print('tractorphot - {} targets'.format(targtype))
@@ -122,26 +146,10 @@ def main():
                 args.specprod, targtype, targsuffix, args.specprod, nfiles, sz, unit, nobj))
             print()
             
-        # targetphot files
-        for targtype, targsuffix in zip(['observed', 'potential'], ['', '-potential']):
-            print('targetphot - {} targets'.format(targtype))
-            if args.specprod == 'fuji' or args.specprod == 'guadalupe':
-                filelist = []
-                for survey in surveys:
-                    filelist.append(os.path.join(args.outdir, '{}-targets'.format(targtype),
-                                                 'targetphot{}-{}-{}.fits'.format(targsuffix, survey, args.specprod)))
-                filelist.append(os.path.join(args.outdir, '{}-targets'.format(targtype),
-                                             'targetphot{}-{}.fits'.format(targsuffix, args.specprod)))
-            else:
-                filelist = glob(os.path.join(args.outdir, '{}-targets'.format(targtype),
-                                             'targetphot{}-*{}.fits'.format(targsuffix, args.specprod)))
-            filelist = np.array(filelist)
-            fileinfo(filelist, args.specprod)
-            print()
-        
     # Validate files.
     if args.validate:
-        for survey in surveys:
+        #for survey in surveys:
+        for survey in ['sv1']:
             print('Working on survey {}'.format(survey))
             obsfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.specprod))
             potfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}-{}.fits'.format(survey, args.specprod))
@@ -149,6 +157,9 @@ def main():
             print('Read {:,d} objects from {}'.format(len(obs), obsfile))
             pot = Table(fitsio.read(potfile))
             print('Read {:,d} objects from {}'.format(len(pot), potfile))
+
+            print('Hack!')
+            obs = obs[obs['TILEID'] == 80870]
 
             tileids = sorted(set(obs['TILEID']))
             print('Processing {} unique tiles'.format(len(tileids)))

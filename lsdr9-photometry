@@ -11,7 +11,7 @@ Set up the software dependencies but make sure we're using the desispec/0.53.2 t
 Sequence of commands for a given release (here, fuji)
 1. Gather targeting photometry from the individual redshift catalogs.
 
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outsuffix fuji --mp 32 --targetphot
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --specprod fuji --mp 32 --targetphot
 
    Output files:
     targetphot-fuji.fits
@@ -20,15 +20,15 @@ Sequence of commands for a given release (here, fuji)
 
 2. Gather Tractor photometry.
 
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outsuffix fuji --mp 32 --tractorphot
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --specprod fuji --mp 32 --tractorphot
 
    Output files:
      tractorphot-nside4-hp???-fuji.fits
 
 3. Gather targeting and Tractor photometry for *potential* targets (going back to the original fiberassign files).
 
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outsuffix fuji --mp 32 --targetphot --potential
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --outsuffix fuji --mp 32 --tractorphot --potential
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --specprod fuji --mp 32 --targetphot --potential
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --specprod fuji --mp 32 --tractorphot --potential
 
    Output files:
      targetphot-potential-fuji.fits
@@ -37,7 +37,7 @@ Sequence of commands for a given release (here, fuji)
      tractorphot-potential-nside4-hp???-fuji.fits
 
 """
-import os, sys, argparse, pdb
+import os, sys, argparse, time, pdb
 from glob import glob
 import numpy as np
 import fitsio
@@ -81,6 +81,16 @@ def read_one_zcat(catfile):
     survey, program = hdr['SURVEY'], hdr['PROGRAM']
     cat = Table(fitsio.read(catfile, ext='ZCATALOG', columns=[
         'TARGETID', 'TILEID', 'TARGET_RA', 'TARGET_DEC', 'PETAL_LOC']))
+    # Remove duplicate observations; e.g., in survey=sv1, program=other,
+    # tileid=80870 there are 8384 observations, but only 4192 of those are
+    # unique targetids.
+    indx = []
+    for tileid in np.unique(cat['TILEID']):
+        I = np.where(tileid == cat['TILEID'])[0]
+        _, uindx = np.unique(cat['TARGETID'][I], return_index=True)
+        indx.append(I[uindx])
+    indx = np.hstack(indx)
+    cat = cat[indx]
     cat['SURVEY'] = survey
     cat['PROGRAM'] = program
     return cat
@@ -191,6 +201,10 @@ def _targetphot_one(args):
 def targetphot_one(input_cat, photocache=None, racolumn='TARGET_RA', deccolumn='TARGET_DEC'):
     """Simple wrapper on desispec.io.photo.gather_targetphot."""
     from desispec.io.photo import gather_targetphot
+    print('Working on tile {}'.format(input_cat['TILEID'][0]))
+
+    # should be unique!
+    assert(len(input_cat) == len(np.unique(input_cat['TARGETID'])))
 
     targetphot = gather_targetphot(input_cat, photocache=photocache,
                                    racolumn=racolumn, deccolumn=deccolumn)
@@ -250,40 +264,26 @@ def _build_secondarycache(mp=1):
     # Figure out which secondary target catalogs actually were used to design
     # tiles but only do this one time.
     #cachefiles = _get_secondary_targetdirs()
-
-    #cachefiles = np.hstack([
-    #    glob('$DESI_ROOT/target/catalogs/dr9/*/targets/*/secondary/*/*targets-*-secondary*.fits'),
-    #    #glob('$DESI_ROOT/target/catalogs/dr9/1.0.0/targets/main/secondary/dark/*targets-*-secondary*.fits'),
-    #    glob('$DESI_ROOT/survey/ops/surveyops/trunk/mtl/*/ToO/ToO.ecsv')
-    #    ])
     
-    cachefiles = np.hstack([
-        [#os.environ.get('DESI_ROOT')+'//target/catalogs/dr9/0.48.0/targets/sv1/secondary/dark/sv1targets-dark-secondary-dr9photometry.fits',
-         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.48.0/targets/sv1/secondary/dark/sv1targets-dark-secondary.fits',
-         #os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.50.0/targets/sv1/secondary/bright/sv1targets-bright-secondary-dr9photometry.fits',
-         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.50.0/targets/sv1/secondary/bright/sv1targets-bright-secondary.fits',
-         #os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.50.0/targets/sv1/secondary/dark/sv1targets-dark-secondary-dr9photometry.fits',
-         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.50.0/targets/sv1/secondary/dark/sv1targets-dark-secondary.fits',
-         #os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.51.0/targets/sv1/secondary/dark/sv1targets-dark-secondary-dr9photometry.fits',
-         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.51.0/targets/sv1/secondary/dark/sv1targets-dark-secondary.fits',
-         #os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.52.0/targets/sv1/secondary/dark/sv1targets-dark-secondary-dr9photometry.fits',
-         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.52.0/targets/sv1/secondary/dark/sv1targets-dark-secondary.fits',
-         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.57.0/targets/sv3/secondary/bright/sv3targets-bright-secondary.fits',
-         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.57.0/targets/sv3/secondary/dark/sv3targets-dark-secondary.fits',
-         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/1.0.0/targets/main/secondary/bright/targets-bright-secondary.fits',
-         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/1.0.0/targets/main/secondary/dark/targets-dark-secondary.fits',
-         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/1.1.1/targets/main/secondary/bright/targets-bright-secondary.fits',
-         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/1.1.1/targets/main/secondary/dark/targets-dark-secondary.fits',
-         os.environ.get('DESI_ROOT')+'/target/secondary/sv1/dedicated/0.49.0/DC3R2_GAMA_priorities.fits'],
-        glob(os.environ.get('DESI_ROOT')+'/survey/ops/surveyops/trunk/mtl/*/ToO/ToO.ecsv')
-        ])
-    
-    #cachefiles = np.hstack([
-    #        [os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.51.0/targets/sv1/secondary/dark/sv1targets-dark-secondary-dr9photometry.fits',
-    #         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.57.0/targets/sv3/secondary/bright/sv3targets-bright-secondary.fits',
-    #         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.57.0/targets/sv3/secondary/dark/sv3targets-dark-secondary.fits',
-    #         ],
-    #        glob(os.environ.get('DESI_ROOT')+'/survey/ops/surveyops/trunk/mtl/*/ToO/ToO.ecsv')])
+    cachefiles = np.hstack([[
+        #os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.48.0/targets/sv1/secondary/dark/sv1targets-dark-secondary-dr9photometry.fits',
+        os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.48.0/targets/sv1/secondary/dark/sv1targets-dark-secondary.fits',
+        os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.50.0/targets/sv1/secondary/bright/sv1targets-bright-secondary.fits',
+        #os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.50.0/targets/sv1/secondary/bright/sv1targets-bright-secondary-dr9photometry.fits',
+        #os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.50.0/targets/sv1/secondary/dark/sv1targets-dark-secondary-dr9photometry.fits',
+        os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.50.0/targets/sv1/secondary/dark/sv1targets-dark-secondary.fits',
+        #os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.51.0/targets/sv1/secondary/dark/sv1targets-dark-secondary-dr9photometry.fits',
+        os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.51.0/targets/sv1/secondary/dark/sv1targets-dark-secondary.fits',
+        #os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.52.0/targets/sv1/secondary/dark/sv1targets-dark-secondary-dr9photometry.fits',
+        os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.52.0/targets/sv1/secondary/dark/sv1targets-dark-secondary.fits',
+        os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.57.0/targets/sv3/secondary/bright/sv3targets-bright-secondary.fits',
+        os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.57.0/targets/sv3/secondary/dark/sv3targets-dark-secondary.fits',
+        os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/1.0.0/targets/main/secondary/bright/targets-bright-secondary.fits',
+        os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/1.0.0/targets/main/secondary/dark/targets-dark-secondary.fits',
+        os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/1.1.1/targets/main/secondary/bright/targets-bright-secondary.fits',
+        os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/1.1.1/targets/main/secondary/dark/targets-dark-secondary.fits',
+        os.environ.get('DESI_ROOT')+'/target/secondary/sv1/dedicated/0.49.0/DC3R2_GAMA_priorities.fits'],
+        glob(os.environ.get('DESI_ROOT')+'/survey/ops/surveyops/trunk/mtl/*/ToO/ToO.ecsv')])
     
     mpargs = []
     for cachefile in np.unique(cachefiles):
@@ -310,7 +310,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--reduxdir', type=str, help='spectro redux base dir overrides $DESI_SPECTRO_REDUX/$SPECPROD')
     p.add_argument('-o', '--outdir', type=str, required=True, help='output directory file')
-    p.add_argument('--outsuffix', type=str, required=True, help='output file prefix')
+    p.add_argument('--specprod', type=str, required=True, help='output file prefix')
     p.add_argument('--mp', type=int, default=1, help='number of multiprocessing cores')
     p.add_argument('--filenside', type=int, default=4, help='healpix nside for tractorphot catalogs.')
     p.add_argument('--no-secondarycache', action='store_true', help='Do not cache the secondary target catalogs.')
@@ -346,9 +346,9 @@ def main():
     # Build the targetphot catalog.
     if args.targetphot:
         if args.potential:        
-            any_outfile = glob(os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-*-{}.fits'.format(args.outsuffix)))
+            any_outfile = glob(os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-*-{}.fits'.format(args.specprod)))
         else:
-            any_outfile = glob(os.path.join(args.outdir, 'observed-targets', 'targetphot-*-{}.fits'.format(args.outsuffix)))
+            any_outfile = glob(os.path.join(args.outdir, 'observed-targets', 'targetphot-*-{}.fits'.format(args.specprod)))
             
         if len(any_outfile) > 0 and not args.overwrite:
             log.info('One or more targetphot output files exist; use --overwrite')
@@ -363,7 +363,7 @@ def main():
     
         if args.potential:
             # Assume that the nominal/parent zcat catalog has been previously generated.
-            parent_zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.outsuffix))
+            parent_zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.specprod))
             if not os.path.isfile(parent_zcatfile):
                 errmsg = 'Targeting photometric catalog {} missing'.format(parent_zcatfile)
                 log.critical(errmsg)
@@ -432,7 +432,7 @@ def main():
             _, _, _, _, sky, _ = decode_targetid(zcat['TARGETID'])
             keep = (sky == 0) * (zcat['TARGETID'] > 0)
             if np.sum(keep) > 0:
-                log.info('Keeping {}/{} objects after removing sky targets and stuck positioners)'.format(
+                log.info('Keeping {}/{} objects after removing sky targets and stuck positioners'.format(
                     np.sum(keep), len(zcat)))
                 zcat = zcat[keep]
 
@@ -440,6 +440,8 @@ def main():
             
             RACOLUMN, DECCOLUMN = 'TARGET_RA', 'TARGET_DEC'
 
+            #zcat[(zcat['SURVEY'] == 'sv1') * (zcat['PROGRAM'] == 'other') * (zcat['TILEID'] == 80870)]
+            
         # Unfortunately, the same TARGETID can appear in different surveys
         # (e.g., sv1 vs sv3) with different targeting information. E.g., a
         # target can be a secondary target in one survey but a primary
@@ -466,12 +468,19 @@ def main():
         # Divide the analysis by survey.
         allout, allzcat = [], []
         allsurveys = zcat['SURVEY']
-        #for survey in ['sv3']:
+        #for survey in ['sv1']:
         for survey in sorted(set(allsurveys)):
             log.info('Working on survey {}'.format(survey))
 
             S = np.where(survey == allsurveys)[0]
             zcat_survey = zcat[S]
+
+            if rand is not None:
+                J = rand.choice(len(zcat_survey), size=args.ntest, replace=False)
+                zcat_survey = zcat_survey[J]
+            
+            # important! sort by tile so we can stack without sorting, below
+            zcat_survey = zcat_survey[np.argsort(zcat_survey['TILEID'])]
 
             # Do not select unique TARGETIDs!
             # See https://github.com/moustakas/desi-photometry/issues/3
@@ -481,10 +490,6 @@ def main():
             #zcat_survey = zcat_survey[uindx]
             #zcat_survey = zcat_survey[np.argsort(zcat_survey['TARGETID'])]
 
-            if rand is not None:
-                J = rand.choice(len(zcat_survey), size=args.ntest, replace=False)
-                zcat_survey = zcat_survey[J]
-            
             log.info('Found {:,} TARGETIDs and {:,} unique tiles from survey: {}'.format(
                 len(zcat_survey), len(set(zcat_survey['TILEID'])), survey))
 
@@ -496,24 +501,35 @@ def main():
             # desispec.io.photo.gather_targetphot to determine which object was
             # actually targeted. Multiprocessing over tiles and surveys solves
             # this issue.
-            #log.info('Dividing the sample into {} unique tiles.'.format(len(set(zcat_survey['TILEID']))))
-            mpargs = [[zcat_survey[zcat_survey['TILEID'] == tileid], photocache, RACOLUMN, DECCOLUMN] for tileid in set(zcat_survey['TILEID'])]
+
+            # count the number of targets in each tile
+            #npertile = [np.sum(zcat_survey['TILEID'] == tileid) for tileid in np.unique(zcat_survey['TILEID'])]
             
-            if args.mp > 1:
+            #log.info('Dividing the sample into {} unique tiles.'.format(len(set(zcat_survey['TILEID']))))
+            mpargs = [[zcat_survey[zcat_survey['TILEID'] == tileid], photocache, RACOLUMN, DECCOLUMN] for tileid in np.unique(zcat_survey['TILEID'])]
+
+            # In fuji/sv1, multiprocessing is suuuuuuuperslow, so skip it here.
+
+            t0 = time.time()
+            if survey != 'sv1' and args.mp > 1:
                 with multiprocessing.Pool(args.mp) as P:
                     out = P.map(_targetphot_one, mpargs)
             else:
                 out = [targetphot_one(*mparg) for mparg in mpargs]
+            log.info('Total time for gather_targetphot = {:.3f} min'.format((time.time()-t0)/60))
 
             # stack, sort, and write out
             if len(out) > 0:
                 out = vstack(out)
-                out = out[np.argsort(out['TARGETID'])]
+                try:
+                    assert(np.all(out['TARGETID'] == zcat_survey['TARGETID']))
+                except:
+                    pdb.set_trace()
 
                 if args.potential:                
-                    outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}-{}.fits'.format(survey, args.outsuffix))
+                    outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}-{}.fits'.format(survey, args.specprod))
                 else:
-                    outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.outsuffix))
+                    outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.specprod))
 
                 add_dependencies(out.meta)
                 out.meta['SURVEY'] = (survey, 'survey name')
@@ -530,9 +546,9 @@ def main():
                 # that this intermediate catalog is needed / used to do
                 # positional Tractor photometry gathering, below.
                 if args.potential:
-                    outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}-{}.fits'.format(survey, args.outsuffix))
+                    outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}-{}.fits'.format(survey, args.specprod))
                 else:
-                    outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}-{}.fits'.format(survey, args.outsuffix))
+                    outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}-{}.fits'.format(survey, args.specprod))
                     
                 add_dependencies(zcat_survey.meta)
                 zcat_survey.meta['SURVEY'] = (survey, 'survey name')
@@ -543,9 +559,9 @@ def main():
 
         if len(allout) > 0:
             if args.potential:
-                outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.outsuffix))
+                outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.specprod))
             else:
-                outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}.fits'.format(args.outsuffix))
+                outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}.fits'.format(args.specprod))
 
             allout = vstack(allout, metadata_conflicts='silent')
             allout.meta.pop('SURVEY')
@@ -554,11 +570,17 @@ def main():
             allout.write(outfile, overwrite=True)
         
             if args.potential:
-                outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.outsuffix))
+                outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.specprod))
             else:
-                outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.outsuffix))
+                outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.specprod))
                 
             allzcat = vstack(allzcat, metadata_conflicts='silent')
+
+            try:
+                assert(np.all(allout['TARGETID'] == allzcat['TARGETID']))
+            except:
+                pdb.set_trace()
+                
             allzcat.meta.pop('SURVEY')
             log.info('Writing {:,} objects to {}'.format(len(allzcat), outfile_zcat))
             allzcat.write(outfile_zcat, overwrite=True)
@@ -569,21 +591,21 @@ def main():
     if args.tractorphot:
         if args.potential:
             any_outfile = glob(os.path.join(args.outdir, 'potential-targets', 'tractorphot', 'tractorphot-potential-nside{}-hp*-{}.fits'.format(
-                args.filenside, args.outsuffix)))
+                args.filenside, args.specprod)))
         else:
             any_outfile = glob(os.path.join(args.outdir, 'observed-targets', 'tractorphot', 'tractorphot-nside{}-hp*-{}.fits'.format(
-                args.filenside, args.outsuffix)))
+                args.filenside, args.specprod)))
         if len(any_outfile) > 0 and not args.overwrite:
             log.info('One or more tractorphot output files exist; use --overwrite')
             return
 
         if args.potential:
-            zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.outsuffix))
-            targetfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.outsuffix))
+            zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.specprod))
+            targetfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.specprod))
             racolumn, deccolumn = 'RA', 'DEC'
         else:
-            zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.outsuffix))
-            targetfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-{}.fits'.format(args.outsuffix))
+            zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.specprod))
+            targetfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}.fits'.format(args.specprod))
             racolumn, deccolumn = 'TARGET_RA', 'TARGET_DEC'
             
         if not os.path.isfile(targetfile):
@@ -608,7 +630,10 @@ def main():
             cat = Table(fitsio.read(targetfile))
             log.info('Reading {}'.format(zcatfile))
             zcat = Table(fitsio.read(zcatfile))
-        assert(np.all(cat['TARGETID'] == zcat['TARGETID']))
+        try:
+            assert(np.all(cat['TARGETID'] == zcat['TARGETID']))
+        except:
+            pdb.set_trace()
 
         # TARGETIDs can repeat in and between surveys, so select just unique
         # targets here.
@@ -647,7 +672,7 @@ def main():
 
         missing = []
         for ipix, pixel in enumerate(set(pixels)):
-            #if ipix < 13:
+            #if ipix < 42:
             #    continue
             log.info('Working on healpix {}/{} (nside={})'.format(ipix+1, npix, args.filenside))
 
@@ -682,10 +707,10 @@ def main():
                 if len(igood) > 0:
                     if args.potential:
                         outfile = os.path.join(args.outdir, 'potential-targets', 'tractorphot', 'tractorphot-potential-nside{}-hp{:03d}-{}.fits'.format(
-                            args.filenside, pixel, args.outsuffix))
+                            args.filenside, pixel, args.specprod))
                     else:
                         outfile = os.path.join(args.outdir, 'observed-targets', 'tractorphot', 'tractorphot-nside{}-hp{:03d}-{}.fits'.format(
-                            args.filenside, pixel, args.outsuffix))
+                            args.filenside, pixel, args.specprod))
 
                     add_dependencies(tractor.meta)
                     tractor.meta['FILENSID'] = (args.filenside, 'HEALPix nside number')
@@ -701,9 +726,9 @@ def main():
             missing = vstack(missing)
     
             if args.potential:
-                outfile_miss = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-missing-{}.fits'.format(args.outsuffix))
+                outfile_miss = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-missing-{}.fits'.format(args.specprod))
             else:
-                outfile_miss = os.path.join(args.outdir, 'ancillary', 'targetphot-missing-{}.fits'.format(args.outsuffix))
+                outfile_miss = os.path.join(args.outdir, 'ancillary', 'targetphot-missing-{}.fits'.format(args.specprod))
             add_dependencies(missing.meta)
             missing.meta['EXTNAME'] = 'TARGETPHOT'
             log.info('Writing {:,} objects to {}'.format(len(missing), outfile_miss))
@@ -714,7 +739,7 @@ def main():
         outcat = []
         outzcat = []
 
-        missfile = os.path.join(args.outdir, 'ancillary', 'targetphot-missing-{}.fits'.format(args.outsuffix))
+        missfile = os.path.join(args.outdir, 'ancillary', 'targetphot-missing-{}.fits'.format(args.specprod))
         log.info('Reading {}'.format(missfile))
         miss = Table(fitsio.read(missfile))
         
@@ -740,7 +765,7 @@ def main():
                 I = np.where(pixel == pixels)[0]
                 
                 catfile = os.path.join(args.outdir, 'observed-targets', 'tractorphot', 'tractorphot-nside{}-hp{:03d}-{}.fits'.format(
-                    args.filenside, pixel, args.outsuffix))
+                    args.filenside, pixel, args.specprod))
                 if not os.path.isfile(catfile):
                     log.info('No Tractor photometry found for {} objects in catalog {}'.format(len(I), catfile))
                     # Make sure they're all in the missing catalog.
@@ -827,7 +852,7 @@ def main():
             out['SURVEY'] = _outzcat['SURVEY']
             out['PROGRAM'] = _outzcat['PROGRAM']
 
-            outfile = os.path.join(args.outdir, 'ancillary', 'tractorphot-validate-{}.fits'.format(args.outsuffix))
+            outfile = os.path.join(args.outdir, 'ancillary', 'tractorphot-validate-{}.fits'.format(args.specprod))
             out.write(outfile, overwrite=True)
 
     # Validate the targeting photometry against the original redshift catalogs.
@@ -841,7 +866,7 @@ def main():
         for survey in sorted(set(allsurveys)):
             log.info('Working on survey {}'.format(survey))
             # read the appropriate targetphot catalog
-            catfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.outsuffix))
+            catfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.specprod))
             cat = Table(fitsio.read(catfile))
             log.info('Read {:,} objects from {}'.format(len(cat), catfile))
 
@@ -877,7 +902,7 @@ def main():
     
         if len(allout) > 0:
             allout = vstack(allout)
-            outfile = os.path.join(args.outdir, 'ancillary', 'targetphot-validate-{}.fits'.format(args.outsuffix))
+            outfile = os.path.join(args.outdir, 'ancillary', 'targetphot-validate-{}.fits'.format(args.specprod))
             allout.write(outfile, overwrite=True)
 
 if __name__ == '__main__':
