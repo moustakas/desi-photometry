@@ -77,14 +77,14 @@ In fuji, there are five *targetphot* catalogs, one for each
 [survey](https://data.desi.lbl.gov/doc/organization) in the EDR, as well as a
 simple stack of all five catalogs:
 
-| File Name    | File Size | Number of Targets | Notes |
-|--------------|:-----:|:-----------:|-----------|
-| observed-targets/targetphot-cmx-fuji.fits     | 4.4MB | 4,146      | Commissioning Survey      |
-| observed-targets/targetphot-special-fuji.fits | 39MB  | 37,296     | Special targets |
-| observed-targets/targetphot-sv1-fuji.fits     | 712MB | 685,884    | Survey Validation 1             |
-| observed-targets/targetphot-sv2-fuji.fits     | 119MB | 113,914    | Survey Validation 2             |
-| observed-targets/targetphot-sv3-fuji.fits     | 1.2GB | 1,164,263  | Survey Validation 3             |
-| observed-targets/targetphot-fuji.fits         | 2.1GB | 2,005,503  | Stack of the preceding five catalogs. |
+| File Name | File Size | Number of Targets | Notes |
+|-----------|:---------:|:-----------------:|-------|
+| observed-targets/targetphot-cmx-fuji.fits | 4.39 MB | 4,146 | Commissioning Survey |
+| observed-targets/targetphot-special-fuji.fits | 69.3 MB | 65,789 | Special targets |
+| observed-targets/targetphot-sv1-fuji.fits | 759 MB | 720,525 | Survey Validation 1 |
+| observed-targets/targetphot-sv2-fuji.fits | 137 MB | 130,473 | Survey Validation 2 |
+| observed-targets/targetphot-sv3-fuji.fits | 1.92 GB | 1,865,908 | Survey Validation 3 |
+| observed-targets/targetphot-fuji.fits | 2.87 GB | 2,786,841 | Stack of the preceding 5 catalogs. |
 
 **Note:**
 
@@ -97,7 +97,9 @@ simple stack of all five catalogs:
   `SV2_BGS_TARGET`, `SV2_MWS_TARGET`, `SV3_DESI_TARGET`, `SV3_BGS_TARGET`,
   `SV3_MWS_TARGET`, `SCND_TARGET`, `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and
   `SV3_SCND_TARGET` (all with a `numpy.int64` data type). In addition, the
-  merged catalog (`targetphot-fuji.fits`) contains a `SURVEY` (`<U7`) column.
+  merged catalog (`targetphot-fuji.fits`) contains `SURVEY` (`<U7`), `PROGRAM`
+  (`<U6`), and `TILEID` (`np.int32`) columns to make it unambiguous which
+  observation each row belongs to.
 
 * Some targets have partial or minimal targeting information (e.g., *secondary*
   targets). For these objects, we populate "missing" *targetphot* columns with
@@ -105,22 +107,25 @@ simple stack of all five catalogs:
   emphasize that the absence of this information doesn't mean the information
   doesn't exist *somewhere*, just that it wasn't used for targeting.
 
-* In fuji, the same object can appear in two different surveys but *with
-  different targeting information*. For example, an object may be a *primary*
-  target in one survey but a *secondary* target in another survey. Consequently,
-  we recommend considering both `TARGETID` and `SURVEY` when retrieving the
-  targeting information for specific targets (depending on how that information
-  will be used, of course).
+* In general, the same object can appear in two different surveys but *with
+  different targeting information* (particularly fuji). For example, an object
+  may be a *primary* target in one survey but a *secondary* target in another
+  survey. Moreover, even within a given survey, an object can appear on two
+  different tiles with different targeting information (e.g., the same object
+  may be a bright-time target on one tile and a dark-time target on another
+  tile). Consequently, we recommend considering `TARGETID`, `SURVEY`, *and*
+  `TILEID` when retrieving the targeting information for specific targets
+  (depending on how that information will be used, of course).
 
 ##### guadalupe
 
 In guadalupe, there are just two *targetphot* catalogs as well as a stack of these two catalogs:
 
-| File Name    | File Size | Number of Targets | Notes |
-|--------------|:-----:|:-----------:|-----------|
-| observed-targets/targetphot-special-guadalupe.fits | 17MB  | 16,088    | Special targets |
-| observed-targets/targetphot-main-guadalupe.fits    | 2.7GB | 2,596,279 | Main Survey |
-| observed-targets/targetphot-guadalupe.fits         | 2.7GB | 2,612,367 | Stack of the preceding two catalogs. |
+| File Name | File Size | Number of Targets | Notes |
+|-----------|:---------:|:-----------------:|-------|
+| observed-targets/targetphot-special-guadalupe.fits | 17.1 MB | 16,248 | Special targets |
+| observed-targets/targetphot-main-guadalupe.fits | 2.69 GB | 2,617,551 | Main Survey |
+| observed-targets/targetphot-guadalupe.fits | 2.71 GB | 2,633,799 | Stack of the preceding 2 catalogs. |
 
 **Note:**
 
@@ -175,9 +180,9 @@ on the sky.) We summarize their location (relative to the top-level directory)
 as well as some additional details regarding the files in the following table:
 
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
-|------------|-----|:-----:|:-----:|:-----:|
-| fuji      | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits      | 71 | 3.9GB | 1,957,908 |
-| guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 5.2GB | 2,603,942 |
+|--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
+| fuji | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 3.86 GB | 1,957,908 |
+| guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 5.14 GB | 2,603,942 |
 
 **Note:**
 
@@ -202,29 +207,29 @@ below:
 
 ##### fuji (*targetphot*)
 
-| File Name    | File Size | Number of Targets | Notes |
-|--------------|:-----:|:-----------:|-----------|
-| potential-targets/targetphot-potential-cmx-fuji.fits     | 22MB  | 20,956    | Commissioning Survey      |
-| potential-targets/targetphot-potential-special-fuji.fits | 220MB | 211,255   | Special targets |
-| potential-targets/targetphot-potential-sv1-fuji.fits     | 4.4GB | 4,306,326 | Survey Validation 1             |
-| potential-targets/targetphot-potential-sv2-fuji.fits     | 459MB | 442,698   | Survey Validation 2             |
-| potential-targets/targetphot-potential-sv3-fuji.fits     | 1.5GB | 1,420,280 | Survey Validation 3             |
-| potential-targets/targetphot-potential-fuji.fits         | 6.6GB | 6,401,515 | Stack of the preceding five catalogs. |
+| File Name | File Size | Number of Targets | Notes |
+|-----------|:---------:|:-----------------:|-------|
+| potential-targets/targetphot-potential-cmx-fuji.fits | 22.1 MB | 20,956 | Commissioning Survey |
+| potential-targets/targetphot-potential-special-fuji.fits | 378 MB | 358,817 | Special targets |
+| potential-targets/targetphot-potential-sv1-fuji.fits | 4.78 GB | 4,645,741 | Survey Validation 1 |
+| potential-targets/targetphot-potential-sv2-fuji.fits | 790 MB | 750,431 | Survey Validation 2 |
+| potential-targets/targetphot-potential-sv3-fuji.fits | 11 GB | 10,684,616 | Survey Validation 3 |
+| potential-targets/targetphot-potential-fuji.fits | 16.9 GB | 16,460,561 | Stack of the preceding 5 catalogs. |
 
 ##### guadalupe (*targetphot*)
 
-| File Name    | File Size | Number of Targets | Notes |
-|--------------|:-----:|:-----------:|-----------|
-| potential-targets/targetphot-potential-special-guadalupe.fits | 82MB  | 79,017    | Special targets |
-| potential-targets/targetphot-potential-main-guadalupe.fits    | 16GB | 15,800,998 | Main Survey |
-| potential-targets/targetphot-potential-guadalupe.fits         | 17GB | 15,880,015 | Stack of the preceding two catalogs. |
+| File Name | File Size | Number of Targets | Notes |
+|-----------|:---------:|:-----------------:|-------|
+| potential-targets/targetphot-potential-special-guadalupe.fits | 84.4 MB | 80,182 | Special targets |
+| potential-targets/targetphot-potential-main-guadalupe.fits | 17.1 GB | 16,603,258 | Main Survey |
+| potential-targets/targetphot-potential-guadalupe.fits | 17.2 GB | 16,683,440 | Stack of the preceding 2 catalogs. |
 
 ##### *tractorphot* 
 
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
-|------------|-----|:-----:|:-----:|:-----:|
-| fuji      | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits      | 71 | 12GB | 6,031,273 |
-| guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 32GB | 15,758,409 |
+|--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
+| fuji | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 11.9 GB | 6,031,273 |
+| guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 31.1 GB | 15,758,409 |
 
 Reproducibility
 ---------------
@@ -274,6 +279,7 @@ the following individuals:
 * Stephanie Juneau (NSF's NOIRLab)
 * Dustin Lang (Perimeter Institute of Theoretical Physics)
 * Adam Myers (University of Wyoming)
+* Ragadeepika Pucha (University of Arizona)
 * Anand Raichoor (Lawrence Berkeley National Lab)
 * Benjamin Weaver (NSF's NOIRLab)
 
