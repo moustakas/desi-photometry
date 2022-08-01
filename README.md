@@ -132,7 +132,7 @@ In guadalupe, there are just two *targetphot* catalogs as well as a stack of the
 * The data model for these catalogs is defined
   [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1). In
   addition, the merged catalog (`targetphot-guadalupe.fits`) contains a `SURVEY`
-  (`<U7`) column.
+  (`<U7`), `PROGRAM` (`<U6`), and `TILEID` (`np.int32`) column.
 
 * As for fuji, some targets have partial or minimal targeting information (e.g.,
   *secondary* targets), in which case we populate "missing" columns with zeros
