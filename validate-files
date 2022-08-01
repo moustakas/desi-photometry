@@ -34,7 +34,7 @@ def targets_one_tile(tileid, obstile, pottile):
         assert(len(K) == len(obstile['TARGETID']))
     except:
         print('  Problem with tile {}!'.format(tileid))
-        pdb.set_trace()        
+        #pdb.set_trace()        
 
     # Now, ensure that the data stored in the potential and observed catalogs
     # *for the same objects* are identical.
@@ -148,8 +148,8 @@ def main():
             
     # Validate files.
     if args.validate:
-        #for survey in surveys:
-        for survey in ['sv1']:
+        for survey in surveys:
+        #for survey in ['sv1']:
             print('Working on survey {}'.format(survey))
             obsfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.specprod))
             potfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}-{}.fits'.format(survey, args.specprod))
@@ -158,8 +158,7 @@ def main():
             pot = Table(fitsio.read(potfile))
             print('Read {:,d} objects from {}'.format(len(pot), potfile))
 
-            print('Hack!')
-            obs = obs[obs['TILEID'] == 80870]
+            #obs = obs[obs['TILEID'] == 80870]
 
             tileids = sorted(set(obs['TILEID']))
             print('Processing {} unique tiles'.format(len(tileids)))
