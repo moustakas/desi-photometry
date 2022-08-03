@@ -14,9 +14,9 @@ This document describes the content and construction of [Legacy Surveys DR9
 (LS/DR9)](https://www.legacysurvey.org/dr9/description) value-added photometric
 catalogs for the following [DESI](https://desi.lbl.gov/) spectroscopic productions:
 
-* **fuji**, which will be released publicly as part of the [DESI Early Data Release
+* **Fuji**, which will be released publicly as part of the [DESI Early Data Release
 (DESI/EDR)](https://data.desi.lbl.gov/public/edr) in early 2023 (exact date TBD); and
-* **guadalupe**, a supplemental dataset to [DESI Data Release 1
+* **Guadalupe**, a supplemental dataset to [DESI Data Release 1
 (DESI/DR1)](https://data.desi.lbl.gov/public/dr1) (release date TBD).
 
 In short, the delivered files include merged [DESI targeting
@@ -24,7 +24,7 @@ catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR
 and [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS/DR9](https://www.legacysurvey.org/dr9/description) for *observed* and
-*potential* DESI targets (excluding sky fibers), for both the fuji and guadalupe
+*potential* DESI targets (excluding sky fibers), for both the Fuji and Guadalupe
 productions.
 
 Getting Started Quickly
@@ -32,7 +32,7 @@ Getting Started Quickly
 
 This [example
 notebook](https://github.com/moustakas/desi-photometry/blob/fujilupe-v1.0/example.ipynb)
-shows how to quickly grab targeting and Tractor photometry from the fuji
+shows how to quickly grab targeting and Tractor photometry from the Fuji
 value-added catalog for a hypothetical set of observed targets. However, be sure
 to read the documentation below for all the details!
 
@@ -42,8 +42,8 @@ Content, Organization, & Data Model
 The LS/DR9 value-added catalogs (VACs) can be accessed at the following links:
 | Data Release | URL |
 |------------|-----|
-| fuji (EDR) | [https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v1.0](https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v1.0) |
-| guadalupe (DR1 supplement) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v1.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v1.0) |
+| Fuji (EDR) | [https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v1.0](https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v1.0) |
+| Guadalupe (DR1 supplement) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v1.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v1.0) |
 
 > **For DESI Collaborators:** At NERSC, the catalogs can also be accessed at the
     following top-level directories:
@@ -71,9 +71,9 @@ The data model for each *targetphot* catalog is documented
 [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1),
 but with a handful of additional columns documented below.
 
-##### fuji
+##### Fuji
 
-In fuji, there are five *targetphot* catalogs, one for each
+In Fuji, there are five *targetphot* catalogs, one for each
 [survey](https://data.desi.lbl.gov/doc/organization) in the EDR, as well as a
 simple stack of all five catalogs:
 
@@ -117,9 +117,9 @@ simple stack of all five catalogs:
   `TILEID` when retrieving the targeting information for specific targets
   (depending on how that information will be used, of course).
 
-##### guadalupe
+##### Guadalupe
 
-In guadalupe, there are just two *targetphot* catalogs as well as a stack of these two catalogs:
+In Guadalupe, there are just two *targetphot* catalogs as well as a stack of these two catalogs:
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
@@ -134,7 +134,7 @@ In guadalupe, there are just two *targetphot* catalogs as well as a stack of the
   addition, the merged catalog (`targetphot-guadalupe.fits`) contains a `SURVEY`
   (`<U7`), `PROGRAM` (`<U6`), and `TILEID` (`np.int32`) column.
 
-* As for fuji, some targets have partial or minimal targeting information (e.g.,
+* As for Fuji, some targets have partial or minimal targeting information (e.g.,
   *secondary* targets), in which case we populate "missing" columns with zeros
   or blank strings (depending on the data type of the column).
 
@@ -181,18 +181,18 @@ as well as some additional details regarding the files in the following table:
 
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
-| fuji | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 3.86 GB | 1,957,908 |
-| guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 5.14 GB | 2,603,942 |
+| Fuji | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 3.86 GB | 1,957,908 |
+| Guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 5.14 GB | 2,603,942 |
 
 **Note:**
 
-* In fuji, there are 1,979,269 unique observed targets (the 2,005,503 number
+* In Fuji, there are 1,979,269 unique observed targets (the 2,005,503 number
   tabulated above includes duplicate targets observed in different surveys), but
   just 1,957,908 unique objects with LS/DR9 photometry; the "missing" 21,361
   objects have no LS/DR9 source within 1 arcsec of the targeted position and
-  therefore do not exist in any of the fuji *tractorphot* files.
+  therefore do not exist in any of the Fuji *tractorphot* files.
 
-* In guadalupe, the number of observed targets with missing LS/DR9 photometry is
+* In Guadalupe, the number of observed targets with missing LS/DR9 photometry is
   just 626.
 
 #### Potential Targets
@@ -205,7 +205,7 @@ As part of these VACs, we include `targetphot` and `tractorphot` catalogs for
 all these potential targets as documented above and as summarized in the tables
 below:
 
-##### fuji (*targetphot*)
+##### Fuji (*targetphot*)
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
@@ -216,7 +216,7 @@ below:
 | potential-targets/targetphot-potential-sv3-fuji.fits | 11 GB | 10,684,616 | Survey Validation 3 |
 | potential-targets/targetphot-potential-fuji.fits | 16.9 GB | 16,460,561 | Stack of the preceding 5 catalogs. |
 
-##### guadalupe (*targetphot*)
+##### Guadalupe (*targetphot*)
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
@@ -228,8 +228,8 @@ below:
 
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
-| fuji | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 11.9 GB | 6,031,273 |
-| guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 31.1 GB | 15,758,409 |
+| Fuji | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 11.9 GB | 6,031,273 |
+| Guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 31.1 GB | 15,758,409 |
 
 Reproducibility
 ---------------
@@ -237,7 +237,7 @@ Reproducibility
 DESI collaborators (or others with all the necessary underlying files and
 software dependencies) can reproduce either of the VACs presented here by
 invoking the following commands at [NERSC](https://nersc.gov/) (illustrated here
-just for fuji).
+just for Fuji).
 
 1. First, set up your software environment:
 ```bash
