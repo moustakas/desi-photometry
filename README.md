@@ -293,8 +293,8 @@ Any use of the data products described in this document must include the text of
 the following acknowledgement verbatim:
 
 ```
-DESI research is supported by the Director, Office of Science, Office of High
-Energy Physics of the U.S. Department of Energy under Contract
+DESI research is supported by the Director, Office of Science, Office of
+High Energy Physics of the U.S. Department of Energy under Contract
 No. DE–AC02–05CH11231, and by the National Energy Research Scientific Computing
 Center, a DOE Office of Science User Facility under the same contract;
 additional support for DESI is provided by the U.S. National Science Foundation,
@@ -304,6 +304,6 @@ Technologies Facilities Council of the United Kingdom; the Gordon and Betty
 Moore Foundation; the Heising-Simons Foundation; the French Alternative Energies
 and Atomic Energy Commission (CEA); the National Council of Science and
 Technology of Mexico (CONACYT); the Ministry of Science and Innovation of Spain
-(MICINN), and by the [DESI Member
-Institutions](https://www.desi.lbl.gov/collaborating-institutions).
+(MICINN), and by the DESI Member Institutions
+(https://www.desi.lbl.gov/collaborating-institutions).
 ```
