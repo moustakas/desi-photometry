@@ -243,17 +243,16 @@ just for Fuji).
 ```bash
 source /global/common/software/desi/desi_environment.sh 22.2
 module unload desispec
-cd /path/to/desi/code
-git clone https://github.com/desihub/desispec.git
-cd desispec && git checkout tags/0.53.2 && cd ..
-export PYTHONPATH=/path/to/desi/code/desispec/py:${PYTHONPATH}
+module load desispec/0.53.2
 git clone https://github.com/moustakas/desi-photometry.git
 cd desi-photometry && git checkout tags/v1.0 && cd ..
 ```
 
-2. Next, set up the `perlmutter` interactive node to run the code:
+2. Next, set up the `cori` interactive node to run the code:
 ```bash
-salloc -N 1 -C cpu -A desi -t 01:00:00 --qos interactive -L SCRATCH,cfs
+salloc -N 1 -C knl -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
+# equivalent on perlmutter
+salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
 ```
 
 3. Next, gather targeting and Tractor photometry for *observed* targets:
