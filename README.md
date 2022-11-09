@@ -268,7 +268,12 @@ time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/s
   -o /path/to/output/fuji --specprod fuji --mp 32 --targetphot --tractorphot --potential
 ```
 
-5. This is a test.
+Known Issues
+------------
+
+* For secondary targets in SV1, the targeting catalog filenames recorded in the
+  fiberassign header are inconsistent with the contents of the corresponding
+  fibermap catalog for a given TILEID.
 
 Contact & Contributors
 ----------------------
