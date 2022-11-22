@@ -250,7 +250,7 @@ cd desi-photometry && git checkout tags/v1.0 && cd ..
 
 2. Next, set up the `cori` interactive node to run the code:
 ```bash
-salloc -N 1 -C knl -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
+salloc -N 1 -C haswell -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
 # equivalent on perlmutter
 salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
 ```
