@@ -61,7 +61,7 @@ more detail.
 In each DESI data release, the targeting catalogs used for DESI target selection
 are organized in a variety of files and locations and with a different data
 model depending on the kind of target observed (e.g., *primary* versus
-*secondary* targets; see [Meyers et
+*secondary* targets; see [Myers et
 al. 2022](https://arxiv.org/abs/2208.08518)). However,
 for some applications, it is convenient to have a merged targeting catalog for
 all targets and with a common data model, which is precisely what our VACs
@@ -161,7 +161,7 @@ ways:
   which were not necessarily targeted by DESI, such as *secondary* targets and
   *targets of opportunity*, using positional matching. Specifically, if the
   `targetid` of a *secondary* target cannot be decoded to determine the LS/DR9
-  source from which that target was selected (see [Meyers et
+  source from which that target was selected (see [Myers et
   al. 2022](https://arxiv.org/abs/2208.08518)),
   then we return the *closest* LS/DR9 source within 1 arcsec of the targeted
   position.
