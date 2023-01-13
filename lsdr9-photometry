@@ -207,7 +207,8 @@ def targetphot_one(input_cat, photocache=None, racolumn='TARGET_RA', deccolumn='
     assert(len(input_cat) == len(np.unique(input_cat['TARGETID'])))
 
     targetphot = gather_targetphot(input_cat, photocache=photocache,
-                                   racolumn=racolumn, deccolumn=deccolumn)
+                                   racolumn=racolumn, deccolumn=deccolumn,
+                                   fiberassign_dir=fiberassign_dir)
 
     # Can have the same targetid across different surveys and even within a
     # survey, across different tiles. So we need these columns.
@@ -373,9 +374,11 @@ def main():
             parent_zcat = Table(fitsio.read(parent_zcatfile))
 
             if rand is not None:
-                #parent_zcat = parent_zcat[parent_zcat['TILEID'] == 81108]
-                J = rand.choice(len(parent_zcat), size=args.ntest, replace=False)
-                parent_zcat = parent_zcat[J]
+                if False:
+                    parent_zcat = parent_zcat[parent_zcat['TILEID'] == 81108] # 80736
+                else:
+                    J = rand.choice(len(parent_zcat), size=args.ntest, replace=False)
+                    parent_zcat = parent_zcat[J]
             log.info('Read {:,} objects from {}'.format(len(parent_zcat), parent_zcatfile))
                 
             #print('RESTRICTING TO SURVEY sv2!')
@@ -435,6 +438,9 @@ def main():
                 log.info('Keeping {}/{} objects after removing sky targets and stuck positioners'.format(
                     np.sum(keep), len(zcat)))
                 zcat = zcat[keep]
+
+            #if True:
+            #    zcat = zcat[zcat['TILEID'] == 81108] # 80736
 
             log.info('Read {:,} objects from {} redshift catalogs'.format(len(zcat), len(zcatfiles)))
             
@@ -576,10 +582,7 @@ def main():
                 
             allzcat = vstack(allzcat, metadata_conflicts='silent')
 
-            try:
-                assert(np.all(allout['TARGETID'] == allzcat['TARGETID']))
-            except:
-                pdb.set_trace()
+            assert(np.all(allout['TARGETID'] == allzcat['TARGETID']))
                 
             allzcat.meta.pop('SURVEY')
             log.info('Writing {:,} objects to {}'.format(len(allzcat), outfile_zcat))
@@ -859,7 +862,8 @@ def main():
     if args.validate_targetphot:
         allout = []
 
-        zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-*-cumulative.fits'))
+        zcatfiles = np.array(glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-*-cumulative.fits')))
+        #zcatfiles = np.array(glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-sv3*-cumulative.fits')))
         #zcatfiles = np.array(glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-sv1-other-cumulative.fits')))
         allsurveys = np.array([os.path.basename(zcatfile).split('-')[1] for zcatfile in zcatfiles])
 
@@ -872,37 +876,52 @@ def main():
 
             S = np.where(survey == allsurveys)[0]
             for zcatfile in zcatfiles[S]:
-                zcat = Table(fitsio.read(zcatfile))
-                log.info('Validating {:,} targets in {}'.format(len(zcat), zcatfile))
+                zcat_survey = Table(fitsio.read(zcatfile))
+                log.info('Validating {:,} targets in {}'.format(len(zcat_survey), zcatfile))
 
                 hdr = fitsio.read_header(zcatfile, ext=1)
-                zcat['SURVEY'] = hdr['SURVEY']
-                zcat['PROGRAM'] = hdr['PROGRAM']
+                zcat_survey['SURVEY'] = hdr['SURVEY']
+                zcat_survey['PROGRAM'] = hdr['PROGRAM']
     
                 # Toss out skies and stuck positioners.
-                _, _, _, _, sky, _ = decode_targetid(zcat['TARGETID'])
-                keep = (sky == 0) * (zcat['TARGETID'] > 0)    
-                zcat = zcat[keep]
+                _, _, _, _, sky, _ = decode_targetid(zcat_survey['TARGETID'])
+                keep = (sky == 0) * (zcat_survey['TARGETID'] > 0)    
+                zcat_survey = zcat_survey[keep]
 
-                _, uindx = np.unique(zcat['TARGETID'], return_index=True)
-                zcat = zcat[uindx]
-                zcat = zcat[np.argsort(zcat['TARGETID'])]
+                # Do not select unique TARGETIDs!
+                # See https://github.com/moustakas/desi-photometry/issues/3
+                
+                #_, uindx = np.unique(zcat_survey['TARGETID'], return_index=True)
+                #zcat_survey = zcat_survey[uindx]
+                #zcat_survey = zcat_survey[np.argsort(zcat_survey['TARGETID'])]
 
-                #I = np.isin(cat['TARGETID'], zcat['TARGETID'])
-                I = np.hstack([np.where(tid == cat['TARGETID'])[0] for tid in zcat['TARGETID']])
-                surveycat = cat[I]
-                assert(np.all(surveycat['TARGETID'] == zcat['TARGETID']))            
-    
-                ii = np.logical_not(np.isclose(zcat['FLUX_R'], surveycat['FLUX_R'], rtol=1e-3))
-                log.info('  Found {:,} mismatches.'.format(np.sum(ii)))
-                if np.sum(ii) > 0:
-                    out = join(zcat['SURVEY', 'PROGRAM', 'TILEID', 'TARGETID', 'FLUX_G', 'FLUX_R', 'FLUX_Z'][ii],
-                               surveycat['TARGETID', 'FLUX_G', 'FLUX_R', 'FLUX_Z'][ii], keys='TARGETID')
-                    allout.append(out)
+                # targets can repeat across tiles with different targeting information, so loop
+                mismatches = 0
+                for tileid in np.unique(zcat_survey['TILEID']):
+                    zcat_survey_onetile = zcat_survey[tileid == zcat_survey['TILEID']]
+
+                    surveycat = cat[cat['TILEID'] == tileid]
+                    
+                    #surveycat = surveycat[np.isin(surveycat['TARGETID'], zcat_survey_onetile['TARGETID'])]
+                    I = np.hstack([np.where(tid == surveycat['TARGETID'])[0] for tid in zcat_survey_onetile['TARGETID']])
+                    #surveycat = cat[I]                    
+                    surveycat = surveycat[I]
+                    assert(np.all(surveycat['TARGETID'] == zcat_survey_onetile['TARGETID']))
+
+                    ii = np.logical_not(np.isclose(zcat_survey_onetile['FLUX_R'], surveycat['FLUX_R'], rtol=1e-3))
+                    if np.sum(ii) > 0:
+                        mismatches += np.sum(ii)
+                        out = join(zcat_survey_onetile['SURVEY', 'PROGRAM', 'TILEID', 'TARGETID', 'FLUX_G', 'FLUX_R', 'FLUX_Z'][ii],
+                                   surveycat['TARGETID', 'FLUX_G', 'FLUX_R', 'FLUX_Z'][ii], keys='TARGETID',
+                                   table_names=['ZCAT', 'VAC'])
+                        allout.append(out)
+                    
+                log.info('  Found {:,} mismatches on survey {}.'.format(mismatches, survey))
     
         if len(allout) > 0:
             allout = vstack(allout)
             outfile = os.path.join(args.outdir, 'ancillary', 'targetphot-validate-{}.fits'.format(args.specprod))
+            print('Writing {} objects to {}'.format(len(allout), outfile))
             allout.write(outfile, overwrite=True)
 
 if __name__ == '__main__':
