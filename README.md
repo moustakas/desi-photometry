@@ -1,11 +1,11 @@
 Legacy Surveys DR9 Photometric Catalogs for DESI Productions Fuji and Guadalupe
 ===============================================================================
 
-DESI Value-Added Catalogs  
-Fuji (Early Data Release)  
-Guadalupe (Data Release 1 Supplement)  
+DESI Value-Added Catalogs
+Fuji (Early Data Release)
+Guadalupe (Data Release 1 Supplement)
 
-**Version: 1.0**  
+**Version: 1.0**
 
 Description
 -----------
@@ -61,8 +61,8 @@ more detail.
 In each DESI data release, the targeting catalogs used for DESI target selection
 are organized in a variety of files and locations and with a different data
 model depending on the kind of target observed (e.g., *primary* versus
-*secondary* targets; see [Meyers et
-al. 2022](https://desi.lbl.gov/DocDB/cgi-bin/private/ShowDocument?docid=6693)). However,
+*secondary* targets; see [Myers et
+al. 2022](https://arxiv.org/abs/2208.08518)). However,
 for some applications, it is convenient to have a merged targeting catalog for
 all targets and with a common data model, which is precisely what our VACs
 provide.
@@ -161,8 +161,8 @@ ways:
   which were not necessarily targeted by DESI, such as *secondary* targets and
   *targets of opportunity*, using positional matching. Specifically, if the
   `targetid` of a *secondary* target cannot be decoded to determine the LS/DR9
-  source from which that target was selected (see [Meyers et
-  al. 2022](https://desi.lbl.gov/DocDB/cgi-bin/private/ShowDocument?docid=6693)),
+  source from which that target was selected (see [Myers et
+  al. 2022](https://arxiv.org/abs/2208.08518)),
   then we return the *closest* LS/DR9 source within 1 arcsec of the targeted
   position.
 
@@ -224,7 +224,7 @@ below:
 | potential-targets/targetphot-potential-main-guadalupe.fits | 17.1 GB | 16,603,258 | Main Survey |
 | potential-targets/targetphot-potential-guadalupe.fits | 17.2 GB | 16,683,440 | Stack of the preceding 2 catalogs. |
 
-##### *tractorphot* 
+##### *tractorphot*
 
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
@@ -243,37 +243,51 @@ just for Fuji).
 ```bash
 source /global/common/software/desi/desi_environment.sh 22.2
 module unload desispec
-cd /path/to/desi/code
-git clone https://github.com/desihub/desispec.git
-cd desispec && git checkout tags/0.53.2 && cd ..
-export PYTHONPATH=/path/to/desi/code/desispec/py:${PYTHONPATH}
+module load desispec/0.53.2
 git clone https://github.com/moustakas/desi-photometry.git
 cd desi-photometry && git checkout tags/v1.0 && cd ..
 ```
 
-2. Next, gather targeting and Tractor photometry for *observed* targets:
+2. Next, set up the `cori` interactive node to run the code:
+```bash
+salloc -N 1 -C haswell -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
+# equivalent on perlmutter
+salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
+```
+
+3. Next, gather targeting and Tractor photometry for *observed* targets:
 ```bash
 time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
   -o /path/to/output/fuji --specprod fuji --mp 32 --targetphot --tractorphot
 ```
 
-3. Finally gather targeting and Tractor photometry for *potential* targets:
+4. Finally gather targeting and Tractor photometry for *potential* targets (you may want to start another interactive node):
 ```bash
 time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
   -o /path/to/output/fuji --specprod fuji --mp 32 --targetphot --tractorphot --potential
 ```
 
+Known Issues
+------------
+
+* For secondary targets in SV1, the targeting catalog filenames recorded in the
+  fiberassign header are inconsistent with the contents of the corresponding
+  fibermap catalog for a given TILEID.
+
 Contact & Contributors
 ----------------------
 
-For questions (or problems) regarding these catalogs or its construction, please
+For questions or problems regarding these catalogs or their construction, please
 file a ticket at the [desi-photometry
 repository](https://github.com/moustakas/desi-photometry/issues) and/or contact
-[John Moustakas](jmoustakas@siena.edu) ([Siena
-College](https://siena.edu)).
+[John Moustakas](jmoustakas@siena.edu) ([Siena College](https://siena.edu)).
 
-We are grateful for important contributions to the VACs presented herein from
-the following individuals:
+JM gratefully acknowledges funding support for this work from the
+U.S. Department of Energy, Office of Science, Office of High Energy Physics
+under Award Number DE-SC0020086.
+
+We are also grateful for important contributions to the VACs presented herein
+from the following individuals:
 
 * Stephen Bailey (Lawrence Berkeley National Lab)
 * Stephanie Juneau (NSF's NOIRLab)
@@ -288,4 +302,19 @@ Required Acknowledgement
 
 Any use of the data products described in this document must include the text of
 the following acknowledgement verbatim:
-https://data.desi.lbl.gov/doc/acknowledgements.
+
+```
+DESI research is supported by the Director, Office of Science, Office of
+High Energy Physics of the U.S. Department of Energy under Contract
+No. DE–AC02–05CH11231, and by the National Energy Research Scientific Computing
+Center, a DOE Office of Science User Facility under the same contract;
+additional support for DESI is provided by the U.S. National Science Foundation,
+Division of Astronomical Sciences under Contract No. AST-0950945 to the NSF’s
+National Optical-Infrared Astronomy Research Laboratory; the Science and
+Technologies Facilities Council of the United Kingdom; the Gordon and Betty
+Moore Foundation; the Heising-Simons Foundation; the French Alternative Energies
+and Atomic Energy Commission (CEA); the National Council of Science and
+Technology of Mexico (CONACYT); the Ministry of Science and Innovation of Spain
+(MICINN), and by the DESI Member Institutions
+(https://www.desi.lbl.gov/collaborating-institutions).
+```

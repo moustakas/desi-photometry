@@ -63,7 +63,7 @@ fiberassign_dir = os.path.join(desi_root, 'target', 'fiberassign', 'tiles', 'tru
 
 def _read_one_zcat(args):
     """Multiprocessing wrapper."""
-    return read_one_zcat(*args) 
+    return read_one_zcat(*args)
 
 def read_one_zcat(catfile):
     """Read a single redshift catalog, e.g., ztile-sv1-dark-cumulative.fits.
@@ -97,7 +97,7 @@ def read_one_zcat(catfile):
 
 def _read_one_potential_targets(args):
     """Multiprocessing wrapper."""
-    return read_one_potential_targets(*args) 
+    return read_one_potential_targets(*args)
 
 def read_one_potential_targets(tileid, survey, program):
     """Read the potential targets in a given fiberassign tile.
@@ -130,12 +130,12 @@ def read_one_potential_targets(tileid, survey, program):
     #out = join(out, targets, keys='TARGETID', join_type='left')
 
     out = Table(fitsio.read(fiberfile, ext='TARGETS', columns=['TARGETID', 'RA', 'DEC']))
-    
+
     # remove skies
     _, _, _, _, sky, _ = decode_targetid(out['TARGETID'])
     keep = (sky == 0) * (out['TARGETID'] > 0)
     out = out[keep]
-    
+
     out['TILEID'] = tileid
     out['SURVEY'] = survey
     out['PROGRAM'] = program
@@ -161,7 +161,7 @@ def read_one_potential_targets(tileid, survey, program):
 
 def _cache_one_catalog(args):
     """Multiprocessing wrapper."""
-    return cache_one_catalog(*args) 
+    return cache_one_catalog(*args)
 
 def cache_one_catalog(cachefile):
     """Cache a single (secondary) targeting catalog, e.g.,
@@ -216,7 +216,7 @@ def targetphot_one(input_cat, photocache=None, racolumn='TARGET_RA', deccolumn='
     targetphot['SURVEY'] = input_cat['SURVEY']
     targetphot['PROGRAM'] = input_cat['PROGRAM']
     targetphot['TILEID'] = input_cat['TILEID']
-    
+
     return targetphot
 
 def _get_secondary_targetdirs():
@@ -231,7 +231,7 @@ def _get_secondary_targetdirs():
     for ii, fiberfile in enumerate(fiberfiles):
         if ii % 500 == 0:
             log.info('Working on fiberfile {}/{}'.format(ii, len(fiberfiles)))
-        fahdr = fits.getheader(fiberfile, ext=0)        
+        fahdr = fits.getheader(fiberfile, ext=0)
         if 'SCND' in fahdr:
             if fahdr['SCND'].strip() != '-':
                 targetdirs += [fahdr['SCND']]
@@ -245,7 +245,7 @@ def _get_secondary_targetdirs():
             targetdir = os.path.join(desi_root, targetdir.replace('/data/', ''))
         if os.path.isdir(targetdir):
             targetdir = glob(os.path.join(targetdir, '*.fits'))
-        for targetdir1 in np.atleast_1d(targetdir):                
+        for targetdir1 in np.atleast_1d(targetdir):
             if os.path.isfile(targetdir1):
                 log.info('Found secondary targets catalog {}'.format(targetdir1))
                 final_targetdirs.append(targetdir1)
@@ -265,7 +265,7 @@ def _build_secondarycache(mp=1):
     # Figure out which secondary target catalogs actually were used to design
     # tiles but only do this one time.
     #cachefiles = _get_secondary_targetdirs()
-    
+
     cachefiles = np.hstack([[
         #os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.48.0/targets/sv1/secondary/dark/sv1targets-dark-secondary-dr9photometry.fits',
         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/0.48.0/targets/sv1/secondary/dark/sv1targets-dark-secondary.fits',
@@ -285,7 +285,7 @@ def _build_secondarycache(mp=1):
         os.environ.get('DESI_ROOT')+'/target/catalogs/dr9/1.1.1/targets/main/secondary/dark/targets-dark-secondary.fits',
         os.environ.get('DESI_ROOT')+'/target/secondary/sv1/dedicated/0.49.0/DC3R2_GAMA_priorities.fits'],
         glob(os.environ.get('DESI_ROOT')+'/survey/ops/surveyops/trunk/mtl/*/ToO/ToO.ecsv')])
-    
+
     mpargs = []
     for cachefile in np.unique(cachefiles):
         #if cachefile.replace('.fits', '-dr9photometry.fits') in cachefiles and '.ecsv' not in cachefile: # just read the photometry
@@ -296,7 +296,7 @@ def _build_secondarycache(mp=1):
             photocache1 = P.map(_cache_one_catalog, mpargs)
     else:
         photocache1 = [cache_one_catalog(mparg[0]) for mparg in mpargs]
-    
+
     photocache = {}
     for _photocache1 in photocache1:
         for key in _photocache1.keys():
@@ -306,8 +306,21 @@ def _build_secondarycache(mp=1):
 
     return photocache
 
-def main():
 
+def _most_recent_targeting():
+    """Placeholder
+    """
+    return
+
+
+def main():
+    """Entry-point for command-line scripts.
+
+    Returns
+    -------
+    :class:`int`
+        An integer suitable for passing to :func:`sys.exit`.
+    """
     p = argparse.ArgumentParser()
     p.add_argument('--reduxdir', type=str, help='spectro redux base dir overrides $DESI_SPECTRO_REDUX/$SPECPROD')
     p.add_argument('-o', '--outdir', type=str, required=True, help='output directory file')
@@ -322,7 +335,8 @@ def main():
     p.add_argument('--tractorphot', action='store_true', help='Build the photo-tractor catalogs.')
     p.add_argument('--validate-tractorphot', action='store_true', help='Validate the photo-tractor catalogs.')
     p.add_argument('--overwrite', action='store_true', help='Overwrite existing photo-targets files.')
-    
+    p.add_argument('--latest', action='store_true', help='Use the most recent targeting instead of the targeting file specified in the fiberassign header.')
+
     args = p.parse_args()
     log = get_logger()
 
@@ -346,11 +360,11 @@ def main():
 
     # Build the targetphot catalog.
     if args.targetphot:
-        if args.potential:        
+        if args.potential:
             any_outfile = glob(os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-*-{}.fits'.format(args.specprod)))
         else:
             any_outfile = glob(os.path.join(args.outdir, 'observed-targets', 'targetphot-*-{}.fits'.format(args.specprod)))
-            
+
         if len(any_outfile) > 0 and not args.overwrite:
             log.info('One or more targetphot output files exist; use --overwrite')
             return
@@ -361,7 +375,7 @@ def main():
             photocache = {}
         else:
             photocache = _build_secondarycache(mp=args.mp)
-    
+
         if args.potential:
             # Assume that the nominal/parent zcat catalog has been previously generated.
             parent_zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.specprod))
@@ -369,7 +383,7 @@ def main():
                 errmsg = 'Targeting photometric catalog {} missing'.format(parent_zcatfile)
                 log.critical(errmsg)
                 raise IOError(errmsg)
-            
+
             log.info('Reading {}'.format(parent_zcatfile))
             parent_zcat = Table(fitsio.read(parent_zcatfile))
 
@@ -380,13 +394,13 @@ def main():
                     J = rand.choice(len(parent_zcat), size=args.ntest, replace=False)
                     parent_zcat = parent_zcat[J]
             log.info('Read {:,} objects from {}'.format(len(parent_zcat), parent_zcatfile))
-                
+
             #print('RESTRICTING TO SURVEY sv2!')
             #uindx = parent_zcat['SURVEY'] == 'sv2'
             #print('RESTRICTING TO TILE 81056!! Note uindx[0]!')
             #uindx = parent_zcat['TILEID'] == 81056
             #parent_zcat = parent_zcat[uindx]
-            
+
             #tileids = np.unique(parent_zcat['TILEID'])
             _, uindx = np.unique(parent_zcat['TILEID'], return_index=True)
             tileids = parent_zcat['TILEID'][uindx]
@@ -396,14 +410,14 @@ def main():
             # Multiprocess over tiles
             #log.info('Dividing the sample into {} unique tiles.'.format(len(tileids)))
             mpargs = [[tileid, survey, program] for tileid, survey, program in zip(tileids, surveys, programs)]
-                    
+
             if args.mp > 1:
                 with multiprocessing.Pool(args.mp) as P:
                     zcat = P.map(_read_one_potential_targets, mpargs)
             else:
                 zcat = [read_one_potential_targets(*mparg) for mparg in mpargs]
             zcat = vstack(zcat)
-            
+
             # Do not select unique TARGETIDs because the same target can appear
             # in different surveys. We handle uniqueness below.
 
@@ -431,7 +445,7 @@ def main():
 
             # Stack and then remove negative targetids and sky fibers.
             zcat = vstack(zcat)
-            
+
             _, _, _, _, sky, _ = decode_targetid(zcat['TARGETID'])
             keep = (sky == 0) * (zcat['TARGETID'] > 0)
             if np.sum(keep) > 0:
@@ -443,11 +457,11 @@ def main():
             #    zcat = zcat[zcat['TILEID'] == 81108] # 80736
 
             log.info('Read {:,} objects from {} redshift catalogs'.format(len(zcat), len(zcatfiles)))
-            
+
             RACOLUMN, DECCOLUMN = 'TARGET_RA', 'TARGET_DEC'
 
             #zcat[(zcat['SURVEY'] == 'sv1') * (zcat['PROGRAM'] == 'other') * (zcat['TILEID'] == 80870)]
-            
+
         # Unfortunately, the same TARGETID can appear in different surveys
         # (e.g., sv1 vs sv3) with different targeting information. E.g., a
         # target can be a secondary target in one survey but a primary
@@ -484,7 +498,7 @@ def main():
             if rand is not None:
                 J = rand.choice(len(zcat_survey), size=args.ntest, replace=False)
                 zcat_survey = zcat_survey[J]
-            
+
             # important! sort by tile so we can stack without sorting, below
             zcat_survey = zcat_survey[np.argsort(zcat_survey['TILEID'])]
 
@@ -510,7 +524,7 @@ def main():
 
             # count the number of targets in each tile
             #npertile = [np.sum(zcat_survey['TILEID'] == tileid) for tileid in np.unique(zcat_survey['TILEID'])]
-            
+
             #log.info('Dividing the sample into {} unique tiles.'.format(len(set(zcat_survey['TILEID']))))
             mpargs = [[zcat_survey[zcat_survey['TILEID'] == tileid], photocache, RACOLUMN, DECCOLUMN] for tileid in np.unique(zcat_survey['TILEID'])]
 
@@ -532,7 +546,7 @@ def main():
                 except:
                     pdb.set_trace()
 
-                if args.potential:                
+                if args.potential:
                     outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}-{}.fits'.format(survey, args.specprod))
                 else:
                     outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.specprod))
@@ -546,7 +560,7 @@ def main():
                 out['SURVEY'] = survey
                 allout.append(out)
                 del out
-        
+
                 # Also write out the redshift catalog (with a minimal number
                 # of columns) used to generate the targetphot file. Note
                 # that this intermediate catalog is needed / used to do
@@ -555,7 +569,7 @@ def main():
                     outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}-{}.fits'.format(survey, args.specprod))
                 else:
                     outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}-{}.fits'.format(survey, args.specprod))
-                    
+
                 add_dependencies(zcat_survey.meta)
                 zcat_survey.meta['SURVEY'] = (survey, 'survey name')
                 zcat_survey.meta['EXTNAME'] = 'ZCATALOG'
@@ -574,22 +588,26 @@ def main():
             #allout.meta['EXTNAME'] = 'TARGETPHOT'
             log.info('Writing {:,} objects to {}'.format(len(allout), outfile))
             allout.write(outfile, overwrite=True)
-        
+
             if args.potential:
                 outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.specprod))
             else:
                 outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.specprod))
-                
+
             allzcat = vstack(allzcat, metadata_conflicts='silent')
 
-            assert(np.all(allout['TARGETID'] == allzcat['TARGETID']))
+            #assert(np.all(allout['TARGETID'] == allzcat['TARGETID']))
+            try:
+                assert(np.all(allout['TARGETID'] == allzcat['TARGETID']))
+            except:
+                pdb.set_trace()
                 
             allzcat.meta.pop('SURVEY')
             log.info('Writing {:,} objects to {}'.format(len(allzcat), outfile_zcat))
             allzcat.write(outfile_zcat, overwrite=True)
-            
+
         del photocache, zcat, allout, allzcat
-        
+
     # Build the tractorphot catalogs.
     if args.tractorphot:
         if args.potential:
@@ -610,7 +628,7 @@ def main():
             zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.specprod))
             targetfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}.fits'.format(args.specprod))
             racolumn, deccolumn = 'TARGET_RA', 'TARGET_DEC'
-            
+
         if not os.path.isfile(targetfile):
             errmsg = 'Targeting photometric catalog {} missing'.format(targetfile)
             log.critical(errmsg)
@@ -644,7 +662,7 @@ def main():
         cat = cat[uindx]
         zcat = zcat[uindx]
         log.info('Selecting {:,} unique targets.'.format(len(cat)))
-        
+
         # Create a mini-cat that we'll use for the searching.
         minicat = cat['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']#, 'RA', 'DEC']
         minicat[racolumn] = zcat[racolumn]
@@ -687,7 +705,7 @@ def main():
             for brick in set(bricknames):
                 J = np.where(brick == bricknames)[0]
                 mpargs.append([minicat[I[J]], racolumn, deccolumn])
-                
+
             if args.mp > 1:
                 with multiprocessing.Pool(args.mp) as P:
                     tractor = P.map(_tractorphot_one, mpargs)
@@ -700,12 +718,12 @@ def main():
                 srt = np.hstack([np.where(tid == tractor['TARGETID'])[0] for tid in minicat['TARGETID'][I]])
                 tractor = tractor[srt]
                 assert(np.all(cat['TARGETID'][I] == tractor['TARGETID']))
-                    
+
                 # If there are any objects with missing Tractor photometry, keep track of them here.
                 imiss = np.where(tractor['BRICKNAME'] == '')[0]
                 if len(imiss) > 0:
                     missing.append(cat[I[imiss]])
-                    
+
                 igood = np.where(tractor['BRICKNAME'] != '')[0]
                 if len(igood) > 0:
                     if args.potential:
@@ -720,14 +738,14 @@ def main():
                     tractor.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
                     tractor.meta['FILEHPIX'] = ('{:03d}'.format(pixel), 'HEALPix number')
                     tractor.meta['EXTNAME'] = 'TRACTORPHOT'
-                    
+
                     log.info('Writing {:,} objects to {}'.format(len(tractor[igood]), outfile))
                     tractor[igood].write(outfile, overwrite=True)
             #del minicat
 
         if len(missing) > 0:
             missing = vstack(missing)
-    
+
             if args.potential:
                 outfile_miss = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-missing-{}.fits'.format(args.specprod))
             else:
@@ -736,7 +754,7 @@ def main():
             missing.meta['EXTNAME'] = 'TARGETPHOT'
             log.info('Writing {:,} objects to {}'.format(len(missing), outfile_miss))
             missing.write(outfile_miss, overwrite=True)
-    
+
     # Validate the Tractor photometry against the original redshift catalogs.
     if args.validate_tractorphot:
         outcat = []
@@ -745,10 +763,10 @@ def main():
         missfile = os.path.join(args.outdir, 'ancillary', 'targetphot-missing-{}.fits'.format(args.specprod))
         log.info('Reading {}'.format(missfile))
         miss = Table(fitsio.read(missfile))
-        
+
         zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-*-cumulative.fits'))
         #zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'zpix-special-*.fits'))
-        #zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-sv1-other-cumulative.fits'))        
+        #zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-sv1-other-cumulative.fits'))
         for zcatfile in zcatfiles:
             log.info('Validating {}'.format(zcatfile))
             zcat = Table(fitsio.read(zcatfile))
@@ -758,15 +776,15 @@ def main():
 
             # Toss out skies and stuck positioners.
             _, _, _, _, sky, _ = decode_targetid(zcat['TARGETID'])
-            keep = (sky == 0) * (zcat['TARGETID'] > 0)    
+            keep = (sky == 0) * (zcat['TARGETID'] > 0)
             zcat = zcat[keep]
-        
+
             # read the appropriate Tractor catalog
             pixels = radec2pix(args.filenside, zcat['TARGET_RA'], zcat['TARGET_DEC'])
             log.info('Working on {} pixels'.format(len(set(pixels))))
             for pixel in set(pixels):
                 I = np.where(pixel == pixels)[0]
-                
+
                 catfile = os.path.join(args.outdir, 'observed-targets', 'tractorphot', 'tractorphot-nside{}-hp{:03d}-{}.fits'.format(
                     args.filenside, pixel, args.specprod))
                 if not os.path.isfile(catfile):
@@ -774,7 +792,7 @@ def main():
                     # Make sure they're all in the missing catalog.
                     assert(np.sum(np.isin(miss['TARGETID'], zcat['TARGETID'][I])) == len(I))
                     continue
-                    
+
                 log.info('Reading {} objects from {}'.format(len(I), catfile))
 
                 _targetids = fitsio.read(catfile, columns='TARGETID')
@@ -798,11 +816,11 @@ def main():
                 #diff = np.logical_or(diff, cat['flux_w1'] != _zcat['FLUX_W1'])
                 #diff = np.logical_or(diff, cat['flux_w2'] != _zcat['FLUX_W2'])
                 diff = np.where(diff)[0]
-        
+
                 if np.sum(diff) > 0:
                     outcat.append(cat[diff])
                     outzcat.append(_zcat[diff])
-                        
+
                     #objid, brickid, release, mock, sky, gaia = decode_targetid(_zcat['TARGETID'][diff])
                     #for dd in diff:
                     #    print(_zcat['BRICKID'][dd], cat['brickid'][dd], _zcat['BRICK_OBJID'][dd], cat['objid'][dd])
@@ -833,7 +851,7 @@ def main():
             out = Table()
             for ii in np.arange(len(zcols)):
                 out[zcols[ii]] = outzcat[zcols[ii]]
-                out[tractorcols[ii]] = outcat[tractorcols[ii]]            
+                out[tractorcols[ii]] = outcat[tractorcols[ii]]
             for col in [
                     'FA_TARGET', 'CMX_TARGET',
                     'DESI_TARGET', 'BGS_TARGET', 'MWS_TARGET',
@@ -917,12 +935,15 @@ def main():
                         allout.append(out)
                     
                 log.info('  Found {:,} mismatches on survey {}.'.format(mismatches, survey))
-    
+                
         if len(allout) > 0:
             allout = vstack(allout)
             outfile = os.path.join(args.outdir, 'ancillary', 'targetphot-validate-{}.fits'.format(args.specprod))
             print('Writing {} objects to {}'.format(len(allout), outfile))
             allout.write(outfile, overwrite=True)
 
+    return 0
+
+
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
