@@ -4,14 +4,15 @@
 (target) catalogs.
 
 Set up the software dependencies but make sure we're using the desispec/0.53.2 tag, which is not yet part of a major release:
-  source /global/common/software/desi/desi_environment.sh 22.2
+  salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
+  source /global/common/software/desi/desi_environment.sh 22.5
   module unload desispec
   export PYTHONPATH=$HOME/code/desihub/desispec/py:${PYTHONPATH}
 
 Sequence of commands for a given release (here, fuji)
 1. Gather targeting photometry from the individual redshift catalogs.
 
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --specprod fuji --mp 32 --targetphot
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /pscratch/sd/i/ioannis/photocatalog/fuji --specprod fuji --mp 128 --targetphot
 
    Output files:
     targetphot-fuji.fits
@@ -20,15 +21,15 @@ Sequence of commands for a given release (here, fuji)
 
 2. Gather Tractor photometry.
 
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --specprod fuji --mp 32 --tractorphot
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /pscratch/sd/i/ioannis/photocatalog/fuji --specprod fuji --mp 128 --tractorphot
 
    Output files:
      tractorphot-nside4-hp???-fuji.fits
 
 3. Gather targeting and Tractor photometry for *potential* targets (going back to the original fiberassign files).
 
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --specprod fuji --mp 32 --targetphot --potential
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /global/cscratch1/sd/ioannis/photocatalog/fuji --specprod fuji --mp 32 --tractorphot --potential
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /pscratch/sd/i/ioannis/photocatalog/fuji --specprod fuji --mp 128 --targetphot --potential
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /pscratch/sd/i/ioannis/photocatalog/fuji --specprod fuji --mp 128 --tractorphot --potential
 
    Output files:
      targetphot-potential-fuji.fits
