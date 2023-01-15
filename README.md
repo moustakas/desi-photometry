@@ -181,14 +181,14 @@ as well as some additional details regarding the files in the following table:
 
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
-| Fuji | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 3.86 GB | 1,957,908 |
+| Fuji | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 3.86 GB | 1,957,907 |
 | Guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 5.14 GB | 2,603,942 |
 
 **Note:**
 
-* In Fuji, there are 1,979,269 unique observed targets (the 2,005,503 number
+* In Fuji, there are 1,979,269 unique observed targets (the 2,786,841 number
   tabulated above includes duplicate targets observed in different surveys), but
-  just 1,957,908 unique objects with LS/DR9 photometry; the "missing" 21,361
+  just 1,957,907 unique objects with LS/DR9 photometry; the "missing" 21,362
   objects have no LS/DR9 source within 1 arcsec of the targeted position and
   therefore do not exist in any of the Fuji *tractorphot* files.
 
@@ -228,7 +228,7 @@ below:
 
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
-| Fuji | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 11.9 GB | 6,031,273 |
+| Fuji | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 11.9 GB | 6,031,271 |
 | Guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 31.1 GB | 15,758,409 |
 
 Reproducibility
@@ -250,7 +250,7 @@ cd desi-photometry && git checkout tags/v2.0 && cd ..
 
 2. Next, set up the `perlmutter` interactive node to run the code:
 ```bash
-salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
+salloc -N 1 -C cpu -A desi -t 02:00:00 --qos interactive -L SCRATCH,cfs
 ```
 
 3. Next, gather targeting and Tractor photometry for *observed* targets:
