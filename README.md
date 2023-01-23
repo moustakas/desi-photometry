@@ -5,7 +5,7 @@ DESI Value-Added Catalogs
 Fuji (Early Data Release)
 Guadalupe (Data Release 1 Supplement)
 
-**Version: 1.0**
+**Version: 2.0**
 
 Description
 -----------
@@ -31,7 +31,7 @@ Getting Started Quickly
 -----------------------
 
 This [example
-notebook](https://github.com/moustakas/desi-photometry/blob/fujilupe-v1.0/example.ipynb)
+notebook](https://github.com/moustakas/desi-photometry/blob/main/example.ipynb)
 shows how to quickly grab targeting and Tractor photometry from the Fuji
 value-added catalog for a hypothetical set of observed targets. However, be sure
 to read the documentation below for all the details!
@@ -42,14 +42,14 @@ Content, Organization, & Data Model
 The LS/DR9 value-added catalogs (VACs) can be accessed at the following links:
 | Data Release | URL |
 |------------|-----|
-| Fuji (EDR) | [https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v1.0](https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v1.0) |
-| Guadalupe (DR1 supplement) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v1.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v1.0) |
+| Fuji (EDR) | [https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.0](https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.0) |
+| Guadalupe (DR1 supplement) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0) |
 
 > **For DESI Collaborators:** At NERSC, the catalogs can also be accessed at the
     following top-level directories:
   ```
-  /global/cfs/cdirs/desi/public/edr/vac/lsdr9-photometry/fuji/v1.0
-  /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/guadalupe/v1.0
+  /global/cfs/cdirs/desi/public/edr/vac/lsdr9-photometry/fuji/v2.0
+  /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0
   ```
 
 The VAC contains two basic kinds of files: targeting (*targetphot*) catalogs,
@@ -181,14 +181,14 @@ as well as some additional details regarding the files in the following table:
 
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
-| Fuji | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 3.86 GB | 1,957,908 |
+| Fuji | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 3.86 GB | 1,957,907 |
 | Guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 5.14 GB | 2,603,942 |
 
 **Note:**
 
-* In Fuji, there are 1,979,269 unique observed targets (the 2,005,503 number
+* In Fuji, there are 1,979,269 unique observed targets (the 2,786,841 number
   tabulated above includes duplicate targets observed in different surveys), but
-  just 1,957,908 unique objects with LS/DR9 photometry; the "missing" 21,361
+  just 1,957,907 unique objects with LS/DR9 photometry; the "missing" 21,362
   objects have no LS/DR9 source within 1 arcsec of the targeted position and
   therefore do not exist in any of the Fuji *tractorphot* files.
 
@@ -228,7 +228,7 @@ below:
 
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
-| Fuji | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 11.9 GB | 6,031,273 |
+| Fuji | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 11.9 GB | 6,031,271 |
 | Guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 31.1 GB | 15,758,409 |
 
 Reproducibility
@@ -241,38 +241,34 @@ just for Fuji).
 
 1. First, set up your software environment:
 ```bash
-source /global/common/software/desi/desi_environment.sh 22.2
+source /global/common/software/desi/desi_environment.sh 22.5
 module unload desispec
-module load desispec/0.53.2
+module load desispec/0.56.3
 git clone https://github.com/moustakas/desi-photometry.git
-cd desi-photometry && git checkout tags/v1.0 && cd ..
+cd desi-photometry && git checkout tags/v2.0 && cd ..
 ```
 
-2. Next, set up the `cori` interactive node to run the code:
+2. Next, set up the `perlmutter` interactive node to run the code:
 ```bash
-salloc -N 1 -C haswell -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
-# equivalent on perlmutter
-salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
+salloc -N 1 -C cpu -A desi -t 02:00:00 --qos interactive -L SCRATCH,cfs
 ```
 
 3. Next, gather targeting and Tractor photometry for *observed* targets:
 ```bash
 time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
-  -o /path/to/output/fuji --specprod fuji --mp 32 --targetphot --tractorphot
+  -o /path/to/output/fuji --specprod fuji --mp 128 --targetphot --tractorphot
 ```
 
 4. Finally gather targeting and Tractor photometry for *potential* targets (you may want to start another interactive node):
 ```bash
 time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
-  -o /path/to/output/fuji --specprod fuji --mp 32 --targetphot --tractorphot --potential
+  -o /path/to/output/fuji --specprod fuji --mp 128 --targetphot --tractorphot --potential
 ```
 
 Known Issues
 ------------
 
-* For secondary targets in SV1, the targeting catalog filenames recorded in the
-  fiberassign header are inconsistent with the contents of the corresponding
-  fibermap catalog for a given TILEID.
+None currently known.
 
 Contact & Contributors
 ----------------------
@@ -282,7 +278,7 @@ file a ticket at the [desi-photometry
 repository](https://github.com/moustakas/desi-photometry/issues) and/or contact
 [John Moustakas](jmoustakas@siena.edu) ([Siena College](https://siena.edu)).
 
-JM gratefully acknowledges funding support for this work from the
+John Moustakas gratefully acknowledges funding support for this work from the
 U.S. Department of Energy, Office of Science, Office of High Energy Physics
 under Award Number DE-SC0020086.
 

@@ -59,10 +59,15 @@ def fileinfo(filelist, specprod, subdir):
 
     nrows, szs = [], []
     for onefile in filelist:
-        szs.append(os.stat(onefile).st_size)
-        nrows.append(fitsio.FITS(onefile)[1].get_nrows())
+        if os.path.isfile(onefile):
+            szs.append(os.stat(onefile).st_size)
+            nrows.append(fitsio.FITS(onefile)[1].get_nrows())
+        else:
+            print('Missing {}'.format(onefile))
     szs = np.array(szs)
     nrows = np.array(nrows)
+    if len(nrows) == 0:
+        return
 
     #srt = np.argsort(nrows)
     srt = np.arange(len(nrows))
@@ -154,6 +159,9 @@ def main():
             print('Working on survey {}'.format(survey))
             obsfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.specprod))
             potfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}-{}.fits'.format(survey, args.specprod))
+            #if not os.path.isfile(obsfile):
+            #    continue
+            
             obs = Table(fitsio.read(obsfile))
             print('Read {:,d} objects from {}'.format(len(obs), obsfile))
             pot = Table(fitsio.read(potfile))
