@@ -241,28 +241,28 @@ just for Fuji).
 
 1. First, set up your software environment:
 ```bash
-source /global/common/software/desi/desi_environment.sh 22.5
+source /global/common/software/desi/desi_environment.sh 23.1
 module unload desispec
-module load desispec/0.56.3
+module load desispec/0.56.4
 git clone https://github.com/moustakas/desi-photometry.git
 cd desi-photometry && git checkout tags/v2.0 && cd ..
 ```
 
 2. Next, set up the `perlmutter` interactive node to run the code:
 ```bash
-salloc -N 1 -C cpu -A desi -t 02:00:00 --qos interactive -L SCRATCH,cfs
+salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
 ```
 
 3. Next, gather targeting and Tractor photometry for *observed* targets:
 ```bash
 time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
-  -o /path/to/output/fuji --specprod fuji --mp 128 --targetphot --tractorphot
+  -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot
 ```
 
 4. Finally gather targeting and Tractor photometry for *potential* targets (you may want to start another interactive node):
 ```bash
 time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
-  -o /path/to/output/fuji --specprod fuji --mp 128 --targetphot --tractorphot --potential
+  -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot --potential
 ```
 
 Known Issues
