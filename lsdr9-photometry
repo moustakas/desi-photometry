@@ -12,7 +12,7 @@ Set up the software dependencies but make sure we're using the desispec/0.53.2 t
 Sequence of commands for a given release (here, fuji)
 1. Gather targeting photometry from the individual redshift catalogs.
 
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /pscratch/sd/i/ioannis/photocatalog/fuji --specprod fuji --mp 128 --targetphot
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/photocatalog/fuji --specprod fuji --mp 128 --targetphot
 
    Output files:
     targetphot-fuji.fits
@@ -21,15 +21,15 @@ Sequence of commands for a given release (here, fuji)
 
 2. Gather Tractor photometry.
 
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /pscratch/sd/i/ioannis/photocatalog/fuji --specprod fuji --mp 128 --tractorphot
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/photocatalog/fuji --specprod fuji --mp 128 --tractorphot
 
    Output files:
      tractorphot-nside4-hp???-fuji.fits
 
 3. Gather targeting and Tractor photometry for *potential* targets (going back to the original fiberassign files).
 
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /pscratch/sd/i/ioannis/photocatalog/fuji --specprod fuji --mp 128 --targetphot --potential
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji -o /pscratch/sd/i/ioannis/photocatalog/fuji --specprod fuji --mp 128 --tractorphot --potential
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/photocatalog/fuji --specprod fuji --mp 128 --targetphot --potential
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/photocatalog/fuji --specprod fuji --mp 128 --tractorphot --potential
 
    Output files:
      targetphot-potential-fuji.fits
@@ -166,7 +166,7 @@ def _cache_one_catalog(args):
 
 def cache_one_catalog(cachefile):
     """Cache a single (secondary) targeting catalog, e.g.,
-    $DESI_ROOT/target/catalogs/dr9/0.48.0/targets/sv1/secondary/dark/sv1targets-dark-secondary.fits
+    ${DESI_ROOT}/target/catalogs/dr9/0.48.0/targets/sv1/secondary/dark/sv1targets-dark-secondary.fits
 
     Args:
         cachefile (str): full path to a targeting catalog.
