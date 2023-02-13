@@ -3,39 +3,40 @@
 """Match data release redshift catalogs against the original photometric
 (target) catalogs.
 
-Set up the software dependencies but make sure we're using the desispec/0.53.2 tag, which is not yet part of a major release:
+Set up the software dependencies:
   salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
   source /global/common/software/desi/desi_environment.sh 23.1
   module unload desispec
-  module load desispec/0.56.4
+  export PATH=/global/homes/i/ioannis/code/desihub/desispec/bin:${PATH}
+  export PYTHONPATH=/global/homes/i/ioannis/code/desihub/desispec/py:${PYTHONPATH}
 
-Sequence of commands for a given release (here, fuji)
+Sequence of commands for a given release (here, iron)
 1. Gather targeting photometry from the individual redshift catalogs.
 
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/photocatalog/fuji --specprod fuji --mp 128 --targetphot
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod iron --mp 128 --targetphot
 
    Output files:
-    targetphot-fuji.fits
-    targetphot-zcat-fuji.fits
-    targetphot-missing-fuji.fits
+    targetphot-iron.fits
+    targetphot-zcat-iron.fits
+    targetphot-missing-iron.fits
 
 2. Gather Tractor photometry.
 
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/photocatalog/fuji --specprod fuji --mp 128 --tractorphot
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod iron --mp 128 --tractorphot
 
    Output files:
-     tractorphot-nside4-hp???-fuji.fits
+     tractorphot-nside4-hp???-iron.fits
 
 3. Gather targeting and Tractor photometry for *potential* targets (going back to the original fiberassign files).
 
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/photocatalog/fuji --specprod fuji --mp 128 --targetphot --potential
-   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/photocatalog/fuji --specprod fuji --mp 128 --tractorphot --potential
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod iron --mp 128 --targetphot --potential
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod iron --mp 128 --tractorphot --potential
 
    Output files:
-     targetphot-potential-fuji.fits
-     targetphot-potential-zcat-fuji.fits
-     targetphot-potential-missing-fuji.fits
-     tractorphot-potential-nside4-hp???-fuji.fits
+     targetphot-potential-iron.fits
+     targetphot-potential-zcat-iron.fits
+     targetphot-potential-missing-iron.fits
+     tractorphot-potential-nside4-hp???-iron.fits
 
 """
 import os, sys, argparse, time, pdb
@@ -202,7 +203,7 @@ def _targetphot_one(args):
 def targetphot_one(input_cat, photocache=None, racolumn='TARGET_RA', deccolumn='TARGET_DEC'):
     """Simple wrapper on desispec.io.photo.gather_targetphot."""
     from desispec.io.photo import gather_targetphot
-    print('Working on tile {}'.format(input_cat['TILEID'][0]))
+    log.info('Working on tile {}'.format(input_cat['TILEID'][0]))
 
     # should be unique!
     assert(len(input_cat) == len(np.unique(input_cat['TARGETID'])))
@@ -367,8 +368,7 @@ def main():
             any_outfile = glob(os.path.join(args.outdir, 'observed-targets', 'targetphot-*-{}.fits'.format(args.specprod)))
 
         if len(any_outfile) > 0 and not args.overwrite:
-            log.info('One or more targetphot output files exist; use --overwrite')
-            return
+            log.warning('One or more targetphot output files exist; proceed with caution or use --overwrite.')
 
         # Optionally cache the targetids of all the secondary target
         # catalogs. This cache is used in desispec.io.photo.gather_targetphot.
@@ -434,7 +434,7 @@ def main():
         else:
             # Read all the zpix catalogs in parallel.
             zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-*-cumulative.fits'))
-            #zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-sv1-other-cumulative.fits'))
+            #zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-*special*-cumulative.fits'))
             mpargs = []
             for zcatfile in zcatfiles:
                 mpargs.append([zcatfile])
@@ -489,10 +489,11 @@ def main():
         # Divide the analysis by survey.
         allout, allzcat = [], []
         allsurveys = zcat['SURVEY']
-        #for survey in ['sv1']:
+        #for survey in ['special']:
         for survey in sorted(set(allsurveys)):
             log.info('Working on survey {}'.format(survey))
 
+            #S = np.where((survey == allsurveys) * (zcat['TILEID'] > 82400) * (zcat['TILEID'] < 82410) )[0]
             S = np.where(survey == allsurveys)[0]
             zcat_survey = zcat[S]
 
@@ -618,8 +619,7 @@ def main():
             any_outfile = glob(os.path.join(args.outdir, 'observed-targets', 'tractorphot', 'tractorphot-nside{}-hp*-{}.fits'.format(
                 args.filenside, args.specprod)))
         if len(any_outfile) > 0 and not args.overwrite:
-            log.info('One or more tractorphot output files exist; use --overwrite')
-            return
+            log.warning('One or more tractorphot output files exist; proceed with caution or use --overwrite.')            
 
         if args.potential:
             zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.specprod))
@@ -694,11 +694,24 @@ def main():
 
         missing = []
         for ipix, pixel in enumerate(set(pixels)):
-            #if ipix < 42:
-            #    continue
-            log.info('Working on healpix {}/{} (nside={})'.format(ipix+1, npix, args.filenside))
+            if ipix != 100:
+                continue
+            
+            if args.potential:
+                outfile = os.path.join(args.outdir, 'potential-targets', 'tractorphot', 'tractorphot-potential-nside{}-hp{:03d}-{}.fits'.format(
+                    args.filenside, pixel, args.specprod))
+            else:
+                outfile = os.path.join(args.outdir, 'observed-targets', 'tractorphot', 'tractorphot-nside{}-hp{:03d}-{}.fits'.format(
+                    args.filenside, pixel, args.specprod))
+                
+            log.info('Working on healpix number {}/{} (healpix={}, nside={})'.format(ipix+1, npix, pixel, args.filenside))
+            if os.path.isfile(outfile) and not args.overwrite:
+                log.warning('Output file {} exists; proceed with caution or use --overwrite.'.format(outfile))
+                continue
 
-            I = np.where(pixel == pixels)[0]
+            print('Hack!')
+            I = np.where((pixel == pixels) * (minicat['BRICKNAME'] == '2368m027'))[0]
+            #I = np.where(pixel == pixels)[0]
             bricknames = minicat['BRICKNAME'][I]
 
             log.info('Dividing the sample into {} unique bricks.'.format(len(set(bricknames))))
@@ -712,36 +725,32 @@ def main():
                     tractor = P.map(_tractorphot_one, mpargs)
             else:
                 tractor = [_tractorphot_one(mparg) for mparg in mpargs]
+
+            # len(tractor) will always be > 0 because the data model is
+            # initialized in io.photo.gather_tractorphot
             tractor = vstack(tractor)
 
-            if len(tractor) > 0:
-                # I don't understand why the Tables aren't sorted???
-                srt = np.hstack([np.where(tid == tractor['TARGETID'])[0] for tid in minicat['TARGETID'][I]])
-                tractor = tractor[srt]
-                assert(np.all(cat['TARGETID'][I] == tractor['TARGETID']))
+            # I don't understand why the Tables aren't sorted???
+            srt = np.hstack([np.where(tid == tractor['TARGETID'])[0] for tid in minicat['TARGETID'][I]])
+            tractor = tractor[srt]
+            assert(np.all(cat['TARGETID'][I] == tractor['TARGETID']))
 
-                # If there are any objects with missing Tractor photometry, keep track of them here.
-                imiss = np.where(tractor['BRICKNAME'] == '')[0]
-                if len(imiss) > 0:
-                    missing.append(cat[I[imiss]])
+            # If there are any objects with missing Tractor photometry, keep track of them here.
+            imiss = np.where(tractor['BRICKNAME'] == '')[0]
+            if len(imiss) > 0:
+                missing.append(cat[I[imiss]])
 
-                igood = np.where(tractor['BRICKNAME'] != '')[0]
-                if len(igood) > 0:
-                    if args.potential:
-                        outfile = os.path.join(args.outdir, 'potential-targets', 'tractorphot', 'tractorphot-potential-nside{}-hp{:03d}-{}.fits'.format(
-                            args.filenside, pixel, args.specprod))
-                    else:
-                        outfile = os.path.join(args.outdir, 'observed-targets', 'tractorphot', 'tractorphot-nside{}-hp{:03d}-{}.fits'.format(
-                            args.filenside, pixel, args.specprod))
+            igood = np.where(tractor['BRICKNAME'] != '')[0]
+            pdb.set_trace()
+            if len(igood) > 0:
+                add_dependencies(tractor.meta)
+                tractor.meta['FILENSID'] = (args.filenside, 'HEALPix nside number')
+                tractor.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
+                tractor.meta['FILEHPIX'] = ('{:03d}'.format(pixel), 'HEALPix number')
+                tractor.meta['EXTNAME'] = 'TRACTORPHOT'
 
-                    add_dependencies(tractor.meta)
-                    tractor.meta['FILENSID'] = (args.filenside, 'HEALPix nside number')
-                    tractor.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
-                    tractor.meta['FILEHPIX'] = ('{:03d}'.format(pixel), 'HEALPix number')
-                    tractor.meta['EXTNAME'] = 'TRACTORPHOT'
-
-                    log.info('Writing {:,} objects to {}'.format(len(tractor[igood]), outfile))
-                    tractor[igood].write(outfile, overwrite=True)
+                log.info('Writing {:,} objects to {}'.format(len(tractor[igood]), outfile))
+                tractor[igood].write(outfile, overwrite=True)
             #del minicat
 
         if len(missing) > 0:
@@ -940,7 +949,7 @@ def main():
         if len(allout) > 0:
             allout = vstack(allout)
             outfile = os.path.join(args.outdir, 'ancillary', 'targetphot-validate-{}.fits'.format(args.specprod))
-            print('Writing {} objects to {}'.format(len(allout), outfile))
+            log.info('Writing {} objects to {}'.format(len(allout), outfile))
             allout.write(outfile, overwrite=True)
 
     return 0
