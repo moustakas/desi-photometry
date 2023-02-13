@@ -655,7 +655,7 @@ def main():
         try:
             assert(np.all(cat['TARGETID'] == zcat['TARGETID']))
         except:
-            pdb.set_trace()
+            raise ValueError('Mismatching TARGETIDs!')
 
         # TARGETIDs can repeat in and between surveys, so select just unique
         # targets here.
@@ -692,11 +692,7 @@ def main():
         pixels = radec2pix(args.filenside, minicat[racolumn], minicat[deccolumn])
         npix = len(set(pixels))
 
-        missing = []
         for ipix, pixel in enumerate(set(pixels)):
-            if ipix != 100:
-                continue
-            
             if args.potential:
                 outfile = os.path.join(args.outdir, 'potential-targets', 'tractorphot', 'tractorphot-potential-nside{}-hp{:03d}-{}.fits'.format(
                     args.filenside, pixel, args.specprod))
@@ -704,58 +700,82 @@ def main():
                 outfile = os.path.join(args.outdir, 'observed-targets', 'tractorphot', 'tractorphot-nside{}-hp{:03d}-{}.fits'.format(
                     args.filenside, pixel, args.specprod))
                 
-            log.info('Working on healpix number {}/{} (healpix={}, nside={})'.format(ipix+1, npix, pixel, args.filenside))
+            log.info('Working on healpix number {}/{} (healpix={:03d}, nside={})'.format(ipix+1, npix, pixel, args.filenside))
             if os.path.isfile(outfile) and not args.overwrite:
                 log.warning('Output file {} exists; proceed with caution or use --overwrite.'.format(outfile))
                 continue
-
-            print('Hack!')
-            I = np.where((pixel == pixels) * (minicat['BRICKNAME'] == '2368m027'))[0]
-            #I = np.where(pixel == pixels)[0]
+        
+            #I = np.where((pixel == pixels) * (minicat['BRICKNAME'] == '2368m027'))[0]
+            I = np.where(pixel == pixels)[0]
             bricknames = minicat['BRICKNAME'][I]
-
+        
             log.info('Dividing the sample into {} unique bricks.'.format(len(set(bricknames))))
             mpargs = []
             for brick in set(bricknames):
                 J = np.where(brick == bricknames)[0]
                 mpargs.append([minicat[I[J]], racolumn, deccolumn])
-
+        
             if args.mp > 1:
                 with multiprocessing.Pool(args.mp) as P:
                     tractor = P.map(_tractorphot_one, mpargs)
             else:
                 tractor = [_tractorphot_one(mparg) for mparg in mpargs]
-
+        
             # len(tractor) will always be > 0 because the data model is
             # initialized in io.photo.gather_tractorphot
             tractor = vstack(tractor)
-
+        
             # I don't understand why the Tables aren't sorted???
             srt = np.hstack([np.where(tid == tractor['TARGETID'])[0] for tid in minicat['TARGETID'][I]])
             tractor = tractor[srt]
             assert(np.all(cat['TARGETID'][I] == tractor['TARGETID']))
-
-            # If there are any objects with missing Tractor photometry, keep track of them here.
-            imiss = np.where(tractor['BRICKNAME'] == '')[0]
-            if len(imiss) > 0:
-                missing.append(cat[I[imiss]])
-
+        
             igood = np.where(tractor['BRICKNAME'] != '')[0]
-            pdb.set_trace()
             if len(igood) > 0:
                 add_dependencies(tractor.meta)
                 tractor.meta['FILENSID'] = (args.filenside, 'HEALPix nside number')
                 tractor.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
                 tractor.meta['FILEHPIX'] = ('{:03d}'.format(pixel), 'HEALPix number')
                 tractor.meta['EXTNAME'] = 'TRACTORPHOT'
-
+        
                 log.info('Writing {:,} objects to {}'.format(len(tractor[igood]), outfile))
                 tractor[igood].write(outfile, overwrite=True)
-            #del minicat
+
+        # For testing and validation, gather the set of targets "missing" LS/DR9
+        # photometry.
+        if args.potential:
+            outfile_miss = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-missing-{}.fits'.format(args.specprod))
+        else:
+            outfile_miss = os.path.join(args.outdir, 'ancillary', 'targetphot-missing-{}.fits'.format(args.specprod))
+
+        if os.path.isfile(outfile_miss) and not args.overwrite:
+            log.warning('Output file {} exists; proceed with caution or use --overwrite.'.format(outfile_miss))
+        
+        missing = []
+        for ipix, pixel in enumerate(set(pixels)):
+            if args.potential:
+                outfile = os.path.join(args.outdir, 'potential-targets', 'tractorphot', 'tractorphot-potential-nside{}-hp{:03d}-{}.fits'.format(
+                    args.filenside, pixel, args.specprod))
+            else:
+                outfile = os.path.join(args.outdir, 'observed-targets', 'tractorphot', 'tractorphot-nside{}-hp{:03d}-{}.fits'.format(
+                    args.filenside, pixel, args.specprod))
+                
+            log.info('Gathering missing targets on healpix number {}/{} (healpix={:03d}, nside={})'.format(
+                ipix+1, npix, pixel, args.filenside))
+            
+            I = np.where(pixel == pixels)[0]            
+
+            if os.path.isfile(outfile):
+                _targetid = fitsio.read(outfile, columns='TARGETID')
+                imiss = np.where(np.logical_not(np.isin(minicat['TARGETID'][I], _targetid)))[0]
+                if len(imiss) > 0:
+                    missing.append(cat[I[imiss]])
+            else:
+                # all targets are missing
+                missing.append(cat[I])
 
         if len(missing) > 0:
             missing = vstack(missing)
-
             if args.potential:
                 outfile_miss = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-missing-{}.fits'.format(args.specprod))
             else:
