@@ -200,10 +200,14 @@ def _targetphot_one(args):
     """Multiprocessing wrapper."""
     return targetphot_one(*args)
 
-def targetphot_one(input_cat, photocache=None, racolumn='TARGET_RA', deccolumn='TARGET_DEC'):
+#def targetphot_one(input_cat, photocache=None, racolumn='TARGET_RA', deccolumn='TARGET_DEC'):
+def targetphot_one(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC'):
     """Simple wrapper on desispec.io.photo.gather_targetphot."""
     from desispec.io.photo import gather_targetphot
     log.info('Working on tile {}'.format(input_cat['TILEID'][0]))
+
+    photocache = None
+    #photocache = _build_secondarycache()
 
     # should be unique!
     assert(len(input_cat) == len(np.unique(input_cat['TARGETID'])))
@@ -371,12 +375,15 @@ def main():
         if len(any_outfile) > 0 and not args.overwrite:
             log.warning('One or more targetphot output files exist; proceed with caution or use --overwrite.')
 
-        # Optionally cache the targetids of all the secondary target
-        # catalogs. This cache is used in desispec.io.photo.gather_targetphot.
-        if args.no_secondarycache:
-            photocache = {}
-        else:
-            photocache = _build_secondarycache(mp=args.mp)
+        ## Optionally cache the targetids of all the secondary target
+        ## catalogs. This cache is used in desispec.io.photo.gather_targetphot.
+        #log.warning('Overriding photocache.')
+        #args.no_secondarycache = True
+        #
+        #if args.no_secondarycache:
+        #    photocache = {}
+        #else:
+        #    photocache = _build_secondarycache(mp=args.mp)
 
         if args.potential:
             # Assume that the nominal/parent zcat catalog has been previously generated.
@@ -529,12 +536,14 @@ def main():
             #npertile = [np.sum(zcat_survey['TILEID'] == tileid) for tileid in np.unique(zcat_survey['TILEID'])]
 
             #log.info('Dividing the sample into {} unique tiles.'.format(len(set(zcat_survey['TILEID']))))
-            mpargs = [[zcat_survey[zcat_survey['TILEID'] == tileid], photocache, RACOLUMN, DECCOLUMN] for tileid in np.unique(zcat_survey['TILEID'])]
-
-            # In fuji/sv1, multiprocessing is suuuuuuuperslow, so skip it here.
+            #mpargs = [[zcat_survey[zcat_survey['TILEID'] == tileid], photocache, RACOLUMN, DECCOLUMN] for tileid in np.unique(zcat_survey['TILEID'])]
+            mpargs = []
+            for tileid in np.unique(zcat_survey['TILEID']):
+                I = zcat_survey['TILEID'] == tileid
+                mpargs.append([zcat_survey[I], RACOLUMN, DECCOLUMN])
 
             t0 = time.time()
-            if survey != 'sv1' and args.mp > 1:
+            if args.mp > 1:
                 with multiprocessing.Pool(args.mp) as P:
                     out = P.map(_targetphot_one, mpargs)
             else:
@@ -609,7 +618,7 @@ def main():
             log.info('Writing {:,} objects to {}'.format(len(allzcat), outfile_zcat))
             allzcat.write(outfile_zcat, overwrite=True)
 
-        del photocache, zcat, allout, allzcat
+        del zcat, allout, allzcat
 
     # Build the tractorphot catalogs.
     if args.tractorphot:
