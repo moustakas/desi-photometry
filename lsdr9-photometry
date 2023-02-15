@@ -200,20 +200,15 @@ def _targetphot_one(args):
     """Multiprocessing wrapper."""
     return targetphot_one(*args)
 
-#def targetphot_one(input_cat, photocache=None, racolumn='TARGET_RA', deccolumn='TARGET_DEC'):
 def targetphot_one(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC'):
     """Simple wrapper on desispec.io.photo.gather_targetphot."""
     from desispec.io.photo import gather_targetphot
     log.info('Working on tile {}'.format(input_cat['TILEID'][0]))
 
-    photocache = None
-    #photocache = _build_secondarycache()
-
     # should be unique!
     assert(len(input_cat) == len(np.unique(input_cat['TARGETID'])))
 
-    targetphot = gather_targetphot(input_cat, photocache=photocache,
-                                   racolumn=racolumn, deccolumn=deccolumn,
+    targetphot = gather_targetphot(input_cat, racolumn=racolumn, deccolumn=deccolumn,
                                    fiberassign_dir=fiberassign_dir)
 
     # Can have the same targetid across different surveys and even within a
@@ -334,7 +329,6 @@ def main():
     p.add_argument('--specprod', type=str, required=True, help='output file prefix')
     p.add_argument('--mp', type=int, default=1, help='number of multiprocessing cores')
     p.add_argument('--filenside', type=int, default=4, help='healpix nside for tractorphot catalogs.')
-    p.add_argument('--no-secondarycache', action='store_true', help='Do not cache the secondary target catalogs.')
     p.add_argument('--ntest', type=int, default=None, help='Test on a randomly selected sample of NTEST objects.')
     p.add_argument('--potential', action='store_true', help='Gather photometry for the potential targets.')
     p.add_argument('--targetphot', action='store_true', help='Build the photo-targets catalogs.')
@@ -342,7 +336,6 @@ def main():
     p.add_argument('--tractorphot', action='store_true', help='Build the photo-tractor catalogs.')
     p.add_argument('--validate-tractorphot', action='store_true', help='Validate the photo-tractor catalogs.')
     p.add_argument('--overwrite', action='store_true', help='Overwrite existing photo-targets files.')
-    p.add_argument('--latest', action='store_true', help='Use the most recent targeting instead of the targeting file specified in the fiberassign header.')
 
     args = p.parse_args()
     log = get_logger()
@@ -374,16 +367,6 @@ def main():
 
         if len(any_outfile) > 0 and not args.overwrite:
             log.warning('One or more targetphot output files exist; proceed with caution or use --overwrite.')
-
-        ## Optionally cache the targetids of all the secondary target
-        ## catalogs. This cache is used in desispec.io.photo.gather_targetphot.
-        #log.warning('Overriding photocache.')
-        #args.no_secondarycache = True
-        #
-        #if args.no_secondarycache:
-        #    photocache = {}
-        #else:
-        #    photocache = _build_secondarycache(mp=args.mp)
 
         if args.potential:
             # Assume that the nominal/parent zcat catalog has been previously generated.
@@ -536,7 +519,6 @@ def main():
             #npertile = [np.sum(zcat_survey['TILEID'] == tileid) for tileid in np.unique(zcat_survey['TILEID'])]
 
             #log.info('Dividing the sample into {} unique tiles.'.format(len(set(zcat_survey['TILEID']))))
-            #mpargs = [[zcat_survey[zcat_survey['TILEID'] == tileid], photocache, RACOLUMN, DECCOLUMN] for tileid in np.unique(zcat_survey['TILEID'])]
             mpargs = []
             for tileid in np.unique(zcat_survey['TILEID']):
                 I = zcat_survey['TILEID'] == tileid
