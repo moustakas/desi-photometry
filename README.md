@@ -1,11 +1,10 @@
-Legacy Surveys DR9 Photometric Catalogs for DESI Productions Fuji and Guadalupe
-===============================================================================
+Legacy Surveys DR9 Photometric Catalogs for DESI Productions Iron, Guadalupe, and Fuji
+======================================================================================
 
 DESI Value-Added Catalogs
-Fuji (Early Data Release)
+Iron (Data Release 1)
 Guadalupe (Data Release 1 Supplement)
-
-**Version: 2.0**
+Fuji (Early Data Release)
 
 Description
 -----------
@@ -14,18 +13,19 @@ This document describes the content and construction of [Legacy Surveys DR9
 (LS/DR9)](https://www.legacysurvey.org/dr9/description) value-added photometric
 catalogs for the following [DESI](https://desi.lbl.gov/) spectroscopic productions:
 
-* **Fuji**, which will be released publicly as part of the [DESI Early Data Release
-(DESI/EDR)](https://data.desi.lbl.gov/public/edr) in early 2023 (exact date TBD); and
+* **Iron**, [DESI Data Release 1
+    (DESI/DR1)](https://data.desi.lbl.gov/public/dr1) (release date TBD);
 * **Guadalupe**, a supplemental dataset to [DESI Data Release 1
-(DESI/DR1)](https://data.desi.lbl.gov/public/dr1) (release date TBD).
+(DESI/DR1)](https://data.desi.lbl.gov/public/dr1) (release date TBD); and
+* **Fuji**, which will be released publicly as part of the [DESI Early Data Release
+(DESI/EDR)](https://data.desi.lbl.gov/public/edr) in April 2023.
 
 In short, the delivered files include merged [DESI targeting
 catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
 and [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS/DR9](https://www.legacysurvey.org/dr9/description) for *observed* and
-*potential* DESI targets (excluding sky fibers), for both the Fuji and Guadalupe
-productions.
+*potential* DESI targets (excluding sky fibers).
 
 Getting Started Quickly
 -----------------------
