@@ -476,10 +476,10 @@ def main():
             tileinfo = Table.read(infofile)
 
         # Divide the analysis by survey.
-        allout, allzcat = [], []
+        allout, allminicat, allzcat = [], [], []
         allsurveys = zcat['SURVEY']
-        for survey in ['main']:
-        #for survey in sorted(set(allsurveys)):
+        #for survey in ['main']:
+        for survey in sorted(set(allsurveys)):
             log.info('Working on survey {}'.format(survey))
 
             #S = np.where((survey == allsurveys) * (zcat['TILEID'] > 82400) * (zcat['TILEID'] < 82410) )[0]
@@ -519,8 +519,11 @@ def main():
             utiles = np.unique(zcat_survey['TILEID'])
             #log.info('Dividing the sample into {} unique tiles.'.format(len(set(zcat_survey['TILEID']))))
 
-            # Split potential MAIN targets into nside=2 healpixels.
+            # Split potential MAIN targets into nside=2 healpixels because there
+            # are too many of them.
             if args.potential and survey == 'main':
+                minicat = []
+                
                 T = tileinfo[np.hstack([np.where(_tileid == tileinfo['TILEID'])[0] for _tileid in utiles])]
                 assert(np.all(T['TILEID'] == utiles))
     
@@ -530,18 +533,16 @@ def main():
                 for ipix, pixel in enumerate(sorted(set(pixels))):
                     outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-nside{}-hp{:02d}-{}-{}.fits'.format(
                         args.nside_targetphot, pixel, survey, args.specprod))
-                    outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-nside{}-hp{:02d}-{}-{}.fits'.format(
-                        args.nside_targetphot, pixel, survey, args.specprod))
                 
-                    P = np.where(pixel == pixels)[0]
+                    Pix = np.where(pixel == pixels)[0]
     
                     mpargs = []
-                    zcat_survey_pixel = []
-                    for tileid in T['TILEID'][P]:
+                    zcat_pixel = []
+                    for tileid in T['TILEID'][Pix]:
                         I = zcat_survey['TILEID'] == tileid
+                        zcat_pixel.append(zcat_survey[I])
                         mpargs.append([zcat_survey[I], RACOLUMN, DECCOLUMN])
-                        zcat_survey_pixel.append(zcat_survey[I])
-                    zcat_survey_pixel = vstack(zcat_survey_pixel)
+                    zcat_pixel = vstack(zcat_pixel)
         
                     t0 = time.time()
                     if args.mp > 1:
@@ -552,29 +553,34 @@ def main():
                     log.info('Total time for gather_targetphot = {:.3f} min'.format((time.time()-t0)/60))
 
                     # stack, sort, and write out
-                    if len(out) > 0:
+                    try:
                         out = vstack(out)
-                        assert(np.all(out['TARGETID'] == zcat_survey_pixel['TARGETID']))
+                        assert(np.all(out['TARGETID'] == zcat_pixel['TARGETID']))
+                    except:
+                        pdb.set_trace()
 
-                        add_dependencies(out.meta)
-                        out.meta['SURVEY'] = (survey, 'survey name')
-                        out.meta['FILENSID'] = (args.nside_targetphot, 'HEALPix nside number')
-                        out.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
-                        out.meta['FILEHPIX'] = ('{:02d}'.format(pixel), 'HEALPix number')
-                        out.meta['EXTNAME'] = 'TARGETPHOT'
-                        log.info('Writing {:,} objects to {}'.format(len(out), outfile))
-                        out.write(outfile, overwrite=True)
+                    add_dependencies(out.meta)
+                    out.meta['SURVEY'] = (survey, 'survey name')
+                    out.meta['FILENSID'] = (args.nside_targetphot, 'HEALPix nside number')
+                    out.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
+                    out.meta['FILEHPIX'] = ('{:02d}'.format(pixel), 'HEALPix number')
+                    out.meta['EXTNAME'] = 'TARGETPHOT'
+                    log.info('Writing {:,} objects to {}'.format(len(out), outfile))
+                    out.write(outfile, overwrite=True)
 
-                        # Also write out the redshift catalog (with a minimal number
-                        # of columns) used to generate the targetphot file. Note
-                        # that this intermediate catalog is needed / used to do
-                        # positional Tractor photometry gathering, below.
-                        add_dependencies(zcat_survey_pixel.meta)
-                        zcat_survey_pixel.meta['SURVEY'] = (survey, 'survey name')
-                        zcat_survey_pixel.meta['EXTNAME'] = 'ZCATALOG'
-                        log.info('Writing {:,} objects to {}'.format(len(zcat_survey_pixel), outfile_zcat))
-                        zcat_survey_pixel.write(outfile_zcat, overwrite=True)
+                    minicat.append(out['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])#, 'RA', 'DEC']
+
+                minicat = vstack(minicat)
+
+                # we somehow get out of order...
+                srt = np.hstack([np.where(tid == minicat['TARGETID'])[0] for tid in zcat_survey['TARGETID']])
+                minicat = minicat[srt]
             else:
+                if args.potential:
+                    outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}-{}.fits'.format(survey, args.specprod))
+                else:
+                    outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.specprod))
+
                 mpargs = []
                 for tileid in utiles:
                     I = zcat_survey['TILEID'] == tileid
@@ -589,32 +595,41 @@ def main():
                 log.info('Total time for gather_targetphot = {:.3f} min'.format((time.time()-t0)/60))
     
                 # stack, sort, and write out
-                if len(out) > 0:
-                    out = vstack(out)
-                    assert(np.all(out['TARGETID'] == zcat_survey['TARGETID']))
+                out = vstack(out)
+                assert(np.all(out['TARGETID'] == zcat_survey['TARGETID']))
+
+                minicat = out['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']#, 'RA', 'DEC']
+                
+                add_dependencies(out.meta)
+                out.meta['SURVEY'] = (survey, 'survey name')
+                out.meta['EXTNAME'] = 'TARGETPHOT'
+                log.info('Writing {:,} objects to {}'.format(len(out), outfile))
+                out.write(outfile, overwrite=True)
     
-                    if args.potential:
-                        outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}-{}.fits'.format(survey, args.specprod))
-                    else:
-                        outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.specprod))
+                out['SURVEY'] = survey
+                if not args.potential:
+                    allout.append(out)
+                del out
     
-                    add_dependencies(out.meta)
-                    out.meta['SURVEY'] = (survey, 'survey name')
-                    out.meta['EXTNAME'] = 'TARGETPHOT'
-                    log.info('Writing {:,} objects to {}'.format(len(out), outfile))
-                    out.write(outfile, overwrite=True)
-    
-                    out['SURVEY'] = survey
-                    if not args.potential:
-                        allout.append(out)
-                    del out
-    
-            # Also write out the redshift catalog (with a minimal number
-            # of columns) used to generate the targetphot file. Note
-            # that this intermediate catalog is needed / used to do
-            # positional Tractor photometry gathering, below.
+            # Also write out a "mini" targetphot catalog and the redshift
+            # catalog (with a minimal number of columns) used to generate the
+            # targetphot file. Note that this intermediate catalog is needed /
+            # used to do positional Tractor photometry gathering, below.
             if args.potential:
                 outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}-{}.fits'.format(survey, args.specprod))
+                outfile_minicat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-minicat-{}-{}.fits'.format(survey, args.specprod))
+
+                try:
+                    assert(np.all(minicat['TARGETID'] == zcat_survey['TARGETID']))
+                except:
+                    pdb.set_trace()
+                    
+                add_dependencies(minicat.meta)
+                minicat.meta['SURVEY'] = (survey, 'survey name')
+                minicat.meta['EXTNAME'] = 'MINICAT'
+                log.info('Writing {:,} objects to {}'.format(len(minicat), outfile_minicat))
+                minicat.write(outfile_minicat, overwrite=True)
+                
             else:
                 outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}-{}.fits'.format(survey, args.specprod))
     
@@ -625,32 +640,47 @@ def main():
             zcat_survey.write(outfile_zcat, overwrite=True)
             
             allzcat.append(zcat_survey)
-
-        if len(allout) > 0 and not args.potential:
+            allminicat.append(minicat)
+            
+        if len(allzcat) > 0:# and not args.potential:
             if args.potential:
-                outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.specprod))
-            else:
-                outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}.fits'.format(args.specprod))
-
-            allout = vstack(allout, metadata_conflicts='silent')
-            allout.meta.pop('SURVEY')
-            #allout.meta['EXTNAME'] = 'TARGETPHOT'
-            log.info('Writing {:,} objects to {}'.format(len(allout), outfile))
-            allout.write(outfile, overwrite=True)
-
-            if args.potential:
+                #outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.specprod))
+                outfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-minicat-{}.fits'.format(args.specprod))
                 outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.specprod))
             else:
+                outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}.fits'.format(args.specprod))
                 outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.specprod))
 
             allzcat = vstack(allzcat, metadata_conflicts='silent')
-            assert(np.all(allout['TARGETID'] == allzcat['TARGETID']))
-                
             allzcat.meta.pop('SURVEY')
+
             log.info('Writing {:,} objects to {}'.format(len(allzcat), outfile_zcat))
             allzcat.write(outfile_zcat, overwrite=True)
 
-        del zcat, allout, allzcat
+            if args.potential:
+                allminicat = vstack(allminicat, metadata_conflicts='silent')
+                try:
+                    assert(np.all(allminicat['TARGETID'] == allzcat['TARGETID']))
+                except:
+                    pdb.set_trace()
+                    
+                add_dependencies(allminicat.meta)
+                allminicat.meta['EXTNAME'] = 'MINICAT'
+                log.info('Writing {:,} objects to {}'.format(len(allminicat), outfile))
+                allminicat.write(outfile, overwrite=True)
+            else:
+                allout = vstack(allout, metadata_conflicts='silent')
+                try:
+                    assert(np.all(allout['TARGETID'] == allzcat['TARGETID']))
+                except:
+                    pdb.set_trace()
+                
+                allout.meta.pop('SURVEY')
+                #allout.meta['EXTNAME'] = 'TARGETPHOT'
+                log.info('Writing {:,} objects to {}'.format(len(allout), outfile))
+                allout.write(outfile, overwrite=True)
+                
+        del zcat, allout, allzcat, allminicat
 
     # Build the tractorphot catalogs.
     if args.tractorphot:
@@ -665,7 +695,8 @@ def main():
 
         if args.potential:
             zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.specprod))
-            targetfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.specprod))
+            targetfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-minicat-{}.fits'.format(args.specprod))
+            #targetfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.specprod))
             racolumn, deccolumn = 'RA', 'DEC'
         else:
             zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.specprod))
