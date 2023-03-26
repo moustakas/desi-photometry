@@ -57,7 +57,7 @@ The VAC contains two basic kinds of files: targeting (*targetphot*) catalogs,
 and photometric or Tractor (*tractorphot*) catalogs, which we now describe in
 more detail.
 
-#### Targeting (*targetphot*) Catalogs
+### Targeting (*targetphot*) Catalogs
 
 In each DESI data release, the targeting catalogs used for DESI target selection
 are organized in a variety of files and locations and with a different data
@@ -72,7 +72,7 @@ The data model for each *targetphot* catalog is documented
 [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1),
 but with a handful of additional columns documented below.
 
-##### Fuji
+#### Fuji
 
 In Fuji, there are six *targetphot* catalogs, one for each
 [survey](https://data.desi.lbl.gov/doc/organization) in the EDR, as well as a
@@ -118,7 +118,7 @@ simple stack of all five catalogs:
   `TILEID` when retrieving the targeting information for specific targets
   (depending on how that information will be used, of course).
 
-##### Iron
+#### Iron
 
 In Iron, there are seven *targetphot* catalogs, five for the Commissioning and
 Survey Validation periods of the project (see the survey definitions
@@ -129,12 +129,12 @@ simple stack of all six catalogs:
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
 | observed-targets/targetphot-cmx-iron.fits | 4.39 MB | 4,146 | Commissioning Survey |
-| observed-targets/targetphot-special-iron.fits | 69.3 MB | 65,789 | Special targets |
-| observed-targets/targetphot-sv1-iron.fits | 759 MB | 720,525 | Survey Validation 1 |
-| observed-targets/targetphot-sv2-iron.fits | 137 MB | 130,473 | Survey Validation 2 |
+| observed-targets/targetphot-special-iron.fits | 177 MB | 168,328 | Special targets |
+| observed-targets/targetphot-sv1-iron.fits | 755 MB | 716,948 | Survey Validation 1 |
+| observed-targets/targetphot-sv2-iron.fits | 129 MB | 122,189 | Survey Validation 2 |
 | observed-targets/targetphot-sv3-iron.fits | 1.92 GB | 1,865,908 | Survey Validation 3 |
-| observed-targets/targetphot-main-iron.fits | 2.69 GB | 2,617,551 | Main Survey |
-| observed-targets/targetphot-iron.fits | 2.87 GB | 2,786,841 | Stack of the preceding 6 catalogs. |
+| observed-targets/targetphot-main-iron.fits | 22.6 GB | 22,019,411 | Main Survey |
+| observed-targets/targetphot-iron.fits | 25.6 GB | 24,896,930 | Stack of the preceding 6 catalogs. |
 
 **Note:**
 
@@ -147,7 +147,7 @@ simple stack of all six catalogs:
   *secondary* targets), in which case we populate "missing" columns with zeros
   or blank strings (depending on the data type of the column).
 
-##### Guadalupe
+#### Guadalupe
 
 In Guadalupe, there are just three *targetphot* catalogs based on the first two
 months of [Main Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey)
@@ -171,7 +171,7 @@ observations.
   *columns with zeros or blank strings (depending on the data type of the
   *column).
 
-#### Tractor (*tractorphot*) Catalogs
+### Tractor (*tractorphot*) Catalogs
 
 For each unique target in the `targetphot-fuji.fits` and
 `targetphot-guadalupe.fits` files, we retrieve [Tractor catalog
@@ -215,6 +215,7 @@ as well as some additional details regarding the files in the following table:
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
 | Fuji | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 3.86 GB | 1,957,907 |
+| iron | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-iron.fits | 104 | 43.2 GB | 21,896,601 |
 | Guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 5.14 GB | 2,603,942 |
 
 **Note:**
@@ -228,7 +229,7 @@ as well as some additional details regarding the files in the following table:
 * In Guadalupe, the number of observed targets with missing LS/DR9 photometry is
   just 626.
 
-#### Potential Targets
+### Potential Targets
 
 When assigning fibers to targets, DESI *fiber-assignment* also records the
 *potential* targets, namely the set of targets *which could have been observed*
@@ -238,7 +239,7 @@ As part of these VACs, we include `targetphot` and `tractorphot` catalogs for
 all these potential targets as documented above and as summarized in the tables
 below:
 
-##### Fuji (*targetphot*)
+#### Fuji (*targetphot*)
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
@@ -249,7 +250,18 @@ below:
 | potential-targets/targetphot-potential-sv3-fuji.fits | 11 GB | 10,684,616 | Survey Validation 3 |
 | potential-targets/targetphot-potential-fuji.fits | 16.9 GB | 16,460,561 | Stack of the preceding 5 catalogs. |
 
-##### Guadalupe (*targetphot*)
+#### Iron (*targetphot*)
+
+| File Name | File Size | Number of Targets | Notes |
+|-----------|:---------:|:-----------------:|-------|
+| potential-targets/targetphot-potential-cmx-fuji.fits | 22.1 MB | 20,956 | Commissioning Survey |
+| potential-targets/targetphot-potential-special-fuji.fits | 378 MB | 358,817 | Special targets |
+| potential-targets/targetphot-potential-sv1-fuji.fits | 4.78 GB | 4,645,741 | Survey Validation 1 |
+| potential-targets/targetphot-potential-sv2-fuji.fits | 790 MB | 750,431 | Survey Validation 2 |
+| potential-targets/targetphot-potential-sv3-fuji.fits | 11 GB | 10,684,616 | Survey Validation 3 |
+| potential-targets/targetphot-potential-nside2-hp[0-9][0-9]-main-iron.fits | 137 GB | 133,235,021 | Main Survey |
+
+#### Guadalupe (*targetphot*)
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
@@ -257,11 +269,12 @@ below:
 | potential-targets/targetphot-potential-main-guadalupe.fits | 17.1 GB | 16,603,258 | Main Survey |
 | potential-targets/targetphot-potential-guadalupe.fits | 17.2 GB | 16,683,440 | Stack of the preceding 2 catalogs. |
 
-##### *tractorphot*
+#### Tractor (*tractorphot*) Catalogs
 
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
 | Fuji | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 11.9 GB | 6,031,271 |
+| iron | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-iron.fits | 59 | 82.4 GB | 41,779,045 |
 | Guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 31.1 GB | 15,758,409 |
 
 Reproducibility
