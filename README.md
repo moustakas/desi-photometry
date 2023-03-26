@@ -74,7 +74,7 @@ but with a handful of additional columns documented below.
 
 ##### Fuji
 
-In Fuji, there are five *targetphot* catalogs, one for each
+In Fuji, there are six *targetphot* catalogs, one for each
 [survey](https://data.desi.lbl.gov/doc/organization) in the EDR, as well as a
 simple stack of all five catalogs:
 
@@ -118,9 +118,40 @@ simple stack of all five catalogs:
   `TILEID` when retrieving the targeting information for specific targets
   (depending on how that information will be used, of course).
 
+##### Iron
+
+In Iron, there are seven *targetphot* catalogs, five for the Commissioning and
+Survey Validation periods of the project (see the survey definitions
+[here](https://data.desi.lbl.gov/doc/organization), one for the [Main
+Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey), and one which is a
+simple stack of all six catalogs:
+
+| File Name | File Size | Number of Targets | Notes |
+|-----------|:---------:|:-----------------:|-------|
+| observed-targets/targetphot-cmx-iron.fits | 4.39 MB | 4,146 | Commissioning Survey |
+| observed-targets/targetphot-special-iron.fits | 69.3 MB | 65,789 | Special targets |
+| observed-targets/targetphot-sv1-iron.fits | 759 MB | 720,525 | Survey Validation 1 |
+| observed-targets/targetphot-sv2-iron.fits | 137 MB | 130,473 | Survey Validation 2 |
+| observed-targets/targetphot-sv3-iron.fits | 1.92 GB | 1,865,908 | Survey Validation 3 |
+| observed-targets/targetphot-main-iron.fits | 2.69 GB | 2,617,551 | Main Survey |
+| observed-targets/targetphot-iron.fits | 2.87 GB | 2,786,841 | Stack of the preceding 6 catalogs. |
+
+**Note:**
+
+* The data model for these catalogs is defined
+  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1). In
+  addition, the merged catalog (`targetphot-guadalupe.fits`) contains a `SURVEY`
+  (`<U7`), `PROGRAM` (`<U6`), and `TILEID` (`np.int32`) column.
+
+* As for Fuji, some targets have partial or minimal targeting information (e.g.,
+  *secondary* targets), in which case we populate "missing" columns with zeros
+  or blank strings (depending on the data type of the column).
+
 ##### Guadalupe
 
-In Guadalupe, there are just two *targetphot* catalogs as well as a stack of these two catalogs:
+In Guadalupe, there are just three *targetphot* catalogs based on the first two
+months of [Main Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey)
+observations.
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
@@ -135,9 +166,10 @@ In Guadalupe, there are just two *targetphot* catalogs as well as a stack of the
   addition, the merged catalog (`targetphot-guadalupe.fits`) contains a `SURVEY`
   (`<U7`), `PROGRAM` (`<U6`), and `TILEID` (`np.int32`) column.
 
-* As for Fuji, some targets have partial or minimal targeting information (e.g.,
-  *secondary* targets), in which case we populate "missing" columns with zeros
-  or blank strings (depending on the data type of the column).
+* As for Fuji and Iron, some targets have partial or minimal targeting
+  *information (e.g., secondary* targets), in which case we populate "missing"
+  *columns with zeros or blank strings (depending on the data type of the
+  *column).
 
 #### Tractor (*tractorphot*) Catalogs
 
