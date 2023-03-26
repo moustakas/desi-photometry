@@ -13,12 +13,11 @@ This document describes the content and construction of [Legacy Surveys DR9
 (LS/DR9)](https://www.legacysurvey.org/dr9/description) value-added photometric
 catalogs for the following [DESI](https://desi.lbl.gov/) spectroscopic productions:
 
-* **Iron**, [DESI Data Release 1
-    (DESI/DR1)](https://data.desi.lbl.gov/public/dr1) (release date TBD);
-* **Guadalupe**, a supplemental dataset to [DESI Data Release 1
-(DESI/DR1)](https://data.desi.lbl.gov/public/dr1) (release date TBD); and
-* **Fuji**, which will be released publicly as part of the [DESI Early Data Release
-(DESI/EDR)](https://data.desi.lbl.gov/public/edr) in April 2023.
+* [DESI Early Data Release (EDR)](https://data.desi.lbl.gov/public/edr) (release date May 2023)
+  * **Fuji**
+* [DESI Data Release 1 (DR1)](https://data.desi.lbl.gov/public/dr1) (release date TBD)
+  * **Iron**
+  * **Guadalupe**
 
 In short, the delivered files include merged [DESI targeting
 catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
@@ -31,7 +30,7 @@ Getting Started Quickly
 -----------------------
 
 This [example
-notebook](https://github.com/moustakas/desi-photometry/blob/main/example.ipynb)
+notebook](https://github.com/moustakas/desi-photometry/blob/main/example-sv.ipynb)
 shows how to quickly grab targeting and Tractor photometry from the Fuji
 value-added catalog for a hypothetical set of observed targets. However, be sure
 to read the documentation below for all the details!
@@ -43,12 +42,14 @@ The LS/DR9 value-added catalogs (VACs) can be accessed at the following links:
 | Data Release | URL |
 |------------|-----|
 | Fuji (EDR) | [https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.0](https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.0) |
+| Iron (DR1) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/iron/v1.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/iron/v1.0) |
 | Guadalupe (DR1 supplement) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0) |
 
 > **For DESI Collaborators:** At NERSC, the catalogs can also be accessed at the
     following top-level directories:
   ```
   /global/cfs/cdirs/desi/public/edr/vac/lsdr9-photometry/fuji/v2.0
+  /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/iron/v1.0
   /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0
   ```
 

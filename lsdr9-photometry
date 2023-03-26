@@ -533,48 +533,60 @@ def main():
                 for ipix, pixel in enumerate(sorted(set(pixels))):
                     outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-nside{}-hp{:02d}-{}-{}.fits'.format(
                         args.nside_targetphot, pixel, survey, args.specprod))
-                
-                    Pix = np.where(pixel == pixels)[0]
-    
-                    mpargs = []
-                    zcat_pixel = []
-                    for tileid in T['TILEID'][Pix]:
-                        I = zcat_survey['TILEID'] == tileid
-                        zcat_pixel.append(zcat_survey[I])
-                        mpargs.append([zcat_survey[I], RACOLUMN, DECCOLUMN])
-                    zcat_pixel = vstack(zcat_pixel)
-        
-                    t0 = time.time()
-                    if args.mp > 1:
-                        with multiprocessing.Pool(args.mp) as P:
-                            out = P.map(_targetphot_one, mpargs)
+
+                    if False:
+                        print('Temporarily reading {}'.format(outfile))
+                        minicat.append(Table(fitsio.read(outfile, columns=['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])))
                     else:
-                        out = [targetphot_one(*mparg) for mparg in mpargs]
-                    log.info('Total time for gather_targetphot = {:.3f} min'.format((time.time()-t0)/60))
+                        Pix = np.where(pixel == pixels)[0]
+        
+                        mpargs = []
+                        zcat_pixel = []
+                        for tileid in T['TILEID'][Pix]:
+                            I = zcat_survey['TILEID'] == tileid
+                            zcat_pixel.append(zcat_survey[I])
+                            mpargs.append([zcat_survey[I], RACOLUMN, DECCOLUMN])
+                        zcat_pixel = vstack(zcat_pixel)
+            
+                        t0 = time.time()
+                        if args.mp > 1:
+                            with multiprocessing.Pool(args.mp) as P:
+                                out = P.map(_targetphot_one, mpargs)
+                        else:
+                            out = [targetphot_one(*mparg) for mparg in mpargs]
+                        log.info('Total time for gather_targetphot = {:.3f} min'.format((time.time()-t0)/60))
+    
+                        # stack, sort, and write out
+                        try:
+                            out = vstack(out)
+                            assert(np.all(out['TARGETID'] == zcat_pixel['TARGETID']))
+                        except:
+                            pdb.set_trace()
+    
+                        add_dependencies(out.meta)
+                        out.meta['SURVEY'] = (survey, 'survey name')
+                        out.meta['FILENSID'] = (args.nside_targetphot, 'HEALPix nside number')
+                        out.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
+                        out.meta['FILEHPIX'] = ('{:02d}'.format(pixel), 'HEALPix number')
+                        out.meta['EXTNAME'] = 'TARGETPHOT'
+                        log.info('Writing {:,} objects to {}'.format(len(out), outfile))
+                        out.write(outfile, overwrite=True)
+    
+                        minicat.append(out['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])#, 'RA', 'DEC']
 
-                    # stack, sort, and write out
-                    try:
-                        out = vstack(out)
-                        assert(np.all(out['TARGETID'] == zcat_pixel['TARGETID']))
-                    except:
-                        pdb.set_trace()
-
-                    add_dependencies(out.meta)
-                    out.meta['SURVEY'] = (survey, 'survey name')
-                    out.meta['FILENSID'] = (args.nside_targetphot, 'HEALPix nside number')
-                    out.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
-                    out.meta['FILEHPIX'] = ('{:02d}'.format(pixel), 'HEALPix number')
-                    out.meta['EXTNAME'] = 'TARGETPHOT'
-                    log.info('Writing {:,} objects to {}'.format(len(out), outfile))
-                    out.write(outfile, overwrite=True)
-
-                    minicat.append(out['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])#, 'RA', 'DEC']
-
+                print('Stacking minicat...')
                 minicat = vstack(minicat)
 
                 # we somehow get out of order...
-                srt = np.hstack([np.where(tid == minicat['TARGETID'])[0] for tid in zcat_survey['TARGETID']])
-                minicat = minicat[srt]
+                # https://stackoverflow.com/questions/68085572/sort-numpy-array-by-another-array
+                idx1 = np.argsort(zcat_survey['TARGETID'])
+                idx2 = np.argsort(minicat['TARGETID'])
+                idx1_inv = np.argsort(idx1)
+                minicat = minicat[idx2][idx1_inv]
+                
+                # so slow!!
+                #srt = np.hstack([np.where(tid == minicat['TARGETID'])[0] for tid in zcat_survey['TARGETID']])
+                #minicat = minicat[srt]
             else:
                 if args.potential:
                     outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}-{}.fits'.format(survey, args.specprod))
