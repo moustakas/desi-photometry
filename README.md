@@ -80,20 +80,21 @@ In each DESI data release, the targeting catalogs used for DESI target selection
 are organized in a variety of files and locations and with a different data
 model depending on the kind of target observed (e.g., *primary* versus
 *secondary* targets; see [Myers et
-al. 2022](https://arxiv.org/abs/2208.08518)). However,
-for some applications, it is convenient to have a merged targeting catalog for
-all targets and with a common data model, which is precisely what our VACs
-provide.
+al. 2022](https://arxiv.org/abs/2208.08518)). However, for some applications, it
+is convenient to have a targeting catalog for all targets and with a common data
+model, which is precisely what our VACs provide.
 
 The data model for each *targetphot* catalog is documented
 [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1),
-but with a handful of additional columns documented below.
+but with a handful of additional columns documented below the following tables.
 
 #### Fuji
 
-In Fuji, there are six *targetphot* catalogs, one for each
-[survey](https://data.desi.lbl.gov/doc/organization) in the EDR, as well as a
-simple stack of all five catalogs:
+In Fuji, there are six *targetphot* catalogs: five catalogs from the
+Commissioning and Survey Validation periods of the project (see the survey
+definitions [here](https://data.desi.lbl.gov/doc/organization)
+[survey](https://data.desi.lbl.gov/doc/organization); and one catalog which is a
+simple stack of the five individual catalogs:
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
@@ -106,11 +107,11 @@ simple stack of all five catalogs:
 
 #### Iron
 
-In Iron, there are seven *targetphot* catalogs, five for the Commissioning and
-Survey Validation periods of the project (see the survey definitions
-[here](https://data.desi.lbl.gov/doc/organization), one for the [Main
-Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey), and one which is a
-simple stack of all six catalogs:
+In Iron, there are seven *targetphot* catalogs: five from [Commissioning and
+Survey Validation](https://data.desi.lbl.gov/doc/organization); one from the
+first thirteen months of the [Main
+Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey); and one which is a
+stack of all six catalogs:
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
@@ -124,9 +125,9 @@ simple stack of all six catalogs:
 
 #### Guadalupe
 
-In Guadalupe, there are just three *targetphot* catalogs based on the first two
-months of [Main Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey)
-observations.
+In Guadalupe, there are two *targetphot* catalogs based on the first two months
+of the [Main Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey) and a
+stack of those two catalogs.
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
@@ -136,18 +137,19 @@ observations.
 
 **Note:**
 
-* In addition to the columns defined
-  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1),
-  these catalogs contain the targeting columns for *all* the possible surveys in
-  the EDR (making it easier for for the catalogs to be stacked or combined),
-  specifically: `CMX_TARGET` `DESI_TARGET`, `BGS_TARGET`, `MWS_TARGET`,
-  `SV1_DESI_TARGET`, `SV1_BGS_TARGET`, `SV1_MWS_TARGET`, `SV2_DESI_TARGET`,
-  `SV2_BGS_TARGET`, `SV2_MWS_TARGET`, `SV3_DESI_TARGET`, `SV3_BGS_TARGET`,
-  `SV3_MWS_TARGET`, `SCND_TARGET`, `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and
-  `SV3_SCND_TARGET` (all with a `numpy.int64` data type). In addition, the
-  merged catalog (`targetphot-fuji.fits`) contains `SURVEY` (`<U7`), `PROGRAM`
-  (`<U6`), and `TILEID` (`np.int32`) columns to make it unambiguous which
-  observation each row belongs to.
+* The base data model for all these catalogs is defined
+  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
+  but with the following additions: these catalogs contain the
+  targeting columns for *all* the possible surveys in the EDR (making it easier
+  for for the catalogs to be stacked or combined), specifically: `CMX_TARGET`
+  `DESI_TARGET`, `BGS_TARGET`, `MWS_TARGET`, `SV1_DESI_TARGET`,
+  `SV1_BGS_TARGET`, `SV1_MWS_TARGET`, `SV2_DESI_TARGET`, `SV2_BGS_TARGET`,
+  `SV2_MWS_TARGET`, `SV3_DESI_TARGET`, `SV3_BGS_TARGET`, `SV3_MWS_TARGET`,
+  `SCND_TARGET`, `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and `SV3_SCND_TARGET`
+  (all with a `numpy.int64` data type). In addition, the merged catalog
+  (`targetphot-fuji.fits`) contains `SURVEY` (`<U7`), `PROGRAM` (`<U6`), and
+  `TILEID` (`np.int32`) columns to make it unambiguous which observation each
+  row belongs to.
 
 * Some targets have partial or minimal targeting information (e.g., *secondary*
   targets). For these objects, we populate "missing" *targetphot* columns with
@@ -233,7 +235,8 @@ as well as some additional details regarding the files in the following table:
 
 ### Potential Targets
 
-When assigning fibers to targets, DESI *fiber-assignment* also records the
+When assigning fibers to targets, DESI [fiber
+assignment](https://data.desi.lbl.gov/public/doc/papers/#code) also records the
 *potential* targets, namely the set of targets *which could have been observed*
 by a given fiber (*including targets which end up being observed*).
 
