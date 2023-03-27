@@ -10,9 +10,9 @@ TBD tag (not released yet)
 iron-v1.0 (2023-03-27)
 ----------------------
 
-* Code and documentation for Iron v1.0 VACs [`PR #11`_].
+* Code and documentation for Iron v1.0 VACs [`PR #12`_].
   
-.. _`PR #11`: https://github.com/moustakas/desi-photometry/pull/11
+.. _`PR #12`: https://github.com/moustakas/desi-photometry/pull/12
 
 fujilupe-v2.0 (2023-02-12)
 --------------------------
