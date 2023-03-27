@@ -5,7 +5,7 @@ Change Log
 TBD tag (not released yet)
 --------------------------
 
-* 
+* No changes yet.
 
 iron-v1.0 (2023-03-27)
 ----------------------
@@ -27,4 +27,4 @@ fujilupe-v2.0 (2023-02-12)
 fujilupe-v1.0 (2022-08-22)
 --------------------------
 
-Original (v1.0) Fuji and Guadalupe VACs.
+* Original (v1.0) Fuji and Guadalupe VACs.
