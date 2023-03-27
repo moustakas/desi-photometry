@@ -1,11 +1,6 @@
 Legacy Surveys DR9 Photometric Catalogs for DESI Productions Fuji, Guadalupe, and Iron
 ======================================================================================
 
-DESI Value-Added Catalogs
-Iron (Data Release 1)
-Guadalupe (Data Release 1 Supplement)
-Fuji (Early Data Release)
-
 Table of Contents
 -----------------
 
@@ -20,7 +15,6 @@ Table of Contents
 [Contact & Contributors](#contact)  
 [Required Acknowledgment](#acknowledgment)  
 
-
 <a name="description"/>
 
 Description
@@ -28,13 +22,11 @@ Description
 
 This document describes the content and construction of [Legacy Surveys DR9
 (LS/DR9)](https://www.legacysurvey.org/dr9/description) value-added photometric
-catalogs for the following [DESI](https://desi.lbl.gov/) spectroscopic productions:
+catalogs for the following [DESI](https://desi.lbl.gov/) [data releases and
+spectroscopic productions](https://data.desi.lbl.gov/public/doc/releases) :
 
-* [DESI Early Data Release (EDR)](https://data.desi.lbl.gov/public/edr) (release date May 2023)
-  * **Fuji**
-* [DESI Data Release 1 (DR1)](https://data.desi.lbl.gov/public/dr1) (release date TBD)
-  * **Iron**
-  * **Guadalupe**
+* [DESI Early Data Release (EDR)](https://data.desi.lbl.gov/public/edr) Fuji Production (release date May 2023)
+* [DESI Data Release 1 (DR1)](https://data.desi.lbl.gov/public/dr1) Iron and Guadalupe Productions (release date TBD)
 
 In short, the delivered files include merged [DESI targeting
 catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
@@ -360,11 +352,12 @@ Required Acknowledgment
 Any use of the data products described in this document must include the text of
 the following acknowledgement verbatim:
 
-```
-DESI research is supported by the Director, Office of Science, Office of
-High Energy Physics of the U.S. Department of Energy under Contract
-No. DE–AC02–05CH11231, and by the National Energy Research Scientific Computing
-Center, a DOE Office of Science User Facility under the same contract;
+> This research used data obtained with the Dark Energy Spectroscopic Instrument
+(DESI). DESI construction and operations was managed by the Lawrence Berkeley
+National Laboratory. Funding for DESI was provided by the Director, Office of
+Science, Office of High Energy Physics of the U.S. Department of Energy under
+Contract No. DE–AC02–05CH11231, and by the [National Energy Research Scientific
+Computing Center, a DOE Office of Science User Facility under the same contract;
 additional support for DESI is provided by the U.S. National Science Foundation,
 Division of Astronomical Sciences under Contract No. AST-0950945 to the NSF’s
 National Optical-Infrared Astronomy Research Laboratory; the Science and
@@ -372,6 +365,7 @@ Technologies Facilities Council of the United Kingdom; the Gordon and Betty
 Moore Foundation; the Heising-Simons Foundation; the French Alternative Energies
 and Atomic Energy Commission (CEA); the National Council of Science and
 Technology of Mexico (CONACYT); the Ministry of Science and Innovation of Spain
-(MICINN), and by the DESI Member Institutions
-(https://www.desi.lbl.gov/collaborating-institutions).
-```
+(MICINN), and by the DESI Member Institutions:
+www.desi.lbl.gov/collaborating-institutions. The DESI collaboration is honored
+to be permitted to conduct scientific research on Iolkam Du’ag (Kitt Peak), a
+mountain with particular significance to the Tohono O’odham Nation.
