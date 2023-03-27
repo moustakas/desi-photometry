@@ -8,16 +8,17 @@ Fuji (Early Data Release)
 
 Table of Contents
 -----------------
-[Description](#description)
-[Getting Started Quickly](#gettingstarted)
-[Content, Organization, & Data Model](#content)
-[Targeting (*targetphot*) Catalogs](#observed-targetphot)
-[Tractor (*tractorphot*) Catalogs](#observed-tractorphot)
-[Potential Targets](#potential)
-[Reproducibility](#reproducibility)
-[Known Issues](#known)
-[Contact & Contributors](#contact)
-[Required Acknowledgment](#acknowledgment)
+
+[Description](#description)  
+[Getting Started Quickly](#gettingstarted)  
+[Content, Organization, & Data Model](#content)  
+[Targeting (*targetphot*) Catalogs](#observed-targetphot)  
+[Tractor (*tractorphot*) Catalogs](#observed-tractorphot)  
+[Potential Targets](#potential)  
+[Reproducibility](#reproducibility)  
+[Known Issues](#known)  
+[Contact & Contributors](#contact)  
+[Required Acknowledgment](#acknowledgment)  
 
 
 <a name="description"/>
