@@ -1,40 +1,54 @@
-Legacy Surveys DR9 Photometric Catalogs for DESI Productions Fuji and Guadalupe
-===============================================================================
+Legacy Surveys DR9 Photometric Catalogs for DESI Productions Fuji, Guadalupe, and Iron
+======================================================================================
 
-DESI Value-Added Catalogs
-Fuji (Early Data Release)
-Guadalupe (Data Release 1 Supplement)
+Table of Contents
+-----------------
 
-**Version: 2.0**
+* [Description](#description)  
+* [Getting Started Quickly](#gettingstarted)  
+* [Content, Organization, & Data Model](#content)  
+  * [Targeting (*targetphot*) Catalogs](#observed-targetphot)  
+  * [Tractor (*tractorphot*) Catalogs](#observed-tractorphot)  
+  * [Potential Targets](#potential)  
+* [Reproducibility](#reproducibility)  
+* [Known Issues](#known)  
+* [Contact & Contributors](#contact)  
+* [Required Acknowledgment](#acknowledgment)  
+
+<a name="description"/>
 
 Description
 -----------
 
 This document describes the content and construction of [Legacy Surveys DR9
 (LS/DR9)](https://www.legacysurvey.org/dr9/description) value-added photometric
-catalogs for the following [DESI](https://desi.lbl.gov/) spectroscopic productions:
+catalogs for the following [DESI](https://desi.lbl.gov/) [data releases and
+spectroscopic productions](https://data.desi.lbl.gov/public/doc/releases) :
 
-* **Fuji**, which will be released publicly as part of the [DESI Early Data Release
-(DESI/EDR)](https://data.desi.lbl.gov/public/edr) in early 2023 (exact date TBD); and
-* **Guadalupe**, a supplemental dataset to [DESI Data Release 1
-(DESI/DR1)](https://data.desi.lbl.gov/public/dr1) (release date TBD).
+* [DESI Early Data Release (EDR)](https://data.desi.lbl.gov/public/edr) **Fuji**
+  Production (release date May 2023)
+* [DESI Data Release 1 (DR1)](https://data.desi.lbl.gov/public/dr1) **Iron** and
+  **Guadalupe** Productions (release date TBD)
 
 In short, the delivered files include merged [DESI targeting
-catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
+catalogs](https://data.desi.lbl.gov/public/doc/releases/#targeting-data-releases)
 and [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS/DR9](https://www.legacysurvey.org/dr9/description) for *observed* and
-*potential* DESI targets (excluding sky fibers), for both the Fuji and Guadalupe
-productions.
+*potential* DESI targets (excluding sky fibers).
+
+<a name="gettingstarted"/>
 
 Getting Started Quickly
 -----------------------
 
 This [example
-notebook](https://github.com/moustakas/desi-photometry/blob/main/example.ipynb)
+notebook](https://nbviewer.org/github/moustakas/desi-photometry/blob/main/example-sv.ipynb)
 shows how to quickly grab targeting and Tractor photometry from the Fuji
 value-added catalog for a hypothetical set of observed targets. However, be sure
 to read the documentation below for all the details!
+
+<a name="content"/>
 
 Content, Organization, & Data Model
 -----------------------------------
@@ -43,12 +57,14 @@ The LS/DR9 value-added catalogs (VACs) can be accessed at the following links:
 | Data Release | URL |
 |------------|-----|
 | Fuji (EDR) | [https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.0](https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.0) |
+| Iron (DR1) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/iron/v1.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/iron/v1.0) |
 | Guadalupe (DR1 supplement) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0) |
 
 > **For DESI Collaborators:** At NERSC, the catalogs can also be accessed at the
     following top-level directories:
   ```
   /global/cfs/cdirs/desi/public/edr/vac/lsdr9-photometry/fuji/v2.0
+  /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/iron/v1.0
   /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0
   ```
 
@@ -56,29 +72,31 @@ The VAC contains two basic kinds of files: targeting (*targetphot*) catalogs,
 and photometric or Tractor (*tractorphot*) catalogs, which we now describe in
 more detail.
 
-#### Targeting (*targetphot*) Catalogs
+<a name="observed-targetphot"/>
+
+### Targeting (*targetphot*) Catalogs
 
 In each DESI data release, the targeting catalogs used for DESI target selection
 are organized in a variety of files and locations and with a different data
 model depending on the kind of target observed (e.g., *primary* versus
 *secondary* targets; see [Myers et
-al. 2022](https://arxiv.org/abs/2208.08518)). However,
-for some applications, it is convenient to have a merged targeting catalog for
-all targets and with a common data model, which is precisely what our VACs
-provide.
+al. 2022](https://arxiv.org/abs/2208.08518)). However, for some applications, it
+is convenient to have a targeting catalog for all targets and with a common data
+model, which is precisely what our VACs provide.
 
 The data model for each *targetphot* catalog is documented
 [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1),
-but with a handful of additional columns documented below.
+but with a handful of additional columns documented below the following tables.
 
-##### Fuji
+#### Fuji
 
-In Fuji, there are five *targetphot* catalogs, one for each
-[survey](https://data.desi.lbl.gov/doc/organization) in the EDR, as well as a
-simple stack of all five catalogs:
+In Fuji, there are six *targetphot* catalogs: five catalogs from the
+[Commissioning and Survey
+Validation](https://data.desi.lbl.gov/doc/organization) periods of the project,
+and one catalog which is a simple stack of the five individual catalogs:
 
-| File Name | File Size | Number of Targets | Notes |
-|-----------|:---------:|:-----------------:|-------|
+| File Name | File Size   | Number of Targets | Notes |
+|-----------|:-----------:|:-----------------:|-------|
 | observed-targets/targetphot-cmx-fuji.fits | 4.39 MB | 4,146 | Commissioning Survey |
 | observed-targets/targetphot-special-fuji.fits | 69.3 MB | 65,789 | Special targets |
 | observed-targets/targetphot-sv1-fuji.fits | 759 MB | 720,525 | Survey Validation 1 |
@@ -86,40 +104,29 @@ simple stack of all five catalogs:
 | observed-targets/targetphot-sv3-fuji.fits | 1.92 GB | 1,865,908 | Survey Validation 3 |
 | observed-targets/targetphot-fuji.fits | 2.87 GB | 2,786,841 | Stack of the preceding 5 catalogs. |
 
-**Note:**
+#### Iron
 
-* In addition to the columns defined
-  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1),
-  these catalogs contain the targeting columns for *all* the possible surveys in
-  the EDR (making it easier for for the catalogs to be stacked or combined),
-  specifically: `CMX_TARGET` `DESI_TARGET`, `BGS_TARGET`, `MWS_TARGET`,
-  `SV1_DESI_TARGET`, `SV1_BGS_TARGET`, `SV1_MWS_TARGET`, `SV2_DESI_TARGET`,
-  `SV2_BGS_TARGET`, `SV2_MWS_TARGET`, `SV3_DESI_TARGET`, `SV3_BGS_TARGET`,
-  `SV3_MWS_TARGET`, `SCND_TARGET`, `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and
-  `SV3_SCND_TARGET` (all with a `numpy.int64` data type). In addition, the
-  merged catalog (`targetphot-fuji.fits`) contains `SURVEY` (`<U7`), `PROGRAM`
-  (`<U6`), and `TILEID` (`np.int32`) columns to make it unambiguous which
-  observation each row belongs to.
+In Iron, there are seven *targetphot* catalogs: five based on [Commissioning and
+Survey Validation](https://data.desi.lbl.gov/doc/organization) observations; one
+from the first thirteen months of the [Main
+Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey); and one which is a
+stack of all six catalogs:
 
-* Some targets have partial or minimal targeting information (e.g., *secondary*
-  targets). For these objects, we populate "missing" *targetphot* columns with
-  zeros or blank strings (depending on the data type of the column). We
-  emphasize that the absence of this information doesn't mean the information
-  doesn't exist *somewhere*, just that it wasn't used for targeting.
+| File Name | File Size | Number of Targets | Notes |
+|-----------|:---------:|:-----------------:|-------|
+| observed-targets/targetphot-cmx-iron.fits | 4.39 MB | 4,146 | Commissioning Survey |
+| observed-targets/targetphot-special-iron.fits | 177 MB | 168,328 | Special targets |
+| observed-targets/targetphot-sv1-iron.fits | 755 MB | 716,948 | Survey Validation 1 |
+| observed-targets/targetphot-sv2-iron.fits | 129 MB | 122,189 | Survey Validation 2 |
+| observed-targets/targetphot-sv3-iron.fits | 1.92 GB | 1,865,908 | Survey Validation 3 |
+| observed-targets/targetphot-main-iron.fits | 22.6 GB | 22,019,411 | Main Survey |
+| observed-targets/targetphot-iron.fits | 25.6 GB | 24,896,930 | Stack of the preceding 6 catalogs. |
 
-* In general, the same object can appear in two different surveys but *with
-  different targeting information* (particularly fuji). For example, an object
-  may be a *primary* target in one survey but a *secondary* target in another
-  survey. Moreover, even within a given survey, an object can appear on two
-  different tiles with different targeting information (e.g., the same object
-  may be a bright-time target on one tile and a dark-time target on another
-  tile). Consequently, we recommend considering `TARGETID`, `SURVEY`, *and*
-  `TILEID` when retrieving the targeting information for specific targets
-  (depending on how that information will be used, of course).
+#### Guadalupe
 
-##### Guadalupe
-
-In Guadalupe, there are just two *targetphot* catalogs as well as a stack of these two catalogs:
+In Guadalupe, there are three *targetphot* catalogs based on the first two months
+of the [Main Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey) and a
+stack of those two catalogs.
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
@@ -129,19 +136,42 @@ In Guadalupe, there are just two *targetphot* catalogs as well as a stack of the
 
 **Note:**
 
-* The data model for these catalogs is defined
-  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1). In
-  addition, the merged catalog (`targetphot-guadalupe.fits`) contains a `SURVEY`
-  (`<U7`), `PROGRAM` (`<U6`), and `TILEID` (`np.int32`) column.
+* The base data model for all these catalogs is defined
+  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1),
+  but with the following additions: these catalogs contain the targeting columns
+  for *all* the possible surveys in the EDR (making it easier for for the
+  catalogs to be stacked or combined), specifically: `CMX_TARGET` `DESI_TARGET`,
+  `BGS_TARGET`, `MWS_TARGET`, `SV1_DESI_TARGET`, `SV1_BGS_TARGET`,
+  `SV1_MWS_TARGET`, `SV2_DESI_TARGET`, `SV2_BGS_TARGET`, `SV2_MWS_TARGET`,
+  `SV3_DESI_TARGET`, `SV3_BGS_TARGET`, `SV3_MWS_TARGET`, `SCND_TARGET`,
+  `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and `SV3_SCND_TARGET` (all with a
+  `numpy.int64` data type). In addition, the survey-stacked catalogs contain
+  `SURVEY` (`<U7`), `PROGRAM` (`<U6`), and `TILEID` (`np.int32`) columns to make
+  it unambiguous which observation each row belongs to.
 
-* As for Fuji, some targets have partial or minimal targeting information (e.g.,
-  *secondary* targets), in which case we populate "missing" columns with zeros
-  or blank strings (depending on the data type of the column).
+* Some targets have partial or minimal targeting information (e.g., *secondary*
+  targets). For these objects, we populate "missing" *targetphot* columns with
+  zeros or blank strings (depending on the data type of the column). We
+  emphasize that the absence of this information doesn't mean the information
+  doesn't exist *somewhere*, just that it wasn't used for targeting.
 
-#### Tractor (*tractorphot*) Catalogs
+* In general, the same object can appear in two different surveys but *with
+  different targeting information* (particularly in the Survey Validation
+  catalogs). For example, an object may be a *primary* target in one survey but
+  a *secondary* target in another survey. Moreover, even within a given survey,
+  an object can appear on two different tiles with different targeting
+  information (e.g., the same object may be a bright-time target on one tile and
+  a dark-time target on another tile). Consequently, we recommend considering
+  `TARGETID`, `SURVEY`, *and* `TILEID` when retrieving the targeting information
+  for specific targets (depending on how that information will be used, of
+  course).
 
-For each unique target in the `targetphot-fuji.fits` and
-`targetphot-guadalupe.fits` files, we retrieve [Tractor catalog
+<a name="observed-tractorphot"/>
+
+### Tractor (*tractorphot*) Catalogs
+
+For each unique target in the [targetphot](#observed-targetphot) catalogs, we
+retrieve [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS/DR9](https://www.legacysurvey.org/dr9/description). These catalogs are
 "value-added" compared to the information in the [official DESI/EDR targeting
@@ -173,7 +203,7 @@ it easier to cross-reference with the DESI redshift catalogs: `TARGETID`
 
 Now, because the `tractorphot` catalogs can become prohibitively large, we
 divide them into *nested* (not ring; see [this *healpy*
-tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf))) `nside=4`
+tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf)) `nside=4`
 [healpixels](https://healpy.readthedocs.io/en/latest/) in a dedicated
 subdirectory. (One `nside=4` healpixel corresponds to roughly 14.7 sq. degrees
 on the sky.) We summarize their location (relative to the top-level directory)
@@ -182,6 +212,7 @@ as well as some additional details regarding the files in the following table:
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
 | Fuji | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 3.86 GB | 1,957,907 |
+| Iron | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-iron.fits | 104 | 43.2 GB | 21,896,601 |
 | Guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 5.14 GB | 2,603,942 |
 
 **Note:**
@@ -192,12 +223,18 @@ as well as some additional details regarding the files in the following table:
   objects have no LS/DR9 source within 1 arcsec of the targeted position and
   therefore do not exist in any of the Fuji *tractorphot* files.
 
+* In Iron, the number of observed targets with missing LS/DR9 photometry is
+  338,142.
+
 * In Guadalupe, the number of observed targets with missing LS/DR9 photometry is
   just 626.
 
-#### Potential Targets
+<a name="potential"/>
 
-When assigning fibers to targets, DESI *fiber-assignment* also records the
+### Potential Targets
+
+When assigning fibers to targets, DESI [fiber
+assignment](https://data.desi.lbl.gov/public/doc/papers/#code) also records the
 *potential* targets, namely the set of targets *which could have been observed*
 by a given fiber (*including targets which end up being observed*).
 
@@ -205,7 +242,7 @@ As part of these VACs, we include `targetphot` and `tractorphot` catalogs for
 all these potential targets as documented above and as summarized in the tables
 below:
 
-##### Fuji (*targetphot*)
+#### Fuji (*targetphot*)
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
@@ -216,7 +253,18 @@ below:
 | potential-targets/targetphot-potential-sv3-fuji.fits | 11 GB | 10,684,616 | Survey Validation 3 |
 | potential-targets/targetphot-potential-fuji.fits | 16.9 GB | 16,460,561 | Stack of the preceding 5 catalogs. |
 
-##### Guadalupe (*targetphot*)
+#### Iron (*targetphot*)
+
+| File Name | File Size | Number of Targets | Notes |
+|-----------|:---------:|:-----------------:|-------|
+| potential-targets/targetphot-potential-cmx-fuji.fits | 22.1 MB | 20,956 | Commissioning Survey |
+| potential-targets/targetphot-potential-special-fuji.fits | 378 MB | 358,817 | Special targets |
+| potential-targets/targetphot-potential-sv1-fuji.fits | 4.78 GB | 4,645,741 | Survey Validation 1 |
+| potential-targets/targetphot-potential-sv2-fuji.fits | 790 MB | 750,431 | Survey Validation 2 |
+| potential-targets/targetphot-potential-sv3-fuji.fits | 11 GB | 10,684,616 | Survey Validation 3 |
+| potential-targets/targetphot-potential-nside2-hp[0-9][0-9]-main-iron.fits | 137 GB | 133,235,021 | Main Survey |
+
+#### Guadalupe (*targetphot*)
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
@@ -224,51 +272,66 @@ below:
 | potential-targets/targetphot-potential-main-guadalupe.fits | 17.1 GB | 16,603,258 | Main Survey |
 | potential-targets/targetphot-potential-guadalupe.fits | 17.2 GB | 16,683,440 | Stack of the preceding 2 catalogs. |
 
-##### *tractorphot*
+#### Tractor (*tractorphot*) Catalogs
 
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
 | Fuji | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 11.9 GB | 6,031,271 |
+| Iron | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-iron.fits | 104 | 141 GB | 71,303,690 |
 | Guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 31.1 GB | 15,758,409 |
+
+<a name="reproducibility"/>
 
 Reproducibility
 ---------------
 
-DESI collaborators (or others with all the necessary underlying files and
-software dependencies) can reproduce either of the VACs presented here by
-invoking the following commands at [NERSC](https://nersc.gov/) (illustrated here
-just for Fuji).
+DESI collaborators (or others with all the necessary underlying files, software
+dependencies, and access to [NERSC](https://nersc.gov/)) can reproduce the VACs
+presented here using the following example instructions (illustrated here just
+for Fuji).
 
-1. First, set up your software environment:
+1. First, clone this repository:
 ```bash
-source /global/common/software/desi/desi_environment.sh 23.1
-module unload desispec
-module load desispec/0.56.4
+cd /path/to/code
 git clone https://github.com/moustakas/desi-photometry.git
-cd desi-photometry && git checkout tags/v2.0 && cd ..
+cd desi-photometry && git checkout tags/iron-v1.0 && cd ..
 ```
 
-2. Next, set up the `perlmutter` interactive node to run the code:
+2. Next, edit the following [Perlmutter Slurm
+script](https://docs.nersc.gov/systems/perlmutter) with your specific paths in order to
+gather targeting and Tractor photometry for both *observed* and *potential* targets:
 ```bash
-salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
+#! /bin/bash
+#SBATCH -A desi
+#SBATCH -C cpu
+#SBATCH -o /path/to/logfile/fuji.log.%j
+#SBATCH -q regular
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -t 04:00:00
+
+source /global/common/software/desi/desi_environment.sh 23.1
+module swap desispec/0.57.0
+
+time srun -n 1 -c 128 /path/to/code/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot
+time srun -n 1 -c 128 /path/to/code/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot --potential
 ```
 
-3. Next, gather targeting and Tractor photometry for *observed* targets:
+3. Finally, submit the job to the queue with:
 ```bash
-time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
-  -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot
+sbatch /path/to/script.slurm
 ```
 
-4. Finally gather targeting and Tractor photometry for *potential* targets (you may want to start another interactive node):
-```bash
-time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
-  -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot --potential
-```
+<a name="known"/>
 
 Known Issues
 ------------
 
-None currently known.
+No significant issues are currently known, but please feel free to review the
+[open issues](https://github.com/moustakas/desi-photometry/issues) for possible
+future changes.
+
+<a name="contact"/>
 
 Contact & Contributors
 ----------------------
@@ -293,17 +356,22 @@ from the following individuals:
 * Anand Raichoor (Lawrence Berkeley National Lab)
 * Benjamin Weaver (NSF's NOIRLab)
 
-Required Acknowledgement
-------------------------
+<a name="acknowledgment"/>
+
+Required Acknowledgment
+-----------------------
 
 Any use of the data products described in this document must include the text of
-the following acknowledgement verbatim:
+the following
+[acknowledgement](https://data.desi.lbl.gov/public/doc/acknowledgements)
+verbatim:
 
-```
-DESI research is supported by the Director, Office of Science, Office of
-High Energy Physics of the U.S. Department of Energy under Contract
-No. DE–AC02–05CH11231, and by the National Energy Research Scientific Computing
-Center, a DOE Office of Science User Facility under the same contract;
+> This research used data obtained with the Dark Energy Spectroscopic Instrument
+(DESI). DESI construction and operations was managed by the Lawrence Berkeley
+National Laboratory. Funding for DESI was provided by the Director, Office of
+Science, Office of High Energy Physics of the U.S. Department of Energy under
+Contract No. DE–AC02–05CH11231, and by the National Energy Research Scientific
+Computing Center, a DOE Office of Science User Facility under the same contract;
 additional support for DESI is provided by the U.S. National Science Foundation,
 Division of Astronomical Sciences under Contract No. AST-0950945 to the NSF’s
 National Optical-Infrared Astronomy Research Laboratory; the Science and
@@ -311,6 +379,7 @@ Technologies Facilities Council of the United Kingdom; the Gordon and Betty
 Moore Foundation; the Heising-Simons Foundation; the French Alternative Energies
 and Atomic Energy Commission (CEA); the National Council of Science and
 Technology of Mexico (CONACYT); the Ministry of Science and Innovation of Spain
-(MICINN), and by the DESI Member Institutions
-(https://www.desi.lbl.gov/collaborating-institutions).
-```
+(MICINN), and by the DESI Member Institutions:
+www.desi.lbl.gov/collaborating-institutions. The DESI collaboration is honored
+to be permitted to conduct scientific research on Iolkam Du’ag (Kitt Peak), a
+mountain with particular significance to the Tohono O’odham Nation.
