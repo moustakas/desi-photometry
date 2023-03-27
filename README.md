@@ -287,16 +287,18 @@ Reproducibility
 
 DESI collaborators (or others with all the necessary underlying files, software
 dependencies, and access to [NERSC](https://nersc.gov/)) can reproduce the VACs
-presented here using the example instructions (illustrated here just for Fuji).
+presented here using the following example instructions (illustrated here just
+for Fuji).
 
 1. First, clone this repository:
 ```bash
+cd /path/to/code
 git clone https://github.com/moustakas/desi-photometry.git
 cd desi-photometry && git checkout tags/iron-v1.0 && cd ..
 ```
 
 2. Next, edit the following [Perlmutter Slurm
-script](https://docs.nersc.gov/systems/perlmutter) with your specific paths to
+script](https://docs.nersc.gov/systems/perlmutter) with your specific paths in order to
 gather targeting and Tractor photometry for both *observed* and *potential* targets:
 ```bash
 #! /bin/bash
@@ -311,11 +313,11 @@ gather targeting and Tractor photometry for both *observed* and *potential* targ
 source /global/common/software/desi/desi_environment.sh 23.1
 module swap desispec/0.57.0
 
-time srun -n 1 -c 128 /path/to/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod fuji --mp 128 --targetphot --tractorphot
-time srun -n 1 -c 128 /path/to/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod fuji --mp 128 --targetphot --tractorphot --potential
+time srun -n 1 -c 128 /path/to/code/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot
+time srun -n 1 -c 128 /path/to/code/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot --potential
 ```
 
-3. Finally, submit the job to the queue with
+3. Finally, submit the job to the queue with:
 ```bash
 sbatch /path/to/script.slurm
 ```
