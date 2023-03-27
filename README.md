@@ -289,15 +289,15 @@ DESI collaborators (or others with all the necessary underlying files, software
 dependencies, and access to [NERSC](https://nersc.gov/)) can reproduce the VACs
 presented here using the example instructions (illustrated here just for Fuji).
 
-1. First, clone this repository
+1. First, clone this repository:
 ```bash
 git clone https://github.com/moustakas/desi-photometry.git
 cd desi-photometry && git checkout tags/iron-v1.0 && cd ..
 ```
 
 2. Next, edit the following [Perlmutter Slurm
-script](https://docs.nersc.gov/systems/perlmutter) with your specific paths:
-
+script](https://docs.nersc.gov/systems/perlmutter) with your specific paths to
+gather targeting and Tractor photometry for both *observed* and *potential* targets:
 ```bash
 #! /bin/bash
 #SBATCH -A desi
@@ -315,33 +315,19 @@ time srun -n 1 -c 128 /path/to/desi-photometry/lsdr9-photometry --reduxdir ${DES
 time srun -n 1 -c 128 /path/to/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod fuji --mp 128 --targetphot --tractorphot --potential
 ```
 
-# sbatch /pscratch/sd/i/ioannis/lsdr9/iron/ancillary/iron.slurm
-
-
-2. Next, set up the `perlmutter` interactive node to run the code:
+3. Finally, submit the job to the queue with
 ```bash
-salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive -L SCRATCH,cfs
+sbatch /path/to/script.slurm
 ```
 
-3. Next, gather targeting and Tractor photometry for *observed* targets:
-```bash
-time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
-  -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot
-```
-
-4. Finally gather targeting and Tractor photometry for *potential* targets (you may want to start another interactive node):
-```bash
-time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
-  -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot --potential
-```
 <a name="known"/>
 
 Known Issues
 ------------
 
-None currently known but please review the [open
-issues](https://github.com/moustakas/desi-photometry/issues) for possible future
-changes.
+No significant issues are currently known, but please feel free to review the
+[open issues](https://github.com/moustakas/desi-photometry/issues) for possible
+future changes.
 
 <a name="contact"/>
 
