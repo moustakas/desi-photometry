@@ -91,13 +91,12 @@ but with a handful of additional columns documented below the following tables.
 #### Fuji
 
 In Fuji, there are six *targetphot* catalogs: five catalogs from the
-Commissioning and Survey Validation periods of the project (see the survey
-definitions [here](https://data.desi.lbl.gov/doc/organization)
-[survey](https://data.desi.lbl.gov/doc/organization); and one catalog which is a
-simple stack of the five individual catalogs:
+[Commissioning and Survey
+Validation](https://data.desi.lbl.gov/doc/organization) periods of the project,
+and one catalog which is a simple stack of the five individual catalogs:
 
-| File Name | File Size | Number of Targets | Notes |
-|-----------|:---------:|:-----------------:|-------|
+| File Name | File Size   | Number of Targets | Notes |
+|-----------|:-----------:|:-----------------:|-------|
 | observed-targets/targetphot-cmx-fuji.fits | 4.39 MB | 4,146 | Commissioning Survey |
 | observed-targets/targetphot-special-fuji.fits | 69.3 MB | 65,789 | Special targets |
 | observed-targets/targetphot-sv1-fuji.fits | 759 MB | 720,525 | Survey Validation 1 |
@@ -107,9 +106,9 @@ simple stack of the five individual catalogs:
 
 #### Iron
 
-In Iron, there are seven *targetphot* catalogs: five from [Commissioning and
-Survey Validation](https://data.desi.lbl.gov/doc/organization); one from the
-first thirteen months of the [Main
+In Iron, there are seven *targetphot* catalogs: five based on [Commissioning and
+Survey Validation](https://data.desi.lbl.gov/doc/organization) observations; one
+from the first thirteen months of the [Main
 Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey); and one which is a
 stack of all six catalogs:
 
@@ -125,7 +124,7 @@ stack of all six catalogs:
 
 #### Guadalupe
 
-In Guadalupe, there are two *targetphot* catalogs based on the first two months
+In Guadalupe, there are three *targetphot* catalogs based on the first two months
 of the [Main Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey) and a
 stack of those two catalogs.
 
@@ -138,18 +137,17 @@ stack of those two catalogs.
 **Note:**
 
 * The base data model for all these catalogs is defined
-  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
-  but with the following additions: these catalogs contain the
-  targeting columns for *all* the possible surveys in the EDR (making it easier
-  for for the catalogs to be stacked or combined), specifically: `CMX_TARGET`
-  `DESI_TARGET`, `BGS_TARGET`, `MWS_TARGET`, `SV1_DESI_TARGET`,
-  `SV1_BGS_TARGET`, `SV1_MWS_TARGET`, `SV2_DESI_TARGET`, `SV2_BGS_TARGET`,
-  `SV2_MWS_TARGET`, `SV3_DESI_TARGET`, `SV3_BGS_TARGET`, `SV3_MWS_TARGET`,
-  `SCND_TARGET`, `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and `SV3_SCND_TARGET`
-  (all with a `numpy.int64` data type). In addition, the merged catalog
-  (`targetphot-fuji.fits`) contains `SURVEY` (`<U7`), `PROGRAM` (`<U6`), and
-  `TILEID` (`np.int32`) columns to make it unambiguous which observation each
-  row belongs to.
+  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1),
+  but with the following additions: these catalogs contain the targeting columns
+  for *all* the possible surveys in the EDR (making it easier for for the
+  catalogs to be stacked or combined), specifically: `CMX_TARGET` `DESI_TARGET`,
+  `BGS_TARGET`, `MWS_TARGET`, `SV1_DESI_TARGET`, `SV1_BGS_TARGET`,
+  `SV1_MWS_TARGET`, `SV2_DESI_TARGET`, `SV2_BGS_TARGET`, `SV2_MWS_TARGET`,
+  `SV3_DESI_TARGET`, `SV3_BGS_TARGET`, `SV3_MWS_TARGET`, `SCND_TARGET`,
+  `SV1_SCND_TARGET`, `SV2_SCND_TARGET`, and `SV3_SCND_TARGET` (all with a
+  `numpy.int64` data type). In addition, the survey-stacked catalogs contain
+  `SURVEY` (`<U7`), `PROGRAM` (`<U6`), and `TILEID` (`np.int32`) columns to make
+  it unambiguous which observation each row belongs to.
 
 * Some targets have partial or minimal targeting information (e.g., *secondary*
   targets). For these objects, we populate "missing" *targetphot* columns with
@@ -172,8 +170,8 @@ stack of those two catalogs.
 
 ### Tractor (*tractorphot*) Catalogs
 
-For each unique target in the `targetphot-fuji.fits` and
-`targetphot-guadalupe.fits` files, we retrieve [Tractor catalog
+For each unique target in the [targetphot](#observed-targetphot) catalogs, we
+retrieve [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS/DR9](https://www.legacysurvey.org/dr9/description). These catalogs are
 "value-added" compared to the information in the [official DESI/EDR targeting
@@ -205,7 +203,7 @@ it easier to cross-reference with the DESI redshift catalogs: `TARGETID`
 
 Now, because the `tractorphot` catalogs can become prohibitively large, we
 divide them into *nested* (not ring; see [this *healpy*
-tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf))) `nside=4`
+tutorial](https://healpix.jpl.nasa.gov/pdf/intro.pdf)) `nside=4`
 [healpixels](https://healpy.readthedocs.io/en/latest/) in a dedicated
 subdirectory. (One `nside=4` healpixel corresponds to roughly 14.7 sq. degrees
 on the sky.) We summarize their location (relative to the top-level directory)
@@ -287,19 +285,38 @@ below:
 Reproducibility
 ---------------
 
-DESI collaborators (or others with all the necessary underlying files and
-software dependencies) can reproduce either of the VACs presented here by
-invoking the following commands at [NERSC](https://nersc.gov/) (illustrated here
-just for Fuji).
+DESI collaborators (or others with all the necessary underlying files, software
+dependencies, and access to [NERSC](https://nersc.gov/)) can reproduce the VACs
+presented here using the example instructions (illustrated here just for Fuji).
 
-1. First, set up your software environment:
+1. First, clone this repository
 ```bash
-source /global/common/software/desi/desi_environment.sh 23.1
-module unload desispec
-module load desispec/0.56.4
 git clone https://github.com/moustakas/desi-photometry.git
-cd desi-photometry && git checkout tags/v2.0 && cd ..
+cd desi-photometry && git checkout tags/iron-v1.0 && cd ..
 ```
+
+2. Next, edit the following [Perlmutter Slurm
+script](https://docs.nersc.gov/systems/perlmutter) with your specific paths:
+
+```bash
+#! /bin/bash
+#SBATCH -A desi
+#SBATCH -C cpu
+#SBATCH -o /path/to/logfile/fuji.log.%j
+#SBATCH -q regular
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -t 04:00:00
+
+source /global/common/software/desi/desi_environment.sh 23.1
+module swap desispec/0.57.0
+
+time srun -n 1 -c 128 /path/to/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod fuji --mp 128 --targetphot --tractorphot
+time srun -n 1 -c 128 /path/to/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod fuji --mp 128 --targetphot --tractorphot --potential
+```
+
+# sbatch /pscratch/sd/i/ioannis/lsdr9/iron/ancillary/iron.slurm
+
 
 2. Next, set up the `perlmutter` interactive node to run the code:
 ```bash
@@ -322,7 +339,9 @@ time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/s
 Known Issues
 ------------
 
-None currently known.
+None currently known but please review the [open
+issues](https://github.com/moustakas/desi-photometry/issues) for possible future
+changes.
 
 <a name="contact"/>
 
