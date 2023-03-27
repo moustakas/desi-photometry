@@ -1,4 +1,4 @@
-Legacy Surveys DR9 Photometric Catalogs for DESI Productions Iron, Guadalupe, and Fuji
+Legacy Surveys DR9 Photometric Catalogs for DESI Productions Fuji, Guadalupe, and Iron
 ======================================================================================
 
 DESI Value-Added Catalogs
@@ -6,6 +6,21 @@ Iron (Data Release 1)
 Guadalupe (Data Release 1 Supplement)
 Fuji (Early Data Release)
 
+Table of Contents
+-----------------
+[Description](#description)
+[Getting Started Quickly](#gettingstarted)
+[Content, Organization, & Data Model](#content)
+[Targeting (*targetphot*) Catalogs](#observed-targetphot)
+[Tractor (*tractorphot*) Catalogs](#observed-tractorphot)
+[Potential Targets](#potential)
+[Reproducibility](#reproducibility)
+[Known Issues](#known)
+[Contact & Contributors](#contact)
+[Required Acknowledgment](#acknowledgment)
+
+
+<a name="description"/>
 Description
 -----------
 
@@ -26,6 +41,7 @@ photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS/DR9](https://www.legacysurvey.org/dr9/description) for *observed* and
 *potential* DESI targets (excluding sky fibers).
 
+<a name="gettingstarted"/>
 Getting Started Quickly
 -----------------------
 
@@ -35,6 +51,7 @@ shows how to quickly grab targeting and Tractor photometry from the Fuji
 value-added catalog for a hypothetical set of observed targets. However, be sure
 to read the documentation below for all the details!
 
+<a name="content"/>
 Content, Organization, & Data Model
 -----------------------------------
 
@@ -57,6 +74,7 @@ The VAC contains two basic kinds of files: targeting (*targetphot*) catalogs,
 and photometric or Tractor (*tractorphot*) catalogs, which we now describe in
 more detail.
 
+<a name="observed-targetphot"/>
 ### Targeting (*targetphot*) Catalogs
 
 In each DESI data release, the targeting catalogs used for DESI target selection
@@ -87,6 +105,36 @@ simple stack of all five catalogs:
 | observed-targets/targetphot-sv3-fuji.fits | 1.92 GB | 1,865,908 | Survey Validation 3 |
 | observed-targets/targetphot-fuji.fits | 2.87 GB | 2,786,841 | Stack of the preceding 5 catalogs. |
 
+#### Iron
+
+In Iron, there are seven *targetphot* catalogs, five for the Commissioning and
+Survey Validation periods of the project (see the survey definitions
+[here](https://data.desi.lbl.gov/doc/organization), one for the [Main
+Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey), and one which is a
+simple stack of all six catalogs:
+
+| File Name | File Size | Number of Targets | Notes |
+|-----------|:---------:|:-----------------:|-------|
+| observed-targets/targetphot-cmx-iron.fits | 4.39 MB | 4,146 | Commissioning Survey |
+| observed-targets/targetphot-special-iron.fits | 177 MB | 168,328 | Special targets |
+| observed-targets/targetphot-sv1-iron.fits | 755 MB | 716,948 | Survey Validation 1 |
+| observed-targets/targetphot-sv2-iron.fits | 129 MB | 122,189 | Survey Validation 2 |
+| observed-targets/targetphot-sv3-iron.fits | 1.92 GB | 1,865,908 | Survey Validation 3 |
+| observed-targets/targetphot-main-iron.fits | 22.6 GB | 22,019,411 | Main Survey |
+| observed-targets/targetphot-iron.fits | 25.6 GB | 24,896,930 | Stack of the preceding 6 catalogs. |
+
+#### Guadalupe
+
+In Guadalupe, there are just three *targetphot* catalogs based on the first two
+months of [Main Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey)
+observations.
+
+| File Name | File Size | Number of Targets | Notes |
+|-----------|:---------:|:-----------------:|-------|
+| observed-targets/targetphot-special-guadalupe.fits | 17.1 MB | 16,248 | Special targets |
+| observed-targets/targetphot-main-guadalupe.fits | 2.69 GB | 2,617,551 | Main Survey |
+| observed-targets/targetphot-guadalupe.fits | 2.71 GB | 2,633,799 | Stack of the preceding 2 catalogs. |
+
 **Note:**
 
 * In addition to the columns defined
@@ -109,68 +157,17 @@ simple stack of all five catalogs:
   doesn't exist *somewhere*, just that it wasn't used for targeting.
 
 * In general, the same object can appear in two different surveys but *with
-  different targeting information* (particularly fuji). For example, an object
-  may be a *primary* target in one survey but a *secondary* target in another
-  survey. Moreover, even within a given survey, an object can appear on two
-  different tiles with different targeting information (e.g., the same object
-  may be a bright-time target on one tile and a dark-time target on another
-  tile). Consequently, we recommend considering `TARGETID`, `SURVEY`, *and*
-  `TILEID` when retrieving the targeting information for specific targets
-  (depending on how that information will be used, of course).
+  different targeting information* (particularly in the Survey Validation
+  catalogs). For example, an object may be a *primary* target in one survey but
+  a *secondary* target in another survey. Moreover, even within a given survey,
+  an object can appear on two different tiles with different targeting
+  information (e.g., the same object may be a bright-time target on one tile and
+  a dark-time target on another tile). Consequently, we recommend considering
+  `TARGETID`, `SURVEY`, *and* `TILEID` when retrieving the targeting information
+  for specific targets (depending on how that information will be used, of
+  course).
 
-#### Iron
-
-In Iron, there are seven *targetphot* catalogs, five for the Commissioning and
-Survey Validation periods of the project (see the survey definitions
-[here](https://data.desi.lbl.gov/doc/organization), one for the [Main
-Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey), and one which is a
-simple stack of all six catalogs:
-
-| File Name | File Size | Number of Targets | Notes |
-|-----------|:---------:|:-----------------:|-------|
-| observed-targets/targetphot-cmx-iron.fits | 4.39 MB | 4,146 | Commissioning Survey |
-| observed-targets/targetphot-special-iron.fits | 177 MB | 168,328 | Special targets |
-| observed-targets/targetphot-sv1-iron.fits | 755 MB | 716,948 | Survey Validation 1 |
-| observed-targets/targetphot-sv2-iron.fits | 129 MB | 122,189 | Survey Validation 2 |
-| observed-targets/targetphot-sv3-iron.fits | 1.92 GB | 1,865,908 | Survey Validation 3 |
-| observed-targets/targetphot-main-iron.fits | 22.6 GB | 22,019,411 | Main Survey |
-| observed-targets/targetphot-iron.fits | 25.6 GB | 24,896,930 | Stack of the preceding 6 catalogs. |
-
-**Note:**
-
-* The data model for these catalogs is defined
-  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1). In
-  addition, the merged catalog (`targetphot-guadalupe.fits`) contains a `SURVEY`
-  (`<U7`), `PROGRAM` (`<U6`), and `TILEID` (`np.int32`) column.
-
-* As for Fuji, some targets have partial or minimal targeting information (e.g.,
-  *secondary* targets), in which case we populate "missing" columns with zeros
-  or blank strings (depending on the data type of the column).
-
-#### Guadalupe
-
-In Guadalupe, there are just three *targetphot* catalogs based on the first two
-months of [Main Survey](https://data.desi.lbl.gov/doc/glossary/#main-survey)
-observations.
-
-| File Name | File Size | Number of Targets | Notes |
-|-----------|:---------:|:-----------------:|-------|
-| observed-targets/targetphot-special-guadalupe.fits | 17.1 MB | 16,248 | Special targets |
-| observed-targets/targetphot-main-guadalupe.fits | 2.69 GB | 2,617,551 | Main Survey |
-| observed-targets/targetphot-guadalupe.fits | 2.71 GB | 2,633,799 | Stack of the preceding 2 catalogs. |
-
-**Note:**
-
-* The data model for these catalogs is defined
-  [here](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1). In
-  addition, the merged catalog (`targetphot-guadalupe.fits`) contains a `SURVEY`
-  (`<U7`), `PROGRAM` (`<U6`), and `TILEID` (`np.int32`) column.
-
-* As for Fuji and Iron, some targets have partial or minimal targeting
-  *information (e.g., secondary* targets), in which case we populate "missing"
-  *columns with zeros or blank strings (depending on the data type of the
-  *column).
-
+<a name="observed-tractorphot"/>
 ### Tractor (*tractorphot*) Catalogs
 
 For each unique target in the `targetphot-fuji.fits` and
@@ -215,7 +212,7 @@ as well as some additional details regarding the files in the following table:
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
 | Fuji | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 3.86 GB | 1,957,907 |
-| iron | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-iron.fits | 104 | 43.2 GB | 21,896,601 |
+| Iron | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-iron.fits | 104 | 43.2 GB | 21,896,601 |
 | Guadalupe | observed-targets/tractorphot/tractorphot-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 5.14 GB | 2,603,942 |
 
 **Note:**
@@ -226,9 +223,13 @@ as well as some additional details regarding the files in the following table:
   objects have no LS/DR9 source within 1 arcsec of the targeted position and
   therefore do not exist in any of the Fuji *tractorphot* files.
 
+* In Iron, the number of observed targets with missing LS/DR9 photometry is
+  338,142.
+
 * In Guadalupe, the number of observed targets with missing LS/DR9 photometry is
   just 626.
 
+<a name="potential"/>
 ### Potential Targets
 
 When assigning fibers to targets, DESI *fiber-assignment* also records the
@@ -274,9 +275,10 @@ below:
 | Data Release | Relative Location of *tractorphot* Files | Number of Files | Total Data Volume | Total Number of Objects |
 |--------------|------------------------------------------|:---------------:|:-----------------:|:-----------------------:|
 | Fuji | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 11.9 GB | 6,031,271 |
-| iron | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-iron.fits | 59 | 82.4 GB | 41,779,045 |
+| Iron | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-iron.fits | 104 | 141 GB | 71,303,690 |
 | Guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 31.1 GB | 15,758,409 |
 
+<a name="reproducibility"/>
 Reproducibility
 ---------------
 
@@ -310,12 +312,13 @@ time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/s
 time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/spectro/redux/fuji \
   -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot --potential
 ```
-
+<a name="known"/>
 Known Issues
 ------------
 
 None currently known.
 
+<a name="contact"/>
 Contact & Contributors
 ----------------------
 
@@ -339,8 +342,9 @@ from the following individuals:
 * Anand Raichoor (Lawrence Berkeley National Lab)
 * Benjamin Weaver (NSF's NOIRLab)
 
-Required Acknowledgement
-------------------------
+<a name="acknowledgment"/>
+Required Acknowledgment
+-----------------------
 
 Any use of the data products described in this document must include the text of
 the following acknowledgement verbatim:

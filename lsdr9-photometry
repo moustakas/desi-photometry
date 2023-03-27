@@ -476,7 +476,7 @@ def main():
             tileinfo = Table.read(infofile)
 
         # Divide the analysis by survey.
-        allout, allminicat, allzcat = [], [], []
+        allout, allminiphot, allzcat = [], [], []
         allsurveys = zcat['SURVEY']
         #for survey in ['main']:
         for survey in sorted(set(allsurveys)):
@@ -522,7 +522,7 @@ def main():
             # Split potential MAIN targets into nside=2 healpixels because there
             # are too many of them.
             if args.potential and survey == 'main':
-                minicat = []
+                miniphot = []
                 
                 T = tileinfo[np.hstack([np.where(_tileid == tileinfo['TILEID'])[0] for _tileid in utiles])]
                 assert(np.all(T['TILEID'] == utiles))
@@ -536,7 +536,7 @@ def main():
 
                     if False:
                         print('Temporarily reading {}'.format(outfile))
-                        minicat.append(Table(fitsio.read(outfile, columns=['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])))
+                        miniphot.append(Table(fitsio.read(outfile, columns=['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])))
                     else:
                         Pix = np.where(pixel == pixels)[0]
         
@@ -572,21 +572,21 @@ def main():
                         log.info('Writing {:,} objects to {}'.format(len(out), outfile))
                         out.write(outfile, overwrite=True)
     
-                        minicat.append(out['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])#, 'RA', 'DEC']
+                        miniphot.append(out['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])#, 'RA', 'DEC']
 
-                print('Stacking minicat...')
-                minicat = vstack(minicat)
+                print('Stacking miniphot...')
+                miniphot = vstack(miniphot)
 
                 # we somehow get out of order...
                 # https://stackoverflow.com/questions/68085572/sort-numpy-array-by-another-array
                 idx1 = np.argsort(zcat_survey['TARGETID'])
-                idx2 = np.argsort(minicat['TARGETID'])
+                idx2 = np.argsort(miniphot['TARGETID'])
                 idx1_inv = np.argsort(idx1)
-                minicat = minicat[idx2][idx1_inv]
+                miniphot = miniphot[idx2][idx1_inv]
                 
                 # so slow!!
-                #srt = np.hstack([np.where(tid == minicat['TARGETID'])[0] for tid in zcat_survey['TARGETID']])
-                #minicat = minicat[srt]
+                #srt = np.hstack([np.where(tid == miniphot['TARGETID'])[0] for tid in zcat_survey['TARGETID']])
+                #miniphot = miniphot[srt]
             else:
                 if args.potential:
                     outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}-{}.fits'.format(survey, args.specprod))
@@ -610,7 +610,7 @@ def main():
                 out = vstack(out)
                 assert(np.all(out['TARGETID'] == zcat_survey['TARGETID']))
 
-                minicat = out['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']#, 'RA', 'DEC']
+                miniphot = out['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']#, 'RA', 'DEC']
                 
                 add_dependencies(out.meta)
                 out.meta['SURVEY'] = (survey, 'survey name')
@@ -629,18 +629,18 @@ def main():
             # used to do positional Tractor photometry gathering, below.
             if args.potential:
                 outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}-{}.fits'.format(survey, args.specprod))
-                outfile_minicat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-minicat-{}-{}.fits'.format(survey, args.specprod))
+                outfile_miniphot = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-miniphot-{}-{}.fits'.format(survey, args.specprod))
 
                 try:
-                    assert(np.all(minicat['TARGETID'] == zcat_survey['TARGETID']))
+                    assert(np.all(miniphot['TARGETID'] == zcat_survey['TARGETID']))
                 except:
                     pdb.set_trace()
                     
-                add_dependencies(minicat.meta)
-                minicat.meta['SURVEY'] = (survey, 'survey name')
-                minicat.meta['EXTNAME'] = 'MINICAT'
-                log.info('Writing {:,} objects to {}'.format(len(minicat), outfile_minicat))
-                minicat.write(outfile_minicat, overwrite=True)
+                add_dependencies(miniphot.meta)
+                miniphot.meta['SURVEY'] = (survey, 'survey name')
+                miniphot.meta['EXTNAME'] = 'MINIPHOT'
+                log.info('Writing {:,} objects to {}'.format(len(miniphot), outfile_miniphot))
+                miniphot.write(outfile_miniphot, overwrite=True)
                 
             else:
                 outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}-{}.fits'.format(survey, args.specprod))
@@ -652,12 +652,12 @@ def main():
             zcat_survey.write(outfile_zcat, overwrite=True)
             
             allzcat.append(zcat_survey)
-            allminicat.append(minicat)
+            allminiphot.append(miniphot)
             
         if len(allzcat) > 0:# and not args.potential:
             if args.potential:
                 #outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.specprod))
-                outfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-minicat-{}.fits'.format(args.specprod))
+                outfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-miniphot-{}.fits'.format(args.specprod))
                 outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.specprod))
             else:
                 outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}.fits'.format(args.specprod))
@@ -670,16 +670,16 @@ def main():
             allzcat.write(outfile_zcat, overwrite=True)
 
             if args.potential:
-                allminicat = vstack(allminicat, metadata_conflicts='silent')
+                allminiphot = vstack(allminiphot, metadata_conflicts='silent')
                 try:
-                    assert(np.all(allminicat['TARGETID'] == allzcat['TARGETID']))
+                    assert(np.all(allminiphot['TARGETID'] == allzcat['TARGETID']))
                 except:
                     pdb.set_trace()
                     
-                add_dependencies(allminicat.meta)
-                allminicat.meta['EXTNAME'] = 'MINICAT'
-                log.info('Writing {:,} objects to {}'.format(len(allminicat), outfile))
-                allminicat.write(outfile, overwrite=True)
+                add_dependencies(allminiphot.meta)
+                allminiphot.meta['EXTNAME'] = 'MINIPHOT'
+                log.info('Writing {:,} objects to {}'.format(len(allminiphot), outfile))
+                allminiphot.write(outfile, overwrite=True)
             else:
                 allout = vstack(allout, metadata_conflicts='silent')
                 try:
@@ -692,7 +692,7 @@ def main():
                 log.info('Writing {:,} objects to {}'.format(len(allout), outfile))
                 allout.write(outfile, overwrite=True)
                 
-        del zcat, allout, allzcat, allminicat
+        del zcat, allout, allzcat, allminiphot
 
     # Build the tractorphot catalogs.
     if args.tractorphot:
@@ -707,7 +707,7 @@ def main():
 
         if args.potential:
             zcatfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.specprod))
-            targetfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-minicat-{}.fits'.format(args.specprod))
+            targetfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-miniphot-{}.fits'.format(args.specprod))
             #targetfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.specprod))
             racolumn, deccolumn = 'RA', 'DEC'
         else:
@@ -750,31 +750,31 @@ def main():
         log.info('Selecting {:,} unique targets.'.format(len(cat)))
 
         # Create a mini-cat that we'll use for the searching.
-        minicat = cat['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']#, 'RA', 'DEC']
-        minicat[racolumn] = zcat[racolumn]
-        minicat[deccolumn] = zcat[deccolumn]
+        miniphot = cat['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']#, 'RA', 'DEC']
+        miniphot[racolumn] = zcat[racolumn]
+        miniphot[deccolumn] = zcat[deccolumn]
 
         # Some secondary programs (e.g., 39632961435338613, 39632966921487347)
         # have BRICKNAME!='' & BRICKID!=0, but BRICK_OBJID==0. Unpack those here
         # using decode_targetid.
-        fix = np.where((minicat['BRICKNAME'] != '') * (minicat['BRICK_OBJID'] == 0))[0]
+        fix = np.where((miniphot['BRICKNAME'] != '') * (miniphot['BRICK_OBJID'] == 0))[0]
         if len(fix) > 0:
             log.info('Inferring BRICK_OBJID for {} objects using decode_targetid'.format(len(fix)))
-            fix_objid, fix_brickid, _, _, _, _ = decode_targetid(minicat['TARGETID'][fix])
-            assert(np.all(fix_brickid == minicat['BRICKID'][fix]))
-            minicat['BRICK_OBJID'][fix] = fix_objid
+            fix_objid, fix_brickid, _, _, _, _ = decode_targetid(miniphot['TARGETID'][fix])
+            assert(np.all(fix_brickid == miniphot['BRICKID'][fix]))
+            miniphot['BRICK_OBJID'][fix] = fix_objid
 
-        inobrickname = np.where(minicat['BRICKNAME'] == '')[0]
+        inobrickname = np.where(miniphot['BRICKNAME'] == '')[0]
         if len(inobrickname) > 0:
             log.info('Inferring brickname for {:,} objects'.format(len(inobrickname)))
-            minicat['BRICKNAME'][inobrickname] = brickname(minicat[racolumn][inobrickname],
-                                                           minicat[deccolumn][inobrickname])
-        assert(np.all(minicat['BRICKNAME'] != ''))
+            miniphot['BRICKNAME'][inobrickname] = brickname(miniphot[racolumn][inobrickname],
+                                                            miniphot[deccolumn][inobrickname])
+        assert(np.all(miniphot['BRICKNAME'] != ''))
 
         # Loop over args.nside-tractorphot healpixels and multiprocess over bricks.
-        log.info('Gathering Tractor photometry for {:,} objects'.format(len(minicat)))
+        log.info('Gathering Tractor photometry for {:,} objects'.format(len(miniphot)))
 
-        pixels = radec2pix(args.nside_tractorphot, minicat[racolumn], minicat[deccolumn])
+        pixels = radec2pix(args.nside_tractorphot, miniphot[racolumn], miniphot[deccolumn])
         npix = len(set(pixels))
 
         for ipix, pixel in enumerate(set(pixels)):
@@ -790,15 +790,15 @@ def main():
                 log.warning('Output file {} exists; proceed with caution or use --overwrite.'.format(outfile))
                 continue
         
-            #I = np.where((pixel == pixels) * (minicat['BRICKNAME'] == '2368m027'))[0]
+            #I = np.where((pixel == pixels) * (miniphot['BRICKNAME'] == '2368m027'))[0]
             I = np.where(pixel == pixels)[0]
-            bricknames = minicat['BRICKNAME'][I]
+            bricknames = miniphot['BRICKNAME'][I]
         
             log.info('Dividing the sample into {} unique bricks.'.format(len(set(bricknames))))
             mpargs = []
             for brick in set(bricknames):
                 J = np.where(brick == bricknames)[0]
-                mpargs.append([minicat[I[J]], racolumn, deccolumn])
+                mpargs.append([miniphot[I[J]], racolumn, deccolumn])
         
             if args.mp > 1:
                 with multiprocessing.Pool(args.mp) as P:
@@ -811,7 +811,7 @@ def main():
             tractor = vstack(tractor)
         
             # I don't understand why the Tables aren't sorted???
-            srt = np.hstack([np.where(tid == tractor['TARGETID'])[0] for tid in minicat['TARGETID'][I]])
+            srt = np.hstack([np.where(tid == tractor['TARGETID'])[0] for tid in miniphot['TARGETID'][I]])
             tractor = tractor[srt]
             assert(np.all(cat['TARGETID'][I] == tractor['TARGETID']))
         
@@ -852,7 +852,7 @@ def main():
 
             if os.path.isfile(outfile):
                 _targetid = fitsio.read(outfile, columns='TARGETID')
-                imiss = np.where(np.logical_not(np.isin(minicat['TARGETID'][I], _targetid)))[0]
+                imiss = np.where(np.logical_not(np.isin(miniphot['TARGETID'][I], _targetid)))[0]
                 if len(imiss) > 0:
                     missing.append(cat[I[imiss]])
             else:
