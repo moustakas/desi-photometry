@@ -21,6 +21,7 @@ Table of Contents
 
 
 <a name="description"/>
+
 Description
 -----------
 
@@ -42,6 +43,7 @@ from [LS/DR9](https://www.legacysurvey.org/dr9/description) for *observed* and
 *potential* DESI targets (excluding sky fibers).
 
 <a name="gettingstarted"/>
+
 Getting Started Quickly
 -----------------------
 
@@ -52,6 +54,7 @@ value-added catalog for a hypothetical set of observed targets. However, be sure
 to read the documentation below for all the details!
 
 <a name="content"/>
+
 Content, Organization, & Data Model
 -----------------------------------
 
@@ -75,6 +78,7 @@ and photometric or Tractor (*tractorphot*) catalogs, which we now describe in
 more detail.
 
 <a name="observed-targetphot"/>
+
 ### Targeting (*targetphot*) Catalogs
 
 In each DESI data release, the targeting catalogs used for DESI target selection
@@ -168,6 +172,7 @@ observations.
   course).
 
 <a name="observed-tractorphot"/>
+
 ### Tractor (*tractorphot*) Catalogs
 
 For each unique target in the `targetphot-fuji.fits` and
@@ -230,6 +235,7 @@ as well as some additional details regarding the files in the following table:
   just 626.
 
 <a name="potential"/>
+
 ### Potential Targets
 
 When assigning fibers to targets, DESI *fiber-assignment* also records the
@@ -279,6 +285,7 @@ below:
 | Guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 31.1 GB | 15,758,409 |
 
 <a name="reproducibility"/>
+
 Reproducibility
 ---------------
 
@@ -313,12 +320,14 @@ time /path/to/desi/code/desi-photometry/lsdr9-photometry --reduxdir $DESI_ROOT/s
   -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot --potential
 ```
 <a name="known"/>
+
 Known Issues
 ------------
 
 None currently known.
 
 <a name="contact"/>
+
 Contact & Contributors
 ----------------------
 
@@ -343,6 +352,7 @@ from the following individuals:
 * Benjamin Weaver (NSF's NOIRLab)
 
 <a name="acknowledgment"/>
+
 Required Acknowledgment
 -----------------------
 
