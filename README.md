@@ -7,9 +7,9 @@ Table of Contents
 [Description](#description)  
 [Getting Started Quickly](#gettingstarted)  
 [Content, Organization, & Data Model](#content)  
-[Targeting (*targetphot*) Catalogs](#observed-targetphot)  
-[Tractor (*tractorphot*) Catalogs](#observed-tractorphot)  
-[Potential Targets](#potential)  
+  [Targeting (*targetphot*) Catalogs](#observed-targetphot)  
+  [Tractor (*tractorphot*) Catalogs](#observed-tractorphot)  
+  [Potential Targets](#potential)  
 [Reproducibility](#reproducibility)  
 [Known Issues](#known)  
 [Contact & Contributors](#contact)  
@@ -25,11 +25,13 @@ This document describes the content and construction of [Legacy Surveys DR9
 catalogs for the following [DESI](https://desi.lbl.gov/) [data releases and
 spectroscopic productions](https://data.desi.lbl.gov/public/doc/releases) :
 
-* [DESI Early Data Release (EDR)](https://data.desi.lbl.gov/public/edr) Fuji Production (release date May 2023)
-* [DESI Data Release 1 (DR1)](https://data.desi.lbl.gov/public/dr1) Iron and Guadalupe Productions (release date TBD)
+* [DESI Early Data Release (EDR)](https://data.desi.lbl.gov/public/edr) **Fuji**
+  Production (release date May 2023)
+* [DESI Data Release 1 (DR1)](https://data.desi.lbl.gov/public/dr1) **Iron** and
+  **Guadalupe** Productions (release date TBD)
 
 In short, the delivered files include merged [DESI targeting
-catalogs](https://desidatamodel.readthedocs.io/en/latest/DESI_TARGET/TARG_DIR/DR/VERSION/targets/PHASE/RESOLVE/OBSCON/PHASEtargets-OBSCON-RESOLVE-hp-HP.html#hdu1)
+catalogs](https://data.desi.lbl.gov/public/doc/releases/#targeting-data-releases)
 and [Tractor catalog
 photometry](https://www.legacysurvey.org/dr9/description/#tractor-catalogs-1)
 from [LS/DR9](https://www.legacysurvey.org/dr9/description) for *observed* and
@@ -41,7 +43,7 @@ Getting Started Quickly
 -----------------------
 
 This [example
-notebook](https://github.com/moustakas/desi-photometry/blob/main/example-sv.ipynb)
+notebook](https://nbviewer.org/github/moustakas/desi-photometry/blob/main/example-sv.ipynb)
 shows how to quickly grab targeting and Tractor photometry from the Fuji
 value-added catalog for a hypothetical set of observed targets. However, be sure
 to read the documentation below for all the details!
@@ -350,13 +352,15 @@ Required Acknowledgment
 -----------------------
 
 Any use of the data products described in this document must include the text of
-the following acknowledgement verbatim:
+the following
+[acknowledgement](https://data.desi.lbl.gov/public/doc/acknowledgements)
+verbatim:
 
 > This research used data obtained with the Dark Energy Spectroscopic Instrument
 (DESI). DESI construction and operations was managed by the Lawrence Berkeley
 National Laboratory. Funding for DESI was provided by the Director, Office of
 Science, Office of High Energy Physics of the U.S. Department of Energy under
-Contract No. DE–AC02–05CH11231, and by the [National Energy Research Scientific
+Contract No. DE–AC02–05CH11231, and by the National Energy Research Scientific
 Computing Center, a DOE Office of Science User Facility under the same contract;
 additional support for DESI is provided by the U.S. National Science Foundation,
 Division of Astronomical Sciences under Contract No. AST-0950945 to the NSF’s
