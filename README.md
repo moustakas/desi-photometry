@@ -326,8 +326,7 @@ sbatch /path/to/script.slurm
 Known Issues
 ------------
 
-Fuji/v2.0
-#########
+### Fuji/v2.0
 
 A total of 367 targets on tiles 80611, 80612, and 80616 have incorrect
 coordinates due to the bug described in Section 5.3 of [Myers et
