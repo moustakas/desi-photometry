@@ -37,7 +37,7 @@ Sequence of commands for a given release (here, iron)
      tractorphot-potential-nside4-hp???-iron.fits
 
 """
-import os, sys, argparse, time, pdb
+import os, sys, argparse, time#, pdb
 from glob import glob
 import numpy as np
 import fitsio
@@ -561,7 +561,9 @@ def main():
                             out = vstack(out)
                             assert(np.all(out['TARGETID'] == zcat_pixel['TARGETID']))
                         except:
-                            pdb.set_trace()
+                            errmsg = 'TARGETID mismatch!'
+                            log.critical(errmsg)
+                            raise IOError(errmsg)
     
                         add_dependencies(out.meta)
                         out.meta['SURVEY'] = (survey, 'survey name')
@@ -633,7 +635,9 @@ def main():
                 try:
                     assert(np.all(miniphot['TARGETID'] == zcat_survey['TARGETID']))
                 except:
-                    pdb.set_trace()
+                    errmsg = 'TARGETID mismatch!'
+                    log.critical(errmsg)
+                    raise IOError(errmsg)
                     
                 add_dependencies(miniphot.meta)
                 miniphot.meta['SURVEY'] = (survey, 'survey name')
@@ -672,7 +676,9 @@ def main():
             try:
                 assert(np.all(allout['TARGETID'] == allzcat['TARGETID']))
             except:
-                pdb.set_trace()
+                errmsg = 'TARGETID mismatch!'
+                log.critical(errmsg)
+                raise IOError(errmsg)
             
             allout.meta.pop('SURVEY')
             #allout.meta['EXTNAME'] = 'TARGETPHOT'
@@ -684,7 +690,9 @@ def main():
                 try:
                     assert(np.all(allminiphot['TARGETID'] == allzcat['TARGETID']))
                 except:
-                    pdb.set_trace()
+                    errmsg = 'TARGETID mismatch!'
+                    log.critical(errmsg)
+                    raise IOError(errmsg)
                     
                 add_dependencies(allminiphot.meta)
                 allminiphot.meta['EXTNAME'] = 'MINIPHOT'
