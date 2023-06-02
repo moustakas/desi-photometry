@@ -80,7 +80,7 @@ In each DESI data release, the targeting catalogs used for DESI target selection
 are organized in a variety of files and locations and with a different data
 model depending on the kind of target observed (e.g., *primary* versus
 *secondary* targets; see [Myers et
-al. 2022](https://arxiv.org/abs/2208.08518)). However, for some applications, it
+al. 2022](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M)). However, for some applications, it
 is convenient to have a targeting catalog for all targets and with a common data
 model, which is precisely what our VACs provide.
 
@@ -192,9 +192,8 @@ ways:
   *targets of opportunity*, using positional matching. Specifically, if the
   `targetid` of a *secondary* target cannot be decoded to determine the LS/DR9
   source from which that target was selected (see [Myers et
-  al. 2022](https://arxiv.org/abs/2208.08518)),
-  then we return the *closest* LS/DR9 source within 1 arcsec of the targeted
-  position.
+  al. 2022](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M)), then we
+  return the *closest* LS/DR9 source within 1 arcsec of the targeted position.
 
 * Finally, we add two additional columns to the *tractorphot* catalogs to make
 it easier to cross-reference with the DESI redshift catalogs: `TARGETID`
@@ -328,11 +327,11 @@ Known Issues
 ------------
 
 Fuji/v2.0
-~~~~~~~~~
+#########
 
 A total of 367 targets on tiles 80611, 80612, and 80616 have incorrect
 coordinates due to the bug described in Section 5.3 of [Myers et
-al. 2022](https://arxiv.org/abs/2208.08518)).
+al. 2022](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M)).
 
 <a name="contact"/>
 
