@@ -56,14 +56,14 @@ Content, Organization, & Data Model
 The LS/DR9 value-added catalogs (VACs) can be accessed at the following links:
 | Data Release | URL |
 |------------|-----|
-| Fuji (EDR) | [https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.0](https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.0) |
+| Fuji (EDR) | [https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.1](https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.1) |
 | Iron (DR1) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/iron/v1.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/iron/v1.0) |
 | Guadalupe (DR1 supplement) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0) |
 
 > **For DESI Collaborators:** At NERSC, the catalogs can also be accessed at the
     following top-level directories:
   ```
-  /global/cfs/cdirs/desi/public/edr/vac/lsdr9-photometry/fuji/v2.0
+  /global/cfs/cdirs/desi/public/edr/vac/lsdr9-photometry/fuji/v2.1
   /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/iron/v1.0
   /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0
   ```
@@ -327,9 +327,12 @@ sbatch /path/to/script.slurm
 Known Issues
 ------------
 
-No significant issues are currently known, but please feel free to review the
-[open issues](https://github.com/moustakas/desi-photometry/issues) for possible
-future changes.
+Fuji/v2.0
+~~~~~~~~~
+
+A total of 367 targets on tiles 80611, 80612, and 80616 have incorrect
+coordinates due to the bug described in Section 5.3 of [Myers et
+al. 2022](https://arxiv.org/abs/2208.08518)).
 
 <a name="contact"/>
 
@@ -367,19 +370,23 @@ the following
 verbatim:
 
 > This research used data obtained with the Dark Energy Spectroscopic Instrument
-(DESI). DESI construction and operations was managed by the Lawrence Berkeley
-National Laboratory. Funding for DESI was provided by the Director, Office of
-Science, Office of High Energy Physics of the U.S. Department of Energy under
-Contract No. DE–AC02–05CH11231, and by the National Energy Research Scientific
-Computing Center, a DOE Office of Science User Facility under the same contract;
-additional support for DESI is provided by the U.S. National Science Foundation,
-Division of Astronomical Sciences under Contract No. AST-0950945 to the NSF’s
-National Optical-Infrared Astronomy Research Laboratory; the Science and
-Technologies Facilities Council of the United Kingdom; the Gordon and Betty
-Moore Foundation; the Heising-Simons Foundation; the French Alternative Energies
-and Atomic Energy Commission (CEA); the National Council of Science and
-Technology of Mexico (CONACYT); the Ministry of Science and Innovation of Spain
-(MICINN), and by the DESI Member Institutions:
-www.desi.lbl.gov/collaborating-institutions. The DESI collaboration is honored
-to be permitted to conduct scientific research on Iolkam Du’ag (Kitt Peak), a
-mountain with particular significance to the Tohono O’odham Nation.
+(DESI). DESI construction and operations is managed by the Lawrence Berkeley
+National Laboratory. This material is based upon work supported by the
+U.S. Department of Energy, Office of Science, Office of High-Energy Physics,
+under Contract No. DE–AC02–05CH11231, and by the National Energy Research
+Scientific Computing Center, a DOE Office of Science User Facility under the
+same contract. Additional support for DESI was provided by the U.S. National
+Science Foundation (NSF), Division of Astronomical Sciences under Contract
+No. AST-0950945 to the NSF’s National Optical-Infrared Astronomy Research
+Laboratory; the Science and Technologies Facilities Council of the United
+Kingdom; the Gordon and Betty Moore Foundation; the Heising-Simons Foundation;
+the French Alternative Energies and Atomic Energy Commission (CEA); the National
+Council of Science and Technology of Mexico (CONACYT); the Ministry of Science
+and Innovation of Spain (MICINN), and by the DESI Member Institutions:
+https://www.desi.lbl.gov/collaborating-institutions. The DESI collaboration is
+honored to be permitted to conduct scientific research on Iolkam Du’ag (Kitt
+Peak), a mountain with particular significance to the Tohono O’odham Nation. Any
+opinions, findings, and conclusions or recommendations expressed in this
+material are those of the author(s) and do not necessarily reflect the views of
+the National Science Foundation, the Department of Energy, or any of the listed
+funding agencies.

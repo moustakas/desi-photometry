@@ -6,12 +6,7 @@
 Set up the software dependencies:
   salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive
   source /global/common/software/desi/desi_environment.sh 23.1
-  module swap desispec/0.58.3
-
-  package=desispec
-  module unload $package
-  export PATH=$HOME/code/desihub/$package/bin:${PATH}
-  export PYTHONPATH=$HOME/code/desihub/$package/py:${PYTHONPATH}
+  module swap desispec/0.58.4
 
 Sequence of commands for a given release (here, iron)
 1. Gather targeting photometry from the individual redshift catalogs.
