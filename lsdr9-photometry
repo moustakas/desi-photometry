@@ -619,8 +619,7 @@ def main():
                 out.write(outfile, overwrite=True)
     
                 out['SURVEY'] = survey
-                if not args.potential:
-                    allout.append(out)
+                allout.append(out)
                 del out
     
             # Also write out a "mini" targetphot catalog and the redshift
@@ -656,8 +655,8 @@ def main():
             
         if len(allzcat) > 0:# and not args.potential:
             if args.potential:
-                #outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.specprod))
-                outfile = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-miniphot-{}.fits'.format(args.specprod))
+                outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.specprod))
+                outfile_mini = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-miniphot-{}.fits'.format(args.specprod))
                 outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.specprod))
             else:
                 outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}.fits'.format(args.specprod))
@@ -669,6 +668,17 @@ def main():
             log.info('Writing {:,} objects to {}'.format(len(allzcat), outfile_zcat))
             allzcat.write(outfile_zcat, overwrite=True)
 
+            allout = vstack(allout, metadata_conflicts='silent')
+            try:
+                assert(np.all(allout['TARGETID'] == allzcat['TARGETID']))
+            except:
+                pdb.set_trace()
+            
+            allout.meta.pop('SURVEY')
+            #allout.meta['EXTNAME'] = 'TARGETPHOT'
+            log.info('Writing {:,} objects to {}'.format(len(allout), outfile))
+            allout.write(outfile, overwrite=True)
+
             if args.potential:
                 allminiphot = vstack(allminiphot, metadata_conflicts='silent')
                 try:
@@ -678,19 +688,8 @@ def main():
                     
                 add_dependencies(allminiphot.meta)
                 allminiphot.meta['EXTNAME'] = 'MINIPHOT'
-                log.info('Writing {:,} objects to {}'.format(len(allminiphot), outfile))
-                allminiphot.write(outfile, overwrite=True)
-            else:
-                allout = vstack(allout, metadata_conflicts='silent')
-                try:
-                    assert(np.all(allout['TARGETID'] == allzcat['TARGETID']))
-                except:
-                    pdb.set_trace()
-                
-                allout.meta.pop('SURVEY')
-                #allout.meta['EXTNAME'] = 'TARGETPHOT'
-                log.info('Writing {:,} objects to {}'.format(len(allout), outfile))
-                allout.write(outfile, overwrite=True)
+                log.info('Writing {:,} objects to {}'.format(len(allminiphot), outfile_mini))
+                allminiphot.write(outfile_mini, overwrite=True)
                 
         del zcat, allout, allzcat, allminiphot
 
