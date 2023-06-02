@@ -8,6 +8,11 @@ Set up the software dependencies:
   source /global/common/software/desi/desi_environment.sh 23.1
   module swap desispec/0.58.3
 
+  package=desispec
+  module unload $package
+  export PATH=$HOME/code/desihub/$package/bin:${PATH}
+  export PYTHONPATH=$HOME/code/desihub/$package/py:${PYTHONPATH}
+
 Sequence of commands for a given release (here, iron)
 1. Gather targeting photometry from the individual redshift catalogs.
 
@@ -190,6 +195,12 @@ def targetphot_one(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC'):
     targetphot['SURVEY'] = input_cat['SURVEY']
     targetphot['PROGRAM'] = input_cat['PROGRAM']
     targetphot['TILEID'] = input_cat['TILEID']
+
+    # Replace proper-motion NaNs with zeros.
+    inan = np.logical_or(np.isnan(targetphot['PMRA']), np.isnan(targetphot['PMDEC']))
+    if np.any(inan):
+        targetphot['PMRA'][inan] = 0.0
+        targetphot['PMDEC'][inan] = 0.0
 
     return targetphot
 
@@ -975,13 +986,14 @@ def main():
                     ii = np.logical_not(np.isclose(zcat_survey_onetile['FLUX_R'], surveycat['FLUX_R'], rtol=1e-3))
                     if np.sum(ii) > 0:
                         mismatches += np.sum(ii)
-                        out = join(zcat_survey_onetile['SURVEY', 'PROGRAM', 'TILEID', 'TARGETID', 'FLUX_G', 'FLUX_R', 'FLUX_Z'][ii],
-                                   surveycat['TARGETID', 'FLUX_G', 'FLUX_R', 'FLUX_Z'][ii], keys='TARGETID',
+                        out = join(zcat_survey_onetile['SURVEY', 'PROGRAM', 'TILEID', 'TARGETID', 'TARGET_RA', 'TARGET_DEC',
+                                                       'BRICK_OBJID', 'BRICKNAME', 'RELEASE', 'BRICKID', 'FLUX_G', 'FLUX_R', 'FLUX_Z'][ii],
+                                   surveycat['TARGETID', 'BRICK_OBJID', 'BRICKNAME', 'RELEASE', 'BRICKID', 'FLUX_G', 'FLUX_R', 'FLUX_Z'][ii], keys='TARGETID',
                                    table_names=['ZCAT', 'VAC'])
                         allout.append(out)
                     
                 log.info('  Found {:,} mismatches on survey {}.'.format(mismatches, survey))
-                
+
         if len(allout) > 0:
             allout = vstack(allout)
             outfile = os.path.join(args.outdir, 'ancillary', 'targetphot-validate-{}.fits'.format(args.specprod))
