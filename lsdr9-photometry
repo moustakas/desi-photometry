@@ -173,7 +173,7 @@ def _targetphot_one(args):
     """Multiprocessing wrapper."""
     return targetphot_one(*args)
 
-def targetphot_one(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC'):
+def targetphot_one(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC', survey=None):
     """Simple wrapper on desispec.io.photo.gather_targetphot."""
     from desispec.io.photo import gather_targetphot
     log.info('Working on tile {}'.format(input_cat['TILEID'][0]))
@@ -183,6 +183,16 @@ def targetphot_one(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC'):
 
     targetphot = gather_targetphot(input_cat, racolumn=racolumn, deccolumn=deccolumn,
                                    fiberassign_dir=fiberassign_dir)
+
+    ## remove extraneous targeting bits -
+    ## https://github.com/moustakas/desi-photometry/issues/13
+    #if survey == 'main' or survey == 'special':
+    #    remcols = ['CMX_TARGET',
+    #               'SV1_DESI_TARGET', 'SV1_BGS_TARGET', 'SV1_MWS_TARGET',
+    #               'SV2_DESI_TARGET', 'SV2_BGS_TARGET', 'SV2_MWS_TARGET',
+    #               'SV3_DESI_TARGET', 'SV3_BGS_TARGET', 'SV3_MWS_TARGET',
+    #               'SV1_SCND_TARGET', 'SV2_SCND_TARGET','SV3_SCND_TARGET']
+    #    targetphot.remove_columns(remcols)
 
     # Can have the same targetid across different surveys and even within a
     # survey, across different tiles. So we need these columns.
@@ -406,8 +416,9 @@ def main():
             tileinfo = Table.read(infofile)
 
         # Divide the analysis by survey.
-        allout, allminiphot, allzcat = [], [], []
-        allsurveys = zcat['SURVEY']
+        allout, allzcat, allminiphot = [], [], []
+        #allout_cmxsv, allout_mainspecial, allzcat_cmxsv, allzcat_mainspecial, allminiphot = [], [], [], [], []
+        allsurveys = zcat['SURVEY'].data
         #for survey in ['main']:
         for survey in sorted(set(allsurveys)):
             log.info('Working on survey {}'.format(survey))
@@ -417,7 +428,10 @@ def main():
             zcat_survey = zcat[S]
 
             if rand is not None:
-                J = rand.choice(len(zcat_survey), size=args.ntest, replace=False)
+                if args.ntest > len(zcat_survey):
+                    J = np.arange(len(zcat_survey))
+                else:
+                    J = rand.choice(len(zcat_survey), size=args.ntest, replace=False)
                 zcat_survey = zcat_survey[J]
 
             # important! sort by tile so we can stack without sorting, below
@@ -475,7 +489,7 @@ def main():
                         for tileid in T['TILEID'][Pix]:
                             I = zcat_survey['TILEID'] == tileid
                             zcat_pixel.append(zcat_survey[I])
-                            mpargs.append([zcat_survey[I], RACOLUMN, DECCOLUMN])
+                            mpargs.append([zcat_survey[I], RACOLUMN, DECCOLUMN, survey])
                         zcat_pixel = vstack(zcat_pixel)
             
                         t0 = time.time()
@@ -528,7 +542,7 @@ def main():
                 mpargs = []
                 for tileid in utiles:
                     I = zcat_survey['TILEID'] == tileid
-                    mpargs.append([zcat_survey[I], RACOLUMN, DECCOLUMN])
+                    mpargs.append([zcat_survey[I], RACOLUMN, DECCOLUMN, survey])
     
                 t0 = time.time()
                 if args.mp > 1:
@@ -543,14 +557,28 @@ def main():
                 assert(np.all(out['TARGETID'] == zcat_survey['TARGETID']))
 
                 miniphot = out['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']#, 'RA', 'DEC']
-                
+
+                # remove extraneous targeting bits -
+                # https://github.com/moustakas/desi-photometry/issues/13
+                if survey == 'main' or survey == 'special':                
+                    remcols = ['CMX_TARGET',
+                               'SV1_DESI_TARGET', 'SV1_BGS_TARGET', 'SV1_MWS_TARGET',
+                               'SV2_DESI_TARGET', 'SV2_BGS_TARGET', 'SV2_MWS_TARGET',
+                               'SV3_DESI_TARGET', 'SV3_BGS_TARGET', 'SV3_MWS_TARGET',
+                               'SV1_SCND_TARGET', 'SV2_SCND_TARGET','SV3_SCND_TARGET']
+                    out.remove_columns(remcols)
+            
                 add_dependencies(out.meta, envvar_names=['DESI_ROOT'])
                 out.meta['SURVEY'] = (survey, 'survey name')
                 out.meta['EXTNAME'] = 'TARGETPHOT'
                 log.info('Writing {:,} objects to {}'.format(len(out), outfile))
                 out.write(outfile, overwrite=True)
-    
+
                 out['SURVEY'] = survey
+                #if survey == 'main' or survey == 'special':
+                #    allout_mainspecial.append(out)
+                #else:
+                #    allout_cmxsv.append(out)
                 allout.append(out)
                 del out
     
@@ -583,11 +611,16 @@ def main():
             zcat_survey.meta['EXTNAME'] = 'ZCATALOG'
             log.info('Writing {:,} objects to {}'.format(len(zcat_survey), outfile_zcat))
             zcat_survey.write(outfile_zcat, overwrite=True)
-            
+
+            #if survey == 'main' or survey == 'special':
+            #    allzcat_mainspecial.append(zcat_survey)
+            #else:
+            #    allzcat_cmxsv.append(zcat_survey)
             allzcat.append(zcat_survey)
             allminiphot.append(miniphot)
-            
-        if len(allzcat) > 0:# and not args.potential:
+
+        #if len(allzcat_cmxsv) > 0 or len(allzcat_mainspecial) > 0:# and not args.potential:
+        if len(allzcat) > 0:
             if args.potential:
                 outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.specprod))
                 outfile_mini = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-miniphot-{}.fits'.format(args.specprod))

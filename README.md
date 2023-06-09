@@ -11,7 +11,7 @@ Table of Contents
   * [Tractor (*tractorphot*) Catalogs](#observed-tractorphot)  
   * [Potential Targets](#potential)  
 * [Reproducibility](#reproducibility)  
-* [Known Issues](#known)  
+* [Known Issues & Previous Versions](#known)  
 * [Contact & Contributors](#contact)  
 * [Required Acknowledgment](#acknowledgment)  
 
@@ -323,14 +323,22 @@ sbatch /path/to/script.slurm
 
 <a name="known"/>
 
-Known Issues
-------------
+Known Issues & Previous Versions
+--------------------------------
 
-### Fuji/v2.0
+#### Fuji/v2.0
 
 A total of 367 targets on tiles 80611, 80612, and 80616 have incorrect
 coordinates due to the bug described in Section 5.3 of [Myers et
-al. 2022](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M)).
+al. 2022](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M). This issue was
+fixed in Fuji/v2.1.
+
+#### Iron/v1.0
+
+A total of 367 targets on tiles 80611, 80612, and 80616 have incorrect
+coordinates due to the bug described in Section 5.3 of [Myers et
+al. 2022](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M). This issue was
+fixed in Iron/v1.1.
 
 <a name="contact"/>
 
