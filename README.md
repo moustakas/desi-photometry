@@ -365,7 +365,7 @@ Required Acknowledgment
 
 Any use of the data products described in this document must include the text of
 the following
-[acknowledgement](https://data.desi.lbl.gov/public/doc/acknowledgements)
+[acknowledgment](https://data.desi.lbl.gov/public/doc/acknowledgments)
 verbatim:
 
 > This research used data obtained with the Dark Energy Spectroscopic Instrument
