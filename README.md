@@ -293,7 +293,7 @@ for Fuji).
 ```bash
 cd /path/to/code
 git clone https://github.com/moustakas/desi-photometry.git
-cd desi-photometry && git checkout tags/iron-v1.0 && cd ..
+cd desi-photometry && git checkout tags/fuji-v2.1 && cd ..
 ```
 
 2. Next, edit the following [Perlmutter Slurm
@@ -310,7 +310,7 @@ gather targeting and Tractor photometry for both *observed* and *potential* targ
 #SBATCH -t 04:00:00
 
 source /global/common/software/desi/desi_environment.sh 23.1
-module swap desispec/0.57.0
+module swap desispec/0.58.4
 
 time srun -n 1 -c 128 /path/to/code/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot
 time srun -n 1 -c 128 /path/to/code/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot --potential
