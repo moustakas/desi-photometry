@@ -25,10 +25,10 @@ This document describes the content and construction of [Legacy Surveys DR9
 catalogs for the following [DESI](https://desi.lbl.gov/) [data releases and
 spectroscopic productions](https://data.desi.lbl.gov/public/doc/releases) :
 
-* [DESI Early Data Release (EDR)](https://data.desi.lbl.gov/public/edr) **Fuji**
-  Production (release date May 2023)
-* [DESI Data Release 1 (DR1)](https://data.desi.lbl.gov/public/dr1) **Iron** and
-  **Guadalupe** Productions (release date TBD)
+* [DESI Early Data Release (EDR)](https://data.desi.lbl.gov/public/doc/releases/edr) **Fuji**
+  Production (release date 2023 June 13)
+* [DESI Data Release 1 (DR1)](https://data.desi.lbl.gov/public/doc/releases/dr1)
+  **Iron** and **Guadalupe** Productions (release date TBD)
 
 In short, the delivered files include merged [DESI targeting
 catalogs](https://data.desi.lbl.gov/public/doc/releases/#targeting-data-releases)
@@ -56,16 +56,16 @@ Content, Organization, & Data Model
 The LS/DR9 value-added catalogs (VACs) can be accessed at the following links:
 | Data Release | URL |
 |------------|-----|
-| Fuji (EDR) | [https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.1](https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.1) |
-| Iron (DR1) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/iron/v1.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/iron/v1.0) |
-| Guadalupe (DR1 supplement) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0) |
+| Fuji (EDR) | https://data.desi.lbl.gov/public/edr/vac/edr/lsdr9-photometry/fuji/v2.1 |
+| Iron (DR1) | https://data.desi.lbl.gov/public/dr1/vac/dr1/lsdr9-photometry/iron/v1.0 |
+| Guadalupe (DR1 supplement) | https://data.desi.lbl.gov/public/dr1/vac/dr1/lsdr9-photometry/guadalupe/v2.0 |
 
 > **For DESI Collaborators:** At NERSC, the catalogs can also be accessed at the
     following top-level directories:
   ```
-  /global/cfs/cdirs/desi/public/edr/vac/lsdr9-photometry/fuji/v2.1
-  /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/iron/v1.0
-  /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0
+  /global/cfs/cdirs/desi/public/edr/vac/edr/lsdr9-photometry/fuji/v2.1
+  /global/cfs/cdirs/desi/public/dr1/vac/dr1/lsdr9-photometry/iron/v1.0
+  /global/cfs/cdirs/desi/public/dr1/vac/dr1/lsdr9-photometry/guadalupe/v2.0
   ```
 
 The VAC contains two basic kinds of files: targeting (*targetphot*) catalogs,
