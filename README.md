@@ -25,10 +25,10 @@ This document describes the content and construction of [Legacy Surveys DR9
 catalogs for the following [DESI](https://desi.lbl.gov/) [data releases and
 spectroscopic productions](https://data.desi.lbl.gov/public/doc/releases) :
 
-* [DESI Early Data Release (EDR)](https://data.desi.lbl.gov/public/edr) **Fuji**
-  Production (release date May 2023)
-* [DESI Data Release 1 (DR1)](https://data.desi.lbl.gov/public/dr1) **Iron** and
-  **Guadalupe** Productions (release date TBD)
+* [DESI Early Data Release (EDR)](https://data.desi.lbl.gov/public/doc/releases/edr) **Fuji**
+  Production (release date 2023 June 13)
+* [DESI Data Release 1 (DR1)](https://data.desi.lbl.gov/public/doc/releases/dr1)
+  **Iron** and **Guadalupe** Productions (release date TBD)
 
 In short, the delivered files include merged [DESI targeting
 catalogs](https://data.desi.lbl.gov/public/doc/releases/#targeting-data-releases)
@@ -56,16 +56,16 @@ Content, Organization, & Data Model
 The LS/DR9 value-added catalogs (VACs) can be accessed at the following links:
 | Data Release | URL |
 |------------|-----|
-| Fuji (EDR) | [https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.1](https://data.desi.lbl.gov/public/edr/vac/lsdr9-photometry/fuji/v2.1) |
-| Iron (DR1) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/iron/v1.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/iron/v1.0) |
-| Guadalupe (DR1 supplement) | [https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0](https://data.desi.lbl.gov/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0) |
+| Fuji (EDR) | https://data.desi.lbl.gov/public/edr/vac/edr/lsdr9-photometry/fuji/v2.1 |
+| Iron (DR1) | https://data.desi.lbl.gov/public/dr1/vac/dr1/lsdr9-photometry/iron/v1.0 |
+| Guadalupe (DR1 supplement) | https://data.desi.lbl.gov/public/dr1/vac/dr1/lsdr9-photometry/guadalupe/v2.0 |
 
 > **For DESI Collaborators:** At NERSC, the catalogs can also be accessed at the
     following top-level directories:
   ```
-  /global/cfs/cdirs/desi/public/edr/vac/lsdr9-photometry/fuji/v2.1
-  /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/iron/v1.0
-  /global/cfs/cdirs/desi/public/dr1/vac/lsdr9-photometry/guadalupe/v2.0
+  /global/cfs/cdirs/desi/public/edr/vac/edr/lsdr9-photometry/fuji/v2.1
+  /global/cfs/cdirs/desi/public/dr1/vac/dr1/lsdr9-photometry/iron/v1.0
+  /global/cfs/cdirs/desi/public/dr1/vac/dr1/lsdr9-photometry/guadalupe/v2.0
   ```
 
 The VAC contains two basic kinds of files: targeting (*targetphot*) catalogs,
@@ -80,7 +80,7 @@ In each DESI data release, the targeting catalogs used for DESI target selection
 are organized in a variety of files and locations and with a different data
 model depending on the kind of target observed (e.g., *primary* versus
 *secondary* targets; see [Myers et
-al. 2022](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M)). However, for some applications, it
+al. 2023](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M)). However, for some applications, it
 is convenient to have a targeting catalog for all targets and with a common data
 model, which is precisely what our VACs provide.
 
@@ -192,7 +192,7 @@ ways:
   *targets of opportunity*, using positional matching. Specifically, if the
   `targetid` of a *secondary* target cannot be decoded to determine the LS/DR9
   source from which that target was selected (see [Myers et
-  al. 2022](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M)), then we
+  al. 2023](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M)), then we
   return the *closest* LS/DR9 source within 1 arcsec of the targeted position.
 
 * Finally, we add two additional columns to the *tractorphot* catalogs to make
@@ -293,7 +293,7 @@ for Fuji).
 ```bash
 cd /path/to/code
 git clone https://github.com/moustakas/desi-photometry.git
-cd desi-photometry && git checkout tags/iron-v1.0 && cd ..
+cd desi-photometry && git checkout tags/fuji-v2.1 && cd ..
 ```
 
 2. Next, edit the following [Perlmutter Slurm
@@ -310,7 +310,7 @@ gather targeting and Tractor photometry for both *observed* and *potential* targ
 #SBATCH -t 04:00:00
 
 source /global/common/software/desi/desi_environment.sh 23.1
-module swap desispec/0.57.0
+module swap desispec/0.58.4
 
 time srun -n 1 -c 128 /path/to/code/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot
 time srun -n 1 -c 128 /path/to/code/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot --potential
@@ -330,7 +330,7 @@ Known Issues & Previous Versions
 
 A total of 367 targets on tiles 80611, 80612, and 80616 have incorrect
 coordinates due to the bug described in Section 5.3 of [Myers et
-al. 2022](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M). This issue was
+al. 2023](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M). This issue was
 fixed in Fuji/v2.1.
 
 <a name="contact"/>
@@ -365,7 +365,7 @@ Required Acknowledgment
 
 Any use of the data products described in this document must include the text of
 the following
-[acknowledgement](https://data.desi.lbl.gov/public/doc/acknowledgements)
+[acknowledgment](https://data.desi.lbl.gov/public/doc/acknowledgments)
 verbatim:
 
 > This research used data obtained with the Dark Energy Spectroscopic Instrument
