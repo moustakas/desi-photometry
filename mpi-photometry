@@ -1,21 +1,43 @@
 #!/usr/bin/env python3
 
-"""MPI wrapper to get a large number of image cutouts. Only run ahead of a VAC
-release.
+"""Match data release redshift catalogs against the original photometric
+(target) catalogs.
 
-cd /global/cfs/cdirs/desi/spectro/fastspecfit/fuji/html/healpix
-from glob import glob
-nftot = 0
-for survey in sorted(glob('*')):
-    for program in glob(os.path.join(survey, '*')):
-        nf = 0
-        for hp100 in glob(os.path.join(program, '*')):
-            for hp in glob(os.path.join(hp100, '*')):
-                nf += len(glob(hp+'/tmp*.jpeg'))
-        nftot += nf
-        print(program, nf)
-print()
-print('Total: ', nftot)
+Set up the software dependencies:
+  salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive
+  source /global/common/software/desi/desi_environment.sh 23.6
+
+srun --nodes 1 --ntasks 16 --cpus-per-task 8 --cpu-bind=none $HOME/code/desihub/desi-photometry/mpi-photometry --outdir $PSCRATCH/lsdr9/fuji --reduxdir $DESI_ROOT_READONLY/spectro/redux/fuji --specprod fuji --mp 4 --targetphot
+
+
+
+Sequence of commands for a given release (here, iron)
+1. Gather targeting photometry from the individual redshift catalogs.
+
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod iron --mp 128 --targetphot
+
+   Output files:
+    targetphot-iron.fits
+    targetphot-zcat-iron.fits
+    targetphot-missing-iron.fits
+
+2. Gather Tractor photometry.
+
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod iron --mp 128 --tractorphot
+
+   Output files:
+     tractorphot-nside4-hp???-iron.fits
+
+3. Gather targeting and Tractor photometry for *potential* targets (going back to the original fiberassign files).
+
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod iron --mp 128 --targetphot --potential
+   time /global/homes/i/ioannis/code/desihub/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/iron -o ${SCRATCH}/lsdr9/iron --specprod iron --mp 128 --tractorphot --potential
+
+   Output files:
+     targetphot-potential-iron.fits
+     targetphot-potential-zcat-iron.fits
+     targetphot-potential-missing-iron.fits
+     tractorphot-potential-nside4-hp???-iron.fits
 
 """
 import pdb # for debugging
@@ -33,7 +55,7 @@ from desiutil.depend import add_dependencies
 from desiutil.log import get_logger, DEBUG
 log = get_logger()
 
-ALLSURVEYS = ['sv2']
+ALLSURVEYS = ['special']
 #ALLSURVEYS = ['sv1', 'sv2', 'sv3', 'cmx', 'special', 'main']
 
 fiberassign_dir = os.path.join(os.getenv('DESI_ROOT_READONLY'), 'target', 'fiberassign', 'tiles', 'trunk')
@@ -615,11 +637,14 @@ def main():
                     groups = weighted_partition(npertile, size)
 
                     # broadcast the work to the other ranks
-                    if comm:
+                    if comm is not None:
                         zcat_survey = comm.bcast(zcat_survey, root=0)
                         utiles = comm.bcast(utiles, root=0)
                         groups = comm.bcast(groups, root=0)
-                    
+
+                if comm is not None:
+                    comm.barrier()
+                        
                 log.debug(f'Rank {rank} started at {time.asctime()} with {len(groups[rank])} tiles.')
 
                 targetphot_survey = []
@@ -651,11 +676,11 @@ def main():
                     S = []
                     for tileid in utiles:
                         I = zcat_survey['TILEID'] == tileid
-                        J = targetphot_survey['TILEID'] == tileid
-                        try:
-                            S.append(geomask.match_to(zcat_survey[I]['TARGETID'].data, targetphot_survey['TARGETID'].data))
-                        except:
-                            pdb.set_trace()
+                        J = np.where(targetphot_survey['TILEID'] == tileid)[0]
+                        pdb.set_trace()
+                        srt_targetphot = geomask.match_to(zcat_survey[I]['TARGETID'].data, targetphot_survey[J]['TARGETID'].data)
+                        S.append(J[srt_targetphot])
+                    pdb.set_trace()
                     S = np.hstack(S)
                     targetphot_survey = targetphot_survey[S]
 
