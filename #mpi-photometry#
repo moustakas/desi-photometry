@@ -636,9 +636,9 @@ def main():
                     zcat_survey = [read_one_zcat(mparg[0]) for mparg in mpargs]
                 zcat_survey = vstack(zcat_survey)
 
-                #print('HACK!!')
-                #I = rand = np.random.choice(len(zcat_survey), 1000, replace=False)
-                #zcat_survey = zcat_survey[I]
+                print('HACK!!')
+                I = rand = np.random.choice(len(zcat_survey), 1000, replace=False)
+                zcat_survey = zcat_survey[I]
 
                 utiles = np.unique(zcat_survey['TILEID'])
                 log.info(f'Found {len(zcat_survey):,d} TARGETIDs and {len(utiles):,d} unique tiles from survey: {survey}')
@@ -668,13 +668,14 @@ def main():
                 targetphot_survey.append(targetphot_onetile)
             targetphot_survey = vstack(targetphot_survey)
 
-            if comm is not None:
-                comm.barrier() # make sure all ranks are done
+            #if comm is not None:
+            #    comm.barrier() # make sure all ranks are done
 
             # stack, sort, and write out on rank 0
             if rank == 0:
                 if comm is not None:
                     targetphot_survey = comm.gather(targetphot_survey, root=0)
+                if type(targetphot_survey) is list:
                     targetphot_survey = vstack(targetphot_survey)
 
                 # targetphot_survey needs to be row-matched to zcat_survey,
@@ -718,6 +719,8 @@ def main():
 
                 allzcat.append(zcat_survey)
                 del zcat_survey
+            else:
+                log.info(f'Rank {rank} is all done!')
 
         # write out the final super-catalogs
         if rank == 0:
