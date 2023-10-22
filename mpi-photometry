@@ -4,8 +4,8 @@
 (target) catalogs.
 
 Set up the software dependencies:
-  salloc -N 1 -C cpu -A desi -t 04:00:00 --qos interactive
-  source /global/common/software/desi/desi_environment.sh 23.6
+  salloc -N 1 -C cpu -A desi -t 01:00:00 --qos interactive
+  source /dvs_ro/common/software/desi/desi_environment.sh 23.6
   for package in desispec; do
     echo Loading local check-out of $package
     module unload $package
@@ -65,8 +65,8 @@ from desiutil.depend import add_dependencies
 from desiutil.log import get_logger, DEBUG
 log = get_logger()
 
-ALLSURVEYS = ['sv2']
-#ALLSURVEYS = ['sv1', 'sv2', 'sv3', 'cmx', 'special', 'main']
+ALLSURVEYS = ['sv1', 'sv2', 'sv3', 'cmx', 'special', 'main']
+#ALLSURVEYS = ['main']
 
 def _read_one_zcat(args):
     """Multiprocessing wrapper."""
@@ -123,6 +123,8 @@ def read_one_potential_targets(tileid, survey, program):
     TARGETID, RA, DEC.
 
     """
+    from desitarget.targets import decode_targetid
+
     fiberassign_dir = os.path.join(os.getenv('DESI_ROOT_READONLY'), 'target', 'fiberassign', 'tiles', 'trunk')
     
     stileid = '{:06d}'.format(tileid)
@@ -185,18 +187,18 @@ def tractorphot_one(cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC'):
     tractorphot = gather_tractorphot(cat, racolumn=racolumn, deccolumn=deccolumn)
     return tractorphot
 
-def _targetphot_one(args):
+def _targetphot_onetile(args):
     """Multiprocessing wrapper."""
-    return targetphot_one(*args)
+    return targetphot_onetile(*args)
 
-def targetphot_one(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC', survey=None):
+def targetphot_onetile(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC', survey=None):
     """Simple wrapper on desispec.io.photo.gather_targetphot."""
     from desispec.io.photo import gather_targetphot
 
     # should be unique!
     assert(len(input_cat) == len(np.unique(input_cat['TARGETID'])))
 
-    targetphot = gather_targetphot(input_cat, racolumn=racolumn, deccolumn=deccolumn, verbose=True)
+    targetphot = gather_targetphot(input_cat, racolumn=racolumn, deccolumn=deccolumn, verbose=False)
 
     ## remove extraneous targeting bits -
     ## https://github.com/moustakas/desi-photometry/issues/13
@@ -223,324 +225,402 @@ def targetphot_one(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC', surv
 
     return targetphot
 
-#def targetphot_potential(args, comm=None):
-#    """Gather targeting photometry for potential targets.
-#
-#    """
-#    if comm is None:
-#        rank, size = 0, 1
-#    else:
-#        rank, size = comm.rank, comm.size
-#
-#    # rank 0 has to do a bunch of organizational work
-#    t0 = time.time()
-#    if rank == 0:
-#        if args.potential:
-#            any_outfile = glob(os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-*-{}.fits'.format(args.specprod)))
-#        else:
-#            any_outfile = glob(os.path.join(args.outdir, 'observed-targets', 'targetphot-*-{}.fits'.format(args.specprod)))
-#
-#        if len(any_outfile) > 0 and not args.overwrite:
-#            log.warning('One or more targetphot output files exist; proceed with caution or use --overwrite.')
-#
-#        if args.potential:
-#            RACOLUMN, DECCOLUMN = 'RA', 'DEC'
-#            
-#            # Assume that the nominal/parent zcat catalog has been previously generated.
-#            parent_zcatfile = os.path.join(args.outdir, 'ancillary', f'targetphot-zcat-{args.specprod}.fits')
-#            if not os.path.isfile(parent_zcatfile):
-#                errmsg = f'Targeting photometric catalog {parent_zcatfile} missing.'
-#                log.critical(errmsg)
-#                raise IOError(errmsg)
-#
-#            parent_zcat = Table(fitsio.read(parent_zcatfile))
-#            log.info(f'Read {len(parent_zcat):,} objects from {parent_zcatfile}.')
-#
-#            #tileids = np.unique(parent_zcat['TILEID'])
-#            _, uindx = np.unique(parent_zcat['TILEID'], return_index=True)
-#            tileids = parent_zcat['TILEID'][uindx]
-#            surveys = parent_zcat['SURVEY'][uindx]
-#            programs = parent_zcat['PROGRAM'][uindx]
-#
-#            mpargs = [[tileid, survey, program] for tileid, survey, program in zip(tileids, surveys, programs)]
-#
-#            if args.mp > 1:
-#                with multiprocessing.Pool(args.mp) as P:
-#                    zcat = P.map(_read_one_potential_targets, mpargs)
-#            else:
-#                zcat = [read_one_potential_targets(*mparg) for mparg in mpargs]
-#            zcat = vstack(zcat)
-#
-#            # Do not select unique TARGETIDs because the same target can appear
-#            # in different surveys; we handle uniqueness below.
-#            log.info(f'Found {len(zcat):,d} objects from {len(set(zcat['TILEID'])):,d} unique tiles.')
-#        else:
-#            RACOLUMN, DECCOLUMN = 'TARGET_RA', 'TARGET_DEC'
-#
-#            # Read all the ztile catalogs in parallel.
-#            print('HACK!')
-#            #zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-*-cumulative.fits'))
-#            zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', 'ztile-*special*-cumulative.fits'))
-#            
-#            mpargs = [[zcatfile] for zcatfile in zcatfiles]
-#            if args.mp > 1:
-#                with multiprocessing.Pool(args.mp) as P:
-#                    zcat = P.map(_read_one_zcat, mpargs)
-#            else:
-#                zcat = [read_one_zcat(mparg[0]) for mparg in mpargs]
-#
-#            # Stack and then remove negative targetids and sky fibers.
-#            zcat = vstack(zcat)
-#            _, _, _, _, sky, _ = decode_targetid(zcat['TARGETID'])
-#            keep = (sky == 0) * (zcat['TARGETID'] > 0)
-#            if np.sum(keep) > 0:
-#                log.info(f'Keeping {np.sum(keep):,d}/{len(zcat):,d} objects after removing sky targets and stuck positioners')
-#                zcat = zcat[keep]
-#
-#            log.info(f'Read {len(zcat):,d} objects from {len(zcatfiles)} redshift catalogs.')
-#
-#        # Get the informational tile file for this specprod so can determine the
-#        # survey.
-#        infofile = os.path.join(args.reduxdir, f'tiles-{args.specprod}.csv')
-#        log.info(f'Reading {infofile}')
-#        if os.path.isfile(infofile):
-#            tileinfo = Table.read(infofile)
-#
-#        # Divide the analysis by survey.
-#        allout, allzcat, allminiphot = [], [], []
-#        allsurveys = zcat['SURVEY'].data
-#        print('HACK!!')
-#        for survey in ['sv1', 'sv2', 'sv3']:
-#        #for survey in sorted(set(allsurveys)):
-#            log.info(f'Working on survey {survey}')
-#
-#            #S = np.where((survey == allsurveys) * (zcat['TILEID'] > 82400) * (zcat['TILEID'] < 82410) )[0]
-#            S = np.where(survey == allsurveys)[0]
-#            zcat_survey = zcat[S]
-#
-#            # important! sort by tile so we can stack without sorting, below
-#            #zcat_survey = zcat_survey[np.argsort(zcat_survey['TILEID'])]
-#
-#            # Do not select unique TARGETIDs!
-#            # See https://github.com/moustakas/desi-photometry/issues/3
-#            #_, uindx = np.unique(zcat_survey['TARGETID'], return_index=True)
-#            #zcat_survey = zcat_survey[uindx]
-#            #zcat_survey = zcat_survey[np.argsort(zcat_survey['TARGETID'])]
-#
-#            utiles = np.unique(zcat_survey['TILEID'])
-#            log.info(f'Found {len(zcat_survey):,d} TARGETIDs and {len(utiles):,d} unique tiles from survey: {survey}')
-#
-#            # Split potential MAIN targets into nside=2 healpixels because there
-#            # are too many of them.
-#            if args.potential and survey == 'main':
-#                miniphot = []
-#                
-#                T = tileinfo[np.hstack([np.where(_tileid == tileinfo['TILEID'])[0] for _tileid in utiles])]
-#                assert(np.all(T['TILEID'] == utiles))
-#    
-#                pixels = radec2pix(args.nside_targetphot, T['TILERA'], T['TILEDEC'])
-#                npix = len(set(pixels))
-#
-#                for ipix, pixel in enumerate(sorted(set(pixels))):
-#                    outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-nside{}-hp{:02d}-{}-{}.fits'.format(
-#                        args.nside_targetphot, pixel, survey, args.specprod))
-#
-#                    if False:
-#                        print('Temporarily reading {}'.format(outfile))
-#                        miniphot.append(Table(fitsio.read(outfile, columns=['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])))
-#                    else:
-#                        Pix = np.where(pixel == pixels)[0]
-#        
-#                        mpargs = []
-#                        zcat_pixel = []
-#                        for tileid in T['TILEID'][Pix]:
-#                            I = zcat_survey['TILEID'] == tileid
-#                            zcat_pixel.append(zcat_survey[I])
-#                            mpargs.append([zcat_survey[I], RACOLUMN, DECCOLUMN, survey])
-#                        zcat_pixel = vstack(zcat_pixel)
-#            
-#                        t0 = time.time()
-#                        if args.mp > 1:
-#                            with multiprocessing.Pool(args.mp) as P:
-#                                out = P.map(_targetphot_one, mpargs)
-#                        else:
-#                            out = [targetphot_one(*mparg) for mparg in mpargs]
-#                        log.info('Total time for gather_targetphot = {:.3f} min'.format((time.time()-t0)/60))
-#    
-#                        # stack, sort, and write out
-#                        try:
-#                            out = vstack(out)
-#                            assert(np.all(out['TARGETID'] == zcat_pixel['TARGETID']))
-#                        except:
-#                            errmsg = 'TARGETID mismatch!'
-#                            log.critical(errmsg)
-#                            raise IOError(errmsg)
-#
-#                        add_dependencies(out.meta, envvar_names=['DESI_ROOT'])
-#                        out.meta['SURVEY'] = (survey, 'survey name')
-#                        out.meta['FILENSID'] = (args.nside_targetphot, 'HEALPix nside number')
-#                        out.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
-#                        out.meta['FILEHPIX'] = ('{:02d}'.format(pixel), 'HEALPix number')
-#                        out.meta['EXTNAME'] = 'TARGETPHOT'
-#                        log.info('Writing {:,} objects to {}'.format(len(out), outfile))
-#                        out.write(outfile, overwrite=True)
-#    
-#                        miniphot.append(out['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])#, 'RA', 'DEC']
-#
-#                print('Stacking miniphot...')
-#                miniphot = vstack(miniphot)
-#
-#                # we somehow get out of order...
-#                # https://stackoverflow.com/questions/68085572/sort-numpy-array-by-another-array
-#                idx1 = np.argsort(zcat_survey['TARGETID'])
-#                idx2 = np.argsort(miniphot['TARGETID'])
-#                idx1_inv = np.argsort(idx1)
-#                miniphot = miniphot[idx2][idx1_inv]
-#                
-#                # so slow!!
-#                #srt = np.hstack([np.where(tid == miniphot['TARGETID'])[0] for tid in zcat_survey['TARGETID']])
-#                #miniphot = miniphot[srt]
-#            else:
-#                if args.potential:
-#                    outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}-{}.fits'.format(survey, args.specprod))
-#                else:
-#                    outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}-{}.fits'.format(survey, args.specprod))
-#
-#                npertile = [np.sum(zcat_survey['TILEID'] == tileid) for tileid in utiles]
-#                groups = weighted_partition(npertile, size)
-#
-#        if comm:
-#            groups = comm.bcast(groups, root=0)
-#
-#        for ii in groups[rank]:
-#            log.debug(f'Rank {rank} started at {time.asctime()}')
-#            sys.stdout.flush()
-#
-#
-#            
-#
-#                mpargs = []
-#                for tileid in utiles:
-#                    I = zcat_survey['TILEID'] == tileid
-#                    mpargs.append([zcat_survey[I], RACOLUMN, DECCOLUMN, survey])
-#    
-#                t0 = time.time()
-#                if args.mp > 1:
-#                    with multiprocessing.Pool(args.mp) as P:
-#                        out = P.map(_targetphot_one, mpargs)
-#                else:
-#                    out = [targetphot_one(*mparg) for mparg in mpargs]
-#                log.info('Total time for gather_targetphot = {:.3f} min'.format((time.time()-t0)/60))
-#    
-#                # stack, sort, and write out
-#                out = vstack(out)
-#                assert(np.all(out['TARGETID'] == zcat_survey['TARGETID']))
-#
-#                miniphot = out['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']#, 'RA', 'DEC']
-#
-#                # remove extraneous targeting bits -
-#                # https://github.com/moustakas/desi-photometry/issues/13
-#                if survey == 'main' or survey == 'special':                
-#                    remcols = ['CMX_TARGET',
-#                               'SV1_DESI_TARGET', 'SV1_BGS_TARGET', 'SV1_MWS_TARGET',
-#                               'SV2_DESI_TARGET', 'SV2_BGS_TARGET', 'SV2_MWS_TARGET',
-#                               'SV3_DESI_TARGET', 'SV3_BGS_TARGET', 'SV3_MWS_TARGET',
-#                               'SV1_SCND_TARGET', 'SV2_SCND_TARGET','SV3_SCND_TARGET']
-#                    out.remove_columns(remcols)
-#            
-#                add_dependencies(out.meta, envvar_names=['DESI_ROOT'])
-#                out.meta['SURVEY'] = (survey, 'survey name')
-#                out.meta['EXTNAME'] = 'TARGETPHOT'
-#                log.info('Writing {:,} objects to {}'.format(len(out), outfile))
-#                out.write(outfile, overwrite=True)
-#
-#                out['SURVEY'] = survey
-#                #if survey == 'main' or survey == 'special':
-#                #    allout_mainspecial.append(out)
-#                #else:
-#                #    allout_cmxsv.append(out)
-#                allout.append(out)
-#                del out
-#    
-#            # Also write out a "mini" targetphot catalog and the redshift
-#            # catalog (with a minimal number of columns) used to generate the
-#            # targetphot file. Note that this intermediate catalog is needed /
-#            # used to do positional Tractor photometry gathering, below.
-#            if args.potential:
-#                outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}-{}.fits'.format(survey, args.specprod))
-#                outfile_miniphot = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-miniphot-{}-{}.fits'.format(survey, args.specprod))
-#
-#                try:
-#                    assert(np.all(miniphot['TARGETID'] == zcat_survey['TARGETID']))
-#                except:
-#                    errmsg = 'TARGETID mismatch!'
-#                    log.critical(errmsg)
-#                    raise IOError(errmsg)
-#                    
-#                add_dependencies(miniphot.meta, envvar_names=['DESI_ROOT'])
-#                miniphot.meta['SURVEY'] = (survey, 'survey name')
-#                miniphot.meta['EXTNAME'] = 'MINIPHOT'
-#                log.info('Writing {:,} objects to {}'.format(len(miniphot), outfile_miniphot))
-#                miniphot.write(outfile_miniphot, overwrite=True)
-#                
-#            else:
-#                outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}-{}.fits'.format(survey, args.specprod))
-#    
-#            add_dependencies(zcat_survey.meta, envvar_names=['DESI_ROOT'])
-#            zcat_survey.meta['SURVEY'] = (survey, 'survey name')
-#            zcat_survey.meta['EXTNAME'] = 'ZCATALOG'
-#            log.info('Writing {:,} objects to {}'.format(len(zcat_survey), outfile_zcat))
-#            zcat_survey.write(outfile_zcat, overwrite=True)
-#
-#            #if survey == 'main' or survey == 'special':
-#            #    allzcat_mainspecial.append(zcat_survey)
-#            #else:
-#            #    allzcat_cmxsv.append(zcat_survey)
-#            allzcat.append(zcat_survey)
-#            allminiphot.append(miniphot)
-#
-#        #if len(allzcat_cmxsv) > 0 or len(allzcat_mainspecial) > 0:# and not args.potential:
-#        if len(allzcat) > 0:
-#            if args.potential:
-#                outfile = os.path.join(args.outdir, 'potential-targets', 'targetphot-potential-{}.fits'.format(args.specprod))
-#                outfile_mini = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-miniphot-{}.fits'.format(args.specprod))
-#                outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-potential-zcat-{}.fits'.format(args.specprod))
-#            else:
-#                outfile = os.path.join(args.outdir, 'observed-targets', 'targetphot-{}.fits'.format(args.specprod))
-#                outfile_zcat = os.path.join(args.outdir, 'ancillary', 'targetphot-zcat-{}.fits'.format(args.specprod))
-#
-#            allzcat = vstack(allzcat, metadata_conflicts='silent')
-#            allzcat.meta.pop('SURVEY')
-#
-#            log.info('Writing {:,} objects to {}'.format(len(allzcat), outfile_zcat))
-#            allzcat.write(outfile_zcat, overwrite=True)
-#
-#            allout = vstack(allout, metadata_conflicts='silent')
-#            try:
-#                assert(np.all(allout['TARGETID'] == allzcat['TARGETID']))
-#            except:
-#                errmsg = 'TARGETID mismatch!'
-#                log.critical(errmsg)
-#                raise IOError(errmsg)
-#            
-#            allout.meta.pop('SURVEY')
-#            #allout.meta['EXTNAME'] = 'TARGETPHOT'
-#            log.info('Writing {:,} objects to {}'.format(len(allout), outfile))
-#            allout.write(outfile, overwrite=True)
-#
-#            if args.potential:
-#                allminiphot = vstack(allminiphot, metadata_conflicts='silent')
-#                try:
-#                    assert(np.all(allminiphot['TARGETID'] == allzcat['TARGETID']))
-#                except:
-#                    errmsg = 'TARGETID mismatch!'
-#                    log.critical(errmsg)
-#                    raise IOError(errmsg)
-#                    
-#                add_dependencies(allminiphot.meta, envvar_names=['DESI_ROOT'])
-#                allminiphot.meta['EXTNAME'] = 'MINIPHOT'
-#                log.info('Writing {:,} objects to {}'.format(len(allminiphot), outfile_mini))
-#                allminiphot.write(outfile_mini, overwrite=True)
+def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
+                     zcat_outfile=None, miniphot_outfile=None, sort=True):
+    """Simple wrapper to write out a targetphot catalog and its ancillary catalogs.
+
+    """
+    # Optionally row-match targetphot_survey to zcat_survey, taking into account
+    # that, e.g., since different ranks can finish at different times and
+    # targetids can repeat across tiles, we need to sort on a tileid-targetid
+    # key.
+    if sort:
+        zkey = [f'{tile}-{tid}' for tile, tid in zip(zcat['TILEID'], zcat['TARGETID'])]
+        tkey = [f'{tile}-{tid}' for tile, tid in zip(targetphot['TILEID'], targetphot['TARGETID'])]
+        zsrt = geomask.match_to(tkey, zkey)
+        targetphot = targetphot[zsrt]
+        assert(np.all(targetphot['TARGETID'] == zcat['TARGETID']))
+    
+    # remove extraneous targeting bits -
+    # https://github.com/moustakas/desi-photometry/issues/13
+    if survey == 'main' or survey == 'special':                
+        remcols = ['CMX_TARGET',
+                   'SV1_DESI_TARGET', 'SV1_BGS_TARGET', 'SV1_MWS_TARGET',
+                   'SV2_DESI_TARGET', 'SV2_BGS_TARGET', 'SV2_MWS_TARGET',
+                   'SV3_DESI_TARGET', 'SV3_BGS_TARGET', 'SV3_MWS_TARGET',
+                   'SV1_SCND_TARGET', 'SV2_SCND_TARGET','SV3_SCND_TARGET']
+        for remcol in remcols:
+            if remcol in targetphot.colnames:
+                targetphot.remove_column(remcol)
+
+    if targetphot_outfile is not None:                
+        add_dependencies(targetphot.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'])
+        targetphot.meta['SURVEY'] = (survey, 'survey name')
+        targetphot.meta['EXTNAME'] = 'TARGETPHOT'
+        log.info(f'Writing {len(targetphot):,d} objects to {targetphot_outfile}')
+        targetphot.write(targetphot_outfile, overwrite=True)
+
+    targetphot['SURVEY'] = survey                    
+
+    if zcat_outfile is not None:
+        add_dependencies(zcat.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'])
+        zcat.meta['SURVEY'] = (survey, 'survey name')
+        zcat.meta['EXTNAME'] = 'ZCATALOG'
+        log.info(f'Writing {len(zcat):,d} objects to {zcat_outfile}')
+        zcat.write(zcat_outfile, overwrite=True)
+
+    # build a "mini" ancillary catalog across all surveys
+    if miniphot_outfile is not None:
+        miniphot = targetphot['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']
+
+        add_dependencies(miniphot.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'])
+        miniphot.meta['SURVEY'] = (survey, 'survey name')
+        miniphot.meta['EXTNAME'] = 'MINIPHOT'
+        log.info(f'Writing {len(miniphot):,d} objects to {miniphot_outfile}')
+        miniphot.write(miniphot_outfile, overwrite=True)
+    else:
+        miniphot = None
+        
+    return targetphot, zcat, miniphot
+
+def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1, overwrite=False):
+    """Gather targeting photometry for observed targets.
+
+    """
+    if comm is None:
+        rank, size = 0, 1
+    else:
+        rank, size = comm.rank, comm.size
+
+    RACOLUMN, DECCOLUMN = 'TARGET_RA', 'TARGET_DEC'
+
+    if rank == 0:
+        any_outfile = glob(os.path.join(outdir, 'observed-targets', f'targetphot-*-{specprod}.fits'))
+        if len(any_outfile) > 0 and not overwrite:
+            log.warning('One or more targetphot output files exist; proceed with caution or use --overwrite.')
+
+        allzcat = []
+        alltargetphot = []
+        #allminiphot = []
+
+        tall = time.time()
+
+    # Divide by survey.
+    for survey in ALLSURVEYS:
+        tone = time.time()
+        
+        zcatfiles = glob(os.path.join(reduxdir, 'zcatalog', f'ztile-{survey}-*-cumulative.fits'))
+        if len(zcatfiles) == 0:
+            log.info(f'No redshift catalogs for survey:specprod {survey}:{specprod}')
+            continue
+
+        # initialize
+        zcat_survey = Table()
+        utiles = np.array([])
+        groups = [np.array([])]
+        
+        # Read all the ztile programs/catalogs in parallel on rank 0.
+        if rank == 0:
+            log.info(f'Working on survey {survey}')
+            
+            targetphot_outfile = os.path.join(outdir, 'observed-targets', f'targetphot-{survey}-{specprod}.fits')
+            zcat_outfile = os.path.join(outdir, 'ancillary', f'targetphot-zcat-{survey}-{specprod}.fits')
+        
+            mpargs = [[zcatfile] for zcatfile in zcatfiles]
+            if mp > 1:
+                import multiprocessing
+                with multiprocessing.Pool(mp) as P:
+                    zcat_survey = P.map(_read_one_zcat, mpargs)
+            else:
+                zcat_survey = [read_one_zcat(mparg[0]) for mparg in mpargs]
+            zcat_survey = vstack(zcat_survey)
+
+            print('HACK!')
+            utiles = np.unique(zcat_survey['TILEID'])
+            if len(utiles) > 1:
+                I = np.random.choice(len(utiles), 2, replace=False)
+                zcat_survey = zcat_survey[np.isin(zcat_survey['TILEID'], utiles[I])]
+            #I = np.random.choice(len(zcat_survey), 20, replace=False)
+            #zcat_survey = zcat_survey[I]
+
+            utiles, npertile = np.unique(zcat_survey['TILEID'], return_counts=True)
+            log.info(f'Found {len(zcat_survey):,d} TARGETIDs and {len(utiles):,d} unique tiles from survey: {survey}')
+
+            groups = weighted_partition(npertile, size)
+
+        # broadcast the work to the other ranks
+        if comm:
+            zcat_survey = comm.bcast(zcat_survey, root=0)
+            utiles = comm.bcast(utiles, root=0)
+            groups = comm.bcast(groups, root=0)
+
+        log.info(f'Rank {rank} started at {time.asctime()} with {len(groups[rank])} tiles.')
+
+        targetphot_survey = []
+        for tileid in utiles[groups[rank]]:
+            log.info(f'Rank {rank} is working on tile {tileid}')
+            I = zcat_survey['TILEID'] == tileid
+            _targetphot_onetile = targetphot_onetile(zcat_survey[I], RACOLUMN, DECCOLUMN, survey)
+            #print(len(zcat_survey[I]), len(_targetphot_onetile))
+            assert(np.all(_targetphot_onetile['TARGETID'] == zcat_survey[I]['TARGETID']))
+            targetphot_survey.append(_targetphot_onetile)
+        if len(targetphot_survey) > 0:
+            targetphot_survey = vstack(targetphot_survey)
+
+        if comm:
+            targetphot_survey = comm.gather(targetphot_survey, root=0)
+
+        # sort and write out on rank 0
+        if rank == 0:
+            if len(targetphot_survey) == 0:
+                errmsg = 'No targeting catalogs were generated!'
+                log.critical(errmsg)
+                raise ValueError(errmsg)
+            targetphot_survey = vstack(targetphot_survey)
+
+            targetphot_survey, zcat_survey, _ = write_targetphot(targetphot_survey, zcat_survey,
+                                                                 targetphot_outfile=targetphot_outfile,
+                                                                 zcat_outfile=zcat_outfile,
+                                                                 survey=survey, sort=True)
+            assert(np.all(targetphot_survey['TARGETID'] == zcat_survey['TARGETID']))            
+
+            alltargetphot.append(targetphot_survey)
+            allzcat.append(zcat_survey)
+            del zcat_survey, targetphot_survey
+
+            log.info(f'Total time for survey {survey}: {(time.time()-tone)/60.:.3f} min')
+
+        log.info(f'Rank {rank} is all done!')
+
+    # write out the final super-catalogs
+    if rank == 0:
+        targetphot_outfile = os.path.join(outdir, 'observed-targets', f'targetphot-{specprod}.fits')
+        zcat_outfile = os.path.join(outdir, 'ancillary', f'targetphot-zcat-{specprod}.fits')
+
+        allzcat = vstack(allzcat, metadata_conflicts='silent')
+        allzcat.meta.pop('SURVEY')
+
+        log.info(f'Writing {len(allzcat):,d} objects to {zcat_outfile}')
+        allzcat.write(zcat_outfile, overwrite=True)
+
+        alltargetphot = vstack(alltargetphot, metadata_conflicts='silent')
+        try:
+            assert(np.all(alltargetphot['TARGETID'] == allzcat['TARGETID']))
+        except:
+            errmsg = 'TARGETID mismatch!'
+            log.critical(errmsg)
+            raise IOError(errmsg)
+        
+        alltargetphot.meta.pop('SURVEY')
+        log.info(f'Writing {len(alltargetphot):,d} objects to {targetphot_outfile}')
+        alltargetphot.write(targetphot_outfile, overwrite=True)
+
+        log.info(f'Total time for all surveys: {(time.time()-tall)/60.:.3f} min')
+
+def targetphot_potential(specprod, reduxdir, outdir, comm=None, mp=1,
+                         nside_targetphot=2, overwrite=False):
+    """Gather targeting photometry for potential targets.
+
+    """
+    from desimodel.footprint import radec2pix
+    
+    if comm is None:
+        rank, size = 0, 1
+    else:
+        rank, size = comm.rank, comm.size
+
+    RACOLUMN, DECCOLUMN = 'RA', 'DEC'
+    
+    if rank == 0:
+        any_outfile = glob(os.path.join(outdir, 'potential-targets', f'targetphot-potential-*-{specprod}.fits'))
+        if len(any_outfile) > 0 and not overwrite:
+            log.warning('One or more targetphot output files exist; proceed with caution or use --overwrite.')
+
+        # Assume that the nominal/parent zcat catalog has been previously generated.
+        parent_zcatfile = os.path.join(outdir, 'ancillary', f'targetphot-zcat-{specprod}.fits')
+        if not os.path.isfile(parent_zcatfile):
+            errmsg = f'Targeting photometric catalog {parent_zcatfile} missing.'
+            log.critical(errmsg)
+            raise IOError(errmsg)
+
+        parent_zcat = Table(fitsio.read(parent_zcatfile))
+        log.info(f'Read {len(parent_zcat):,d} objects from {parent_zcatfile}.')
+
+        _, uindx = np.unique(parent_zcat['TILEID'], return_index=True)
+        tileids = parent_zcat['TILEID'][uindx]
+        surveys = parent_zcat['SURVEY'][uindx]
+        programs = parent_zcat['PROGRAM'][uindx]
+
+        mpargs = [[tileid, survey, program] for tileid, survey, program in zip(tileids, surveys, programs)]
+        if mp > 1:
+            import multiprocessing
+            with multiprocessing.Pool(mp) as P:
+                zcat = P.map(_read_one_potential_targets, mpargs)
+        else:
+            zcat = [read_one_potential_targets(*mparg) for mparg in mpargs]
+        zcat = vstack(zcat)
+
+        # Do not select unique TARGETIDs because the same target can appear
+        # in different surveys; we handle uniqueness below.
+        log.info(f"Found {len(zcat):,d} objects from {len(set(zcat['TILEID'])):,d} unique tiles.")
+
+        allzcat = []
+        alltargetphot = []
+        allminiphot = []
+
+        tall = time.time()
+
+    # Divide by survey.
+    for survey in ALLSURVEYS:
+        tone = time.time()
+
+        # initialize
+        zcat_survey = Table()
+        pixels = np.array([])
+        if survey == 'main':
+            utiles = [np.array([])]   # list of tiles within each healpix
+            groups = [[np.array([])]] # indices of tiles to process within each healpix
+        else:
+            utiles = np.array([])
+            groups = [np.array([])]
+
+        # Read all the ztile programs/catalogs in parallel on rank 0.
+        if rank == 0:
+            log.info(f'Working on survey {survey}')
+
+            S = np.where(survey == zcat['SURVEY'])[0]
+            if len(S) == 0:
+                log.info(f'No redshift catalogs for survey:specprod {survey}:{specprod}')
+                continue
+            
+            zcat_survey = zcat[S]
+            allzcat.append(zcat_survey)
+
+            utiles, npertile = np.unique(zcat_survey['TILEID'], return_counts=True)
+            log.info(f'Found {len(zcat_survey):,d} TARGETIDs and {len(utiles):,d} unique tiles from survey: {survey}')
+
+            # Split potential MAIN targets into nside=2 healpixels because there
+            # are too many of them.
+            if survey == 'main':
+                pixels = radec2pix(nside_targetphot, zcat_survey['RA'], zcat_survey['DEC'])
+                groups, utiles = [], []
+                for ipix, pixel in enumerate(sorted(set(pixels))):
+                    P = pixel == pixels
+                    utiles_pixel, npertile = np.unique(zcat_survey[P]['TILEID'], return_counts=True)
+                    utiles.append(utiles_pixel)
+                    groups.append(weighted_partition(npertile, size))
+            else:
+                groups = weighted_partition(npertile, size)
+
+        # broadcast the work to the other ranks
+        if comm:
+            zcat_survey = comm.bcast(zcat_survey, root=0)
+            utiles = comm.bcast(utiles, root=0)
+            pixels = comm.bcast(pixels, root=0)
+            groups = comm.bcast(groups, root=0)
+
+        # deal with MAIN separately
+        if survey == 'main':
+            if rank == 0:
+                miniphot_survey = []
+            
+            for ipix, pixel in enumerate(sorted(set(pixels))):
+                log.info(f'Rank {rank} started at {time.asctime()} on healpix {pixel} with {len(groups[ipix][rank])} tiles.')
+            
+                P = np.where(pixel == pixels)[0]
+                zcat_pixel = zcat_survey[P]
+            
+                targetphot_pixel = []
+                for tileid in utiles[ipix][groups[ipix][rank]]:
+                    log.info(f'Rank {rank} is working on healpix {pixel} and tile {tileid}')
+                    I = zcat_pixel['TILEID'] == tileid
+                    _targetphot_onetile = targetphot_onetile(zcat_pixel[I], RACOLUMN, DECCOLUMN, survey)
+                    assert(np.all(_targetphot_onetile['TARGETID'] == zcat_pixel[I]['TARGETID']))
+                    targetphot_pixel.append(_targetphot_onetile)
+                if len(targetphot_pixel) > 0:            
+                    targetphot_pixel = vstack(targetphot_pixel)
+    
+                if comm:
+                    targetphot_pixel = comm.gather(targetphot_pixel, root=0)
+
+                # sort and write out on rank 0
+                if rank == 0:
+                    if len(targetphot_pixel) == 0:
+                        errmsg = 'No targeting catalogs were generated!'
+                        log.critical(errmsg)
+                        raise ValueError(errmsg)
+                    
+                    targetphot_pixel = vstack(targetphot_pixel)
+                
+                    targetphot_pixel_outfile = os.path.join(outdir, 'potential-targets', f'targetphot-potential-nside{nside_targetphot}-hp{pixel:02d}-{survey}-{specprod}.fits')
+                    targetphot_pixel, _, _ = write_targetphot(
+                        targetphot_pixel, zcat_pixel, targetphot_outfile=targetphot_pixel_outfile,
+                        zcat_outfile=None, miniphot_outfile=None, survey=survey, sort=True)
+                    miniphot_survey.append(targetphot_pixel['TARGETID', 'TILEID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])
+
+            if rank == 0:
+                miniphot_survey = vstack(miniphot_survey)
+
+                zcat_outfile = os.path.join(outdir, 'ancillary', f'targetphot-potential-zcat-{survey}-{specprod}.fits')
+                miniphot_outfile = os.path.join(outdir, 'ancillary', f'targetphot-potential-miniphot-{survey}-{specprod}.fits')
+                write_targetphot(miniphot_survey, zcat_survey, zcat_outfile=zcat_outfile,
+                                 miniphot_outfile=miniphot_outfile, survey=survey, sort=True)
+
+                
+        else:
+            log.info(f'Rank {rank} started at {time.asctime()} with {len(groups[rank])} tiles.')
+            
+            targetphot_survey = []
+            for tileid in utiles[groups[rank]]:
+                log.info(f'Rank {rank} is working on tile {tileid}')
+                I = zcat_survey['TILEID'] == tileid
+                _targetphot_onetile = targetphot_onetile(zcat_survey[I], RACOLUMN, DECCOLUMN, survey)
+                assert(np.all(_targetphot_onetile['TARGETID'] == zcat_survey[I]['TARGETID']))
+                targetphot_survey.append(_targetphot_onetile)
+            if len(targetphot_survey) > 0:            
+                targetphot_survey = vstack(targetphot_survey)
+
+            if comm:
+                targetphot_survey = comm.gather(targetphot_survey, root=0)
+
+            # sort and write out on rank 0
+            if rank == 0:
+                if len(targetphot_survey) == 0:
+                    errmsg = 'No targeting catalogs were generated!'
+                    log.critical(errmsg)
+                    raise ValueError(errmsg)
+                targetphot_survey = vstack(targetphot_survey)
+
+                targetphot_outfile = os.path.join(outdir, 'potential-targets', f'targetphot-potential-{survey}-{specprod}.fits')
+                zcat_outfile = os.path.join(outdir, 'ancillary', f'targetphot-potential-zcat-{survey}-{specprod}.fits')
+                #miniphot_outfile = os.path.join(outdir, 'ancillary', f'targetphot-potential-miniphot-{survey}-{specprod}.fits')
+                miniphot_outfile = None
+
+                targetphot_survey, zcat_survey, miniphot_survey = write_targetphot(
+                    targetphot_survey, zcat_survey, targetphot_outfile=targetphot_outfile,
+                    zcat_outfile=zcat_outfile, miniphot_outfile=miniphot_outfile, survey=survey,
+                    sort=True)
+                assert(np.all(targetphot_survey['TARGETID'] == zcat_survey['TARGETID']))            
+    
+                alltargetphot.append(targetphot_survey)
+                #allminiphot.append(miniphot_survey)
+                del targetphot_survey, zcat_survey, miniphot_survey
+    
+            log.info(f'Total time for survey {survey}: {(time.time()-tone)/60.:.3f} min')            
+
+        log.info(f'Rank {rank} is all done!')
+
+    # write out the final merged redshift catalog.
+    if rank == 0:
+        if len(allzcat) > 0:
+            zcat_outfile = os.path.join(outdir, 'ancillary', f'targetphot-potential-zcat-{specprod}.fits')
+
+            allzcat = vstack(allzcat, metadata_conflicts='silent')
+            log.info(f'Writing {len(allzcat):,d} objects to {zcat_outfile}')
+            allzcat.write(zcat_outfile, overwrite=True)
+
+        log.info(f'Total time for all surveys: {(time.time()-tall)/60.:.3f} min')
+
 
 def main():
     """Main wrapper.
@@ -596,154 +676,19 @@ def main():
         except ImportError:
             comm = None
 
-    if comm is None:
-        rank, size = 0, 1
-    else:
-        rank, size = comm.rank, comm.size
-
     # https://docs.nersc.gov/development/languages/python/parallel-python/#use-the-spawn-start-method
     if args.mp > 1 and 'NERSC_HOST' in os.environ:
         import multiprocessing
         multiprocessing.set_start_method('spawn')
 
     if args.targetphot:
-        if rank == 0:
-            any_outfile = glob(os.path.join(args.outdir, 'observed-targets', f'targetphot-*-{args.specprod}.fits'))
-            if len(any_outfile) > 0 and not args.overwrite:
-                log.warning('One or more targetphot output files exist; proceed with caution or use --overwrite.')
-
-            allzcat = []
-            allminiphot = []
-            alltargetphot = []
-
-            t0 = time.time()
-
-        # Divide by survey.
-        for survey in ALLSURVEYS:
-            # Read all the ztile programs/catalogs in parallel on rank 0.
-            if rank == 0:
-                log.info(f'Working on survey {survey}')
-                targetphot_outfile = os.path.join(args.outdir, 'observed-targets', f'targetphot-{survey}-{args.specprod}.fits')
-                zcat_outfile = os.path.join(args.outdir, 'ancillary', f'targetphot-zcat-{survey}-{args.specprod}.fits')
-            
-                zcatfiles = glob(os.path.join(args.reduxdir, 'zcatalog', f'ztile-{survey}-*-cumulative.fits'))
-                
-                mpargs = [[zcatfile] for zcatfile in zcatfiles]
-                if args.mp > 1:
-                    with multiprocessing.Pool(args.mp) as P:
-                        zcat_survey = P.map(_read_one_zcat, mpargs)
-                else:
-                    zcat_survey = [read_one_zcat(mparg[0]) for mparg in mpargs]
-                zcat_survey = vstack(zcat_survey)
-
-                #print('HACK!!')
-                #I = rand = np.random.choice(len(zcat_survey), 1000, replace=False)
-                #zcat_survey = zcat_survey[I]
-
-                utiles = np.unique(zcat_survey['TILEID'])
-                log.info(f'Found {len(zcat_survey):,d} TARGETIDs and {len(utiles):,d} unique tiles from survey: {survey}')
-
-                npertile = [np.sum(zcat_survey['TILEID'] == tileid) for tileid in utiles]
-                groups = weighted_partition(npertile, size)
-            else:
-                zcat_survey = Table()
-                utiles = np.array([])
-                groups = [np.array([])]
-
-            # broadcast the work to the other ranks
-            if comm is not None:
-                zcat_survey = comm.bcast(zcat_survey, root=0)
-                utiles = comm.bcast(utiles, root=0)
-                groups = comm.bcast(groups, root=0)
-
-            log.debug(f'Rank {rank} started at {time.asctime()} with {len(groups[rank])} tiles.')
-
-            targetphot_survey = []
-            for tileid in utiles[groups[rank]]:
-                log.info(f'Rank {rank} is working on tile {tileid}')
-                I = zcat_survey['TILEID'] == tileid
-                targetphot_onetile = targetphot_one(zcat_survey[I], 'TARGET_RA', 'TARGET_DEC', survey)
-                #print(len(zcat_survey[I]), len(targetphot_onetile))
-                assert(np.all(targetphot_onetile['TARGETID'] == zcat_survey[I]['TARGETID']))
-                targetphot_survey.append(targetphot_onetile)
-            targetphot_survey = vstack(targetphot_survey)
-
-            if comm is not None:
-                comm.barrier() # make sure all ranks are done
-
-            # stack, sort, and write out on rank 0
-            if rank == 0:
-                if comm is not None:
-                    targetphot_survey = comm.gather(targetphot_survey, root=0)
-                    targetphot_survey = vstack(targetphot_survey)
-
-                # targetphot_survey needs to be row-matched to zcat_survey,
-                # but since different ranks can finish at different times
-                # and targetids can repeat across tiles, we need to sort on
-                # a tileid-targetid key.
-                zkey = [f'{tile}-{tid}' for tile, tid in zip(zcat_survey['TILEID'], zcat_survey['TARGETID'])]
-                tkey = [f'{tile}-{tid}' for tile, tid in zip(targetphot_survey['TILEID'], targetphot_survey['TARGETID'])]
-                zsrt = geomask.match_to(tkey, zkey)
-                targetphot_survey = targetphot_survey[zsrt]
-                assert(np.all(targetphot_survey['TARGETID'] == zcat_survey['TARGETID']))
-                
-                # build a "mini" ancillary catalog across all surveys
-                allminiphot.append(targetphot_survey['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])
-
-                # remove extraneous targeting bits -
-                # https://github.com/moustakas/desi-photometry/issues/13
-                if survey == 'main' or survey == 'special':                
-                    remcols = ['CMX_TARGET',
-                               'SV1_DESI_TARGET', 'SV1_BGS_TARGET', 'SV1_MWS_TARGET',
-                               'SV2_DESI_TARGET', 'SV2_BGS_TARGET', 'SV2_MWS_TARGET',
-                               'SV3_DESI_TARGET', 'SV3_BGS_TARGET', 'SV3_MWS_TARGET',
-                               'SV1_SCND_TARGET', 'SV2_SCND_TARGET','SV3_SCND_TARGET']
-                    targetphot_survey.remove_columns(remcols)
-            
-                add_dependencies(targetphot_survey.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'])
-                targetphot_survey.meta['SURVEY'] = (survey, 'survey name')
-                targetphot_survey.meta['EXTNAME'] = 'TARGETPHOT'
-                log.info(f'Writing {len(targetphot_survey):,d} objects to {targetphot_outfile}')
-                targetphot_survey.write(targetphot_outfile, overwrite=True)
-
-                targetphot_survey['SURVEY'] = survey                    
-                alltargetphot.append(targetphot_survey)
-                del targetphot_survey
-
-                add_dependencies(zcat_survey.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'])
-                zcat_survey.meta['SURVEY'] = (survey, 'survey name')
-                zcat_survey.meta['EXTNAME'] = 'ZCATALOG'
-                log.info(f'Writing {len(zcat_survey):,d} objects to {zcat_outfile}')
-                zcat_survey.write(zcat_outfile, overwrite=True)
-
-                allzcat.append(zcat_survey)
-                del zcat_survey
-
-        # write out the final super-catalogs
-        if rank == 0:
-            log.info(f'Total time for all surveys = {(time.time()-t0)/60.:.3f} min')
-
-            targetphot_outfile = os.path.join(args.outdir, 'observed-targets', f'targetphot-{args.specprod}.fits')
-            zcat_outfile = os.path.join(args.outdir, 'ancillary', f'targetphot-zcat-{args.specprod}.fits')
-    
-            allzcat = vstack(allzcat, metadata_conflicts='silent')
-            allzcat.meta.pop('SURVEY')
-    
-            log.info(f'Writing {len(allzcat):,d} objects to {zcat_outfile}')
-            allzcat.write(zcat_outfile, overwrite=True)
-    
-            alltargetphot = vstack(alltargetphot, metadata_conflicts='silent')
-            try:
-                assert(np.all(alltargetphot['TARGETID'] == allzcat['TARGETID']))
-            except:
-                errmsg = 'TARGETID mismatch!'
-                log.critical(errmsg)
-                raise IOError(errmsg)
-            
-            alltargetphot.meta.pop('SURVEY')
-            log.info(f'Writing {len(alltargetphot):,d} objects to {targetphot_outfile}')
-            alltargetphot.write(targetphot_outfile, overwrite=True)
-
+        targetphot_observed(args.specprod, args.reduxdir, args.outdir, comm=comm,
+                            mp=args.mp, overwrite=args.overwrite)
+        
+    if args.targetphot_potential:
+        targetphot_potential(args.specprod, args.reduxdir, args.outdir, comm=comm,
+                             mp=args.mp, nside_targetphot=args.nside_targetphot,
+                             overwrite=args.overwrite)
                     
     #if args.tractorphot:
     #    if args.potential:
