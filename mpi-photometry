@@ -218,7 +218,7 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
         
     return targetphot, zcat, miniphot
 
-def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1, overwrite=False):
+def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1):
     """Gather targeting photometry for observed targets.
 
     """
@@ -230,10 +230,6 @@ def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1, overwrite=F
     RACOLUMN, DECCOLUMN = 'TARGET_RA', 'TARGET_DEC'
 
     if rank == 0:
-        any_outfile = glob(os.path.join(outdir, 'observed-targets', f'targetphot-*-{specprod}.fits'))
-        if len(any_outfile) > 0 and not overwrite:
-            log.warning('One or more targetphot output files exist; proceed with caution or use --overwrite')
-
         allzcat = []
         alltargetphot = []
         #allminiphot = []
@@ -270,11 +266,11 @@ def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1, overwrite=F
                 zcat_survey = [read_one_zcat(mparg[0]) for mparg in mpargs]
             zcat_survey = vstack(zcat_survey)
 
-            print('testing...')
-            utiles = np.unique(zcat_survey['TILEID'])
-            if len(utiles) > 1:
-                I = np.random.choice(len(utiles), 8, replace=False)
-                zcat_survey = zcat_survey[np.isin(zcat_survey['TILEID'], utiles[I])]
+            #print('testing...')
+            #utiles = np.unique(zcat_survey['TILEID'])
+            #if len(utiles) > 1:
+            #    I = np.random.choice(len(utiles), 16, replace=False)
+            #    zcat_survey = zcat_survey[np.isin(zcat_survey['TILEID'], utiles[I])]
 
             utiles, npertile = np.unique(zcat_survey['TILEID'], return_counts=True)
             log.info(f'Distributing {len(zcat_survey):,d} TARGETIDs and {len(utiles):,d} unique tiles from survey {survey} across {size} ranks')
@@ -301,7 +297,7 @@ def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1, overwrite=F
             targetphot_survey = vstack(targetphot_survey)
 
         if comm:
-            targetphot_survey = comm.Gatherv(targetphot_survey, root=0)
+            targetphot_survey = comm.gather(targetphot_survey, root=0)
 
         # sort and write out on rank 0
         if rank == 0:
@@ -323,7 +319,7 @@ def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1, overwrite=F
 
             log.info(f'Total time for survey {survey}: {(time.time()-tone)/60.:.3f} min')
         else:
-            del targetphot_survey
+            del zcat_survey, targetphot_survey
 
         #log.info(f'Rank {rank:03d} is all done!')
 
@@ -352,8 +348,7 @@ def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1, overwrite=F
 
         log.info(f'Total time for all surveys: {(time.time()-tall)/60.:.3f} min')
 
-def targetphot_potential(specprod, reduxdir, outdir, comm=None, mp=1,
-                         nside_targetphot=2, overwrite=False):
+def targetphot_potential(specprod, reduxdir, outdir, comm=None, mp=1, nside_targetphot=2):
     """Gather targeting photometry for potential targets.
 
     """
@@ -367,10 +362,6 @@ def targetphot_potential(specprod, reduxdir, outdir, comm=None, mp=1,
     RACOLUMN, DECCOLUMN = 'RA', 'DEC'
     
     if rank == 0:
-        any_outfile = glob(os.path.join(outdir, 'potential-targets', f'targetphot-potential-*-{specprod}.fits'))
-        if len(any_outfile) > 0 and not overwrite:
-            log.warning('One or more targetphot output files exist; proceed with caution or use --overwrite')
-
         # Assume that the nominal/parent zcat catalog has been previously generated.
         parent_zcatfile = os.path.join(outdir, 'ancillary', f'targetphot-zcat-{specprod}.fits')
         if not os.path.isfile(parent_zcatfile):
@@ -502,7 +493,6 @@ def targetphot_potential(specprod, reduxdir, outdir, comm=None, mp=1,
                 miniphot_outfile = os.path.join(outdir, 'ancillary', f'targetphot-potential-miniphot-{survey}-{specprod}.fits')
                 write_targetphot(miniphot_survey, zcat_survey, zcat_outfile=zcat_outfile,
                                  miniphot_outfile=miniphot_outfile, survey=survey, sort=True)
-
                 
         else:
             log.info(f'Rank {rank:03d} started at {time.asctime()} with {len(groups[rank])} tiles')
@@ -544,7 +534,7 @@ def targetphot_potential(specprod, reduxdir, outdir, comm=None, mp=1,
                 allminiphot.append(miniphot_survey)
                 #del targetphot_survey, zcat_survey, miniphot_survey
     
-            log.info(f'Total time for survey {survey}: {(time.time()-tone)/60.:.3f} min')            
+                log.info(f'Total time for survey {survey}: {(time.time()-tone)/60.:.3f} min')            
 
         log.info(f'Rank {rank:03d} is all done!')
 
@@ -561,8 +551,7 @@ def targetphot_potential(specprod, reduxdir, outdir, comm=None, mp=1,
 
         log.info(f'Total time for all surveys: {(time.time()-tall)/60.:.3f} min')
 
-def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4,
-                overwrite=False, potential=False):
+def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potential=False):
     """Gather targeting photometry for observed targets.
 
     """
@@ -590,10 +579,6 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4,
             targets_subdir = 'observed-targets'
             suffix = ''
         
-        any_outfile = glob(os.path.join(outdir, targets_subdir, 'tractorphot', f'tractorphot{suffix}-nside{nside_tractorphot}-hp*-{specprod}.fits'))
-        if len(any_outfile) > 0 and not overwrite:
-            log.warning('One or more tractorphot output files exist; proceed with caution or use --overwrite')            
-
         zcatfile = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-zcat-{specprod}.fits')
         if potential:
             targetfile = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-miniphot-{specprod}.fits')
@@ -674,9 +659,6 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4,
         log.info(f'Rank {rank:03d} working on healpix {pixel:03d} with {len(groups[ipix][rank])} bricks')
 
         tractorphot_outfile = os.path.join(outdir, targets_subdir, 'tractorphot', f'tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:02d}-{specprod}.fits')
-        if os.path.isfile(tractorphot_outfile) and not overwrite:
-            log.warning(f'Output file {tractorphot_outfile} exists; proceed with caution or use --overwrite')
-            continue
 
         P = np.where(pixel == pixels)[0]
         miniphot_pixel = miniphot[P]
@@ -721,8 +703,6 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4,
     # photometry.
     if rank == 0:
         missing_outfile = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-missing-{specprod}.fits')
-        if os.path.isfile(missing_outfile) and not overwrite:
-            log.warning(f'Output file {missing_outfile} exists; proceed with caution or use --overwrite')
         
         missing = []
         for ipix, pixel in enumerate(sorted(set(pixels))):
@@ -777,8 +757,6 @@ def main():
 
     parser.add_argument('--plan', action='store_true', help='Plan how many nodes to use and how to distribute the targets.')
     parser.add_argument('--nompi', action='store_true', help='Do not use MPI parallelism.')
-    parser.add_argument('--dry-run', action='store_true', help='Generate but do not run commands.')
-    parser.add_argument('--overwrite', action='store_true', help='Overwrite any existing output files.')
     
     args = parser.parse_args()
     log = get_logger()    
@@ -811,21 +789,19 @@ def main():
         multiprocessing.set_start_method('spawn')
 
     if args.targetphot:
-        targetphot_observed(args.specprod, args.reduxdir, args.outdir, comm=comm,
-                            mp=args.mp, overwrite=args.overwrite)
+        targetphot_observed(args.specprod, args.reduxdir, args.outdir, comm=comm, mp=args.mp)
         
     if args.targetphot_potential:
         targetphot_potential(args.specprod, args.reduxdir, args.outdir, comm=comm,
-                             mp=args.mp, nside_targetphot=args.nside_targetphot,
-                             overwrite=args.overwrite)
+                             mp=args.mp, nside_targetphot=args.nside_targetphot)
                     
     if args.tractorphot:
-        tractorphot(args.specprod, args.outdir, comm=comm, overwrite=args.overwrite,
-                    nside_tractorphot=args.nside_tractorphot, potential=False)
+        tractorphot(args.specprod, args.outdir, comm=comm, potential=False,
+                    nside_tractorphot=args.nside_tractorphot)
         
     if args.tractorphot_potential:
-        tractorphot(args.specprod, args.outdir, comm=comm, overwrite=args.overwrite,
-                    nside_tractorphot=args.nside_tractorphot, potential=True)
+        tractorphot(args.specprod, args.outdir, comm=comm, potential=True,
+                    nside_tractorphot=args.nside_tractorphot)
 
 if __name__ == '__main__':
     main()
