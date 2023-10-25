@@ -5,6 +5,7 @@
 
 Set up the software dependencies:
   salloc -N 1 -C cpu -A desi -t 01:00:00 --qos interactive
+
   source /dvs_ro/common/software/desi/desi_environment.sh 23.6
   for package in desispec; do
     echo Loading local check-out of $package
@@ -15,10 +16,16 @@ Set up the software dependencies:
 
 srun --ntasks 64 --cpus-per-task $((2 * 128 / 64)) --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --outdir $PSCRATCH/lsdr9/fuji --reduxdir $DESI_ROOT_READONLY/spectro/redux/fuji --specprod fuji --mp 4 --targetphot
 
+alloc -N 1 -C cpu -A desi -t 01:00:00 --qos interactive
+srun --ntasks=8 --cpus-per-task=32 --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --reduxdir $DESI_ROOT_READONLY/spectro/redux/fuji --outdir $PSCRATCH/lsdr9/fuji --specprod fuji --targetphot
+
+alloc -N 2 -C cpu -A desi -t 01:00:00 --qos interactive
+srun --ntasks=16 --cpus-per-task=32 --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --reduxdir $DESI_ROOT_READONLY/spectro/redux/fuji --outdir $PSCRATCH/lsdr9/fuji --specprod fuji --targetphot
+
 """
 import pdb # for debugging
 
-import os, sys, time
+import os, sys, time, psutil
 import numpy as np
 import fitsio
 from glob import glob
@@ -32,7 +39,7 @@ from desiutil.log import get_logger, DEBUG
 log = get_logger()
 
 ALLSURVEYS = ['sv1', 'sv2', 'sv3', 'cmx', 'special', 'main']
-ALLSURVEYS = ['sv3']
+ALLSURVEYS = ['sv2']
 #ALLSURVEYS = ['main']
 
 def _read_one_zcat(args):
@@ -266,11 +273,12 @@ def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1):
                 zcat_survey = [read_one_zcat(mparg[0]) for mparg in mpargs]
             zcat_survey = vstack(zcat_survey)
 
-            #print('testing...')
-            #utiles = np.unique(zcat_survey['TILEID'])
-            #if len(utiles) > 1:
-            #    I = np.random.choice(len(utiles), 16, replace=False)
-            #    zcat_survey = zcat_survey[np.isin(zcat_survey['TILEID'], utiles[I])]
+            if False:
+                print('Testing...')
+                utiles = np.unique(zcat_survey['TILEID'])
+                if len(utiles) > 1:
+                    I = np.random.choice(len(utiles), 16, replace=False)
+                    zcat_survey = zcat_survey[np.isin(zcat_survey['TILEID'], utiles[I])]
 
             utiles, npertile = np.unique(zcat_survey['TILEID'], return_counts=True)
             log.info(f'Distributing {len(zcat_survey):,d} TARGETIDs and {len(utiles):,d} unique tiles from survey {survey} across {size} ranks')
@@ -287,17 +295,24 @@ def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1):
 
         targetphot_survey = []
         for itile, tileid in enumerate(utiles[groups[rank]]):
-            log.info(f'Rank {rank:03d} is working on tile {tileid:05d} ({itile+1:02d}/{len(utiles[groups[rank]]):02d})')
+            log.info(f'Rank {rank:03d} is working on tile {tileid:05d} ({itile+1:04d}/{len(utiles[groups[rank]]):04d})')
             I = zcat_survey['TILEID'] == tileid
             _targetphot_onetile = targetphot_onetile(zcat_survey[I], RACOLUMN, DECCOLUMN, survey)
             #print(len(zcat_survey[I]), len(_targetphot_onetile))
             assert(np.all(_targetphot_onetile['TARGETID'] == zcat_survey[I]['TARGETID']))
             targetphot_survey.append(_targetphot_onetile)
+            del _targetphot_onetile
         if len(targetphot_survey) > 0:
             targetphot_survey = vstack(targetphot_survey)
 
         if comm:
+            #mem = psutil.Process(os.getpid()).memory_info().rss / 1024**3 # GB
+            #log.info(f'Rank {rank} memory before gather: {mem:,d} GB')
+            print('before', rank, len(targetphot_survey))
             targetphot_survey = comm.gather(targetphot_survey, root=0)
+            print('after', rank, len(targetphot_survey))
+            #mem = psutil.Process(os.getpid()).memory_info().rss / 1024**3 # GB
+            #log.info(f'Rank {rank} memory after gather: {mem:,d} GB')
 
         # sort and write out on rank 0
         if rank == 0:
