@@ -572,7 +572,7 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
                     targetphot_pixel, _, _ = write_targetphot(
                         targetphot_pixel, zcat_pixel, targetphot_outfile=targetphot_pixel_outfile,
                         zcat_outfile=None, miniphot_outfile=None, survey=survey, sort=True,
-                        healpix=f'{pixel:02d}', nside=nside_targetphot)
+                        healpix=pixel, nside=nside_targetphot)
                     miniphot_survey.append(targetphot_pixel[MINIPHOT_COLUMNS])
 
             if comm:
@@ -815,7 +815,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
                 add_dependencies(tractorphot_pixel.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'])
                 tractorphot_pixel.meta['FILENSID'] = (nside_tractorphot, 'HEALPix nside number')
                 tractorphot_pixel.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
-                tractorphot_pixel.meta['FILEHPIX'] = (f'{pixel:03d}', 'HEALPix number')
+                tractorphot_pixel.meta['FILEHPIX'] = (pixel, 'HEALPix number')
                 tractorphot_pixel.meta['EXTNAME'] = 'TRACTORPHOT'
         
                 log.info(f'Writing {len(tractorphot_pixel):,d} objects to {tractorphot_outfile}')
