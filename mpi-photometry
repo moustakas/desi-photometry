@@ -154,7 +154,8 @@ def targetphot_onetile(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC', 
     return targetphot
 
 def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
-                     zcat_outfile=None, miniphot_outfile=None, sort=True):
+                     zcat_outfile=None, miniphot_outfile=None, sort=True,
+                     nside=None, healpix=None):
     """Simple wrapper to write out a targetphot catalog and its ancillary catalogs.
 
     """
@@ -188,7 +189,12 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
         else:
             if 'SURVEY' in targetphot.meta.keys():
                 targetphot.meta.pop('SURVEY')
+        if nside is not None and healpix is not None:
+            targetphot.meta['FILENSID'] = (nside, 'HEALPix nside number')
+            targetphot.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
+            targetphot.meta['FILEHPIX'] = (healpix, 'HEALPix number')
         targetphot.meta['EXTNAME'] = 'TARGETPHOT'
+        
         log.info(f'Writing {len(targetphot):,d} objects to {targetphot_outfile}')
         targetphot.write(targetphot_outfile, overwrite=True)
 
@@ -464,7 +470,7 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
                 zcat_survey = zcat[S]
                 allzcat.append(zcat_survey)
 
-                utiles, npertile = np.unique(zcat_survey['TILEID'], return_counts=True)
+                utiles, npertile = np.unique(zcat_survey['TILEID'].data, return_counts=True)
                 log.info(f'Found {len(zcat_survey):,d} TARGETIDs and {len(utiles):,d} unique tiles from survey: {survey}')
 
                 pixels = radec2pix(nside_targetphot, zcat_survey['RA'], zcat_survey['DEC'])
@@ -489,18 +495,17 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
             for ipix, pixel in enumerate(upixels):
                 #log.info(f'Rank {rank:03d} started at {time.asctime()} on healpix {pixel:03d} with {len(groups[ipix][rank])} tiles')
 
-                # initialize
-                utiles = np.array([])
-                groups = [np.array([])]
-                zcat_pixel = None
-
                 # Split potential MAIN targets into nside=2 healpixels because there
                 # are too many of them.
                 if rank == 0:
                     P = pixel == pixels
                     zcat_pixel = zcat_survey[P]
-                    utiles, npertile = np.unique(zcat_pixel['TILEID'], return_counts=True)
+                    utiles, npertile = np.unique(zcat_pixel['TILEID'].data, return_counts=True)
                     groups = weighted_partition(npertile, size)
+                else:
+                    utiles = np.array([])
+                    groups = [np.array([])]
+                    zcat_pixel = None
 
                 if comm:
                     utiles = comm.bcast(utiles, root=0)
@@ -508,9 +513,8 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
                     zcat_pixel = comm.bcast(zcat_pixel, root=0)
 
                 targetphot_pixel = []
-                for itile, tileid in enumerate(utiles[groups[ipix][rank]]):
-                    log.info(f"""Rank {rank:03d} is working on healpix {pixel:03d} ({ipix+1:03d}/{len(upixels):03d}) and {survey}
-                              tile {tileid:05d} ({itile+1:04d}/{len(utiles[groups[rank]]):04d})""")
+                for itile, tileid in enumerate(utiles[groups[rank]]):
+                    log.info(f'Rank {rank:03d} is working on healpix {pixel:02d} ({ipix+1:02d}/{len(upixels):02d}) and {survey} tile {tileid:05d} ({itile+1:04d}/{len(utiles[groups[rank]]):04d})')
                     I = zcat_pixel['TILEID'] == tileid
                     _targetphot_onetile = targetphot_onetile(zcat_pixel[I], RACOLUMN, DECCOLUMN, survey)
                     assert(np.all(_targetphot_onetile['TARGETID'] == zcat_pixel[I]['TARGETID']))
@@ -518,7 +522,7 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
                     
                 if len(targetphot_pixel) > 0:            
                     targetphot_pixel = vstack(targetphot_pixel)
-                    targetphot_pixel_tmpfile = os.path.join(outdir, 'potential-targets', f'tmp-rank{rank}-targetphot-potential-hp{pixel:03d}-{survey}-{specprod}.fits')
+                    targetphot_pixel_tmpfile = os.path.join(outdir, 'potential-targets', f'tmp-rank{rank}-targetphot-potential-hp{pixel:02d}-{survey}-{specprod}.fits')
                     targetphot_pixel.write(targetphot_pixel_tmpfile, overwrite=True)
                     
                 if comm:
@@ -533,7 +537,7 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
                     #    raise ValueError(errmsg)
                     #targetphot_pixel = vstack(targetphot_pixel)
 
-                    targetphot_pixel_tmpfiles = glob(os.path.join(outdir, 'potential-targets', f'tmp-rank*-targetphot-potential-hp{pixel:03d}-{survey}-{specprod}.fits'))
+                    targetphot_pixel_tmpfiles = glob(os.path.join(outdir, 'potential-targets', f'tmp-rank*-targetphot-potential-hp{pixel:02d}-{survey}-{specprod}.fits'))
                     if len(targetphot_pixel_tmpfiles) == 0:
                         errmsg = 'No targeting catalogs were generated!'
                         log.critical(errmsg)
@@ -546,11 +550,12 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
                         os.remove(targetphot_pixel_tmpfile)
                     targetphot_pixel = vstack(targetphot_pixel)
                         
-                    targetphot_pixel_outfile = f'targetphot-potential-nside{nside_targetphot}-hp{pixel:03d}-{survey}-{specprod}.fits'
+                    targetphot_pixel_outfile = f'targetphot-potential-nside{nside_targetphot}-hp{pixel:02d}-{survey}-{specprod}.fits'
                     targetphot_pixel_outfile = os.path.join(outdir, 'potential-targets', targetphot_pixel_outfile)
                     targetphot_pixel, _, _ = write_targetphot(
                         targetphot_pixel, zcat_pixel, targetphot_outfile=targetphot_pixel_outfile,
-                        zcat_outfile=None, miniphot_outfile=None, survey=survey, sort=True)
+                        zcat_outfile=None, miniphot_outfile=None, survey=survey, sort=True,
+                        healpix=f'{pixel:02d}', nside=nside_targetphot)
                     miniphot_survey.append(targetphot_pixel['TARGETID', 'TILEID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])
 
             if comm:
@@ -701,7 +706,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
             raise IOError(errmsg)
 
         # TARGETIDs can repeat in and between surveys, so select just unique
-        # targets here.
+        # targets here; that's fine.
         _, uindx = np.unique(cat['TARGETID'], return_index=True)
         cat = cat[uindx]
         zcat = zcat[uindx]
@@ -717,7 +722,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
         # using decode_targetid.
         fix = np.where((miniphot['BRICKNAME'] != '') * (miniphot['BRICK_OBJID'] == 0))[0]
         if len(fix) > 0:
-            log.info(f'Inferring BRICK_OBJID for {len(fix)} objects using decode_targetid')
+            log.info(f'Inferring BRICK_OBJID for {len(fix):,d} objects using decode_targetid')
             fix_objid, fix_brickid, _, _, _, _ = decode_targetid(miniphot['TARGETID'][fix])
             assert(np.all(fix_brickid == miniphot['BRICKID'][fix]))
             miniphot['BRICK_OBJID'][fix] = fix_objid
@@ -734,37 +739,36 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
         log.info(f'Gathering Tractor photometry for {len(miniphot):,d} objects')
 
         pixels = radec2pix(nside_tractorphot, miniphot[RACOLUMN].data, miniphot[DECCOLUMN].data)
-        groups, bricknames = [], []
-        for ipix, pixel in enumerate(sorted(set(pixels))):
-            P = pixel == pixels
-            bricknames_pixel, nperbrick = np.unique(miniphot[P]['BRICKNAME'].data, return_counts=True)
-            bricknames.append(bricknames_pixel)
-            groups.append(weighted_partition(nperbrick, size))
     else:
-        # initialize
-        miniphot = Table()
         pixels = np.array([])
-        bricknames = [np.array([])] # list of bricknames within each healpix
-        groups = [[np.array([])]]   # indices of bricks to process within each healpix
 
     # broadcast the work to the other ranks
     if comm:
-        miniphot = comm.bcast(miniphot, root=0)
-        bricknames = comm.bcast(bricknames, root=0)
         pixels = comm.bcast(pixels, root=0)
-        groups = comm.bcast(groups, root=0)
-            
-    for ipix, pixel in enumerate(sorted(set(pixels))):
-        log.debug(f'Rank {rank:03d} working on healpix {pixel:03d} with {len(groups[ipix][rank])} brick(s)')
 
-        tractorphot_outfile = os.path.join(outdir, targets_subdir, 'tractorphot', f'tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits')
+    upixels = sorted(set(pixels))
+    for ipix, pixel in enumerate(upixels):
+        #log.debug(f'Rank {rank:03d} working on healpix {pixel:03d} with {len(groups[ipix][rank])} brick(s)')
 
-        P = np.where(pixel == pixels)[0]
-        miniphot_pixel = miniphot[P]
-    
+        if rank == 0:
+            P = pixel == pixels
+            miniphot_pixel = miniphot[P]
+            ubricknames, nperbrick = np.unique(miniphot_pixel['BRICKNAME'].data, return_counts=True)
+            groups = weighted_partition(nperbrick, size)
+        else:
+            ubricknames = np.array([])
+            groups = [np.array([])]
+            miniphot_pixel = None
+
+        if comm:
+            ubricknames = comm.bcast(ubricknames, root=0)
+            groups = comm.bcast(groups, root=0)
+            miniphot_pixel = comm.bcast(miniphot_pixel, root=0)
+
+        # gather the photometry
         tractorphot_pixel = []
-        for brickname in bricknames[ipix][groups[ipix][rank]]:
-            #log.info(f'Rank {rank:03d} is working on healpix {pixel} and brickname {brickname}')
+        for ibrick, brickname in enumerate(ubricknames[groups[rank]]):
+            log.info(f'Rank {rank:03d} is working on healpix {pixel:03d} ({ipix+1:03d}/{len(upixels):03d}) and brick {brickname} ({ibrick+1:04d}/{len(ubricknames[groups[rank]]):04d})')
             I = np.where(miniphot_pixel['BRICKNAME'] == brickname)[0]
             _tractorphot_onebrick = tractorphot_onebrick(miniphot_pixel[I], RACOLUMN, DECCOLUMN)
             assert(np.all(_tractorphot_onebrick['TARGETID'] == miniphot_pixel[I]['TARGETID']))
@@ -782,6 +786,8 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
                 log.critical(errmsg)
                 raise ValueError(errmsg)            
             tractorphot_pixel = vstack(tractorphot_pixel)
+
+            tractorphot_outfile = os.path.join(outdir, targets_subdir, 'tractorphot', f'tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits')
 
             # sort
             tractorphot_pixel = tractorphot_pixel[geomask.match_to(tractorphot_pixel['TARGETID'], miniphot_pixel['TARGETID'])]
