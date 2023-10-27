@@ -748,8 +748,6 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
 
     upixels = sorted(set(pixels))
     for ipix, pixel in enumerate(upixels):
-        #log.debug(f'Rank {rank:03d} working on healpix {pixel:03d} with {len(groups[ipix][rank])} brick(s)')
-
         if rank == 0:
             P = pixel == pixels
             miniphot_pixel = miniphot[P]
@@ -766,9 +764,11 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
             miniphot_pixel = comm.bcast(miniphot_pixel, root=0)
 
         # gather the photometry
+        log.info(f'Rank {rank:03d} working on healpix {pixel:03d} ({ipix+1:03d}/{len(upixels):03d}) with {len(ubricknames[groups[rank]])} brick(s)')
+
         tractorphot_pixel = []
         for ibrick, brickname in enumerate(ubricknames[groups[rank]]):
-            log.info(f'Rank {rank:03d} is working on healpix {pixel:03d} ({ipix+1:03d}/{len(upixels):03d}) and brick {brickname} ({ibrick+1:04d}/{len(ubricknames[groups[rank]]):04d})')
+            log.debug(f'Rank {rank:03d} is working on healpix {pixel:03d} ({ipix+1:03d}/{len(upixels):03d}) and brick {brickname} ({ibrick+1:04d}/{len(ubricknames[groups[rank]]):04d})')
             I = np.where(miniphot_pixel['BRICKNAME'] == brickname)[0]
             _tractorphot_onebrick = tractorphot_onebrick(miniphot_pixel[I], RACOLUMN, DECCOLUMN)
             assert(np.all(_tractorphot_onebrick['TARGETID'] == miniphot_pixel[I]['TARGETID']))
