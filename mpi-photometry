@@ -7,10 +7,7 @@ Set up the software dependencies:
   salloc -N 1 -C cpu -A desi -t 01:00:00 --qos interactive
 
   source /dvs_ro/common/software/desi/desi_environment.sh 23.6
-  package=desispec
-  module unload $package
-  export PATH=$HOME/code/desihub/$package/bin:${PATH}
-  export PYTHONPATH=$HOME/code/desihub/$package/py:${PYTHONPATH}
+  export PYTHONPATH=$HOME/code/desihub/desispec/py:${PYTHONPATH}
 
 srun --ntasks 64 --cpus-per-task $((2 * 128 / 64)) --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --outdir $PSCRATCH/lsdr9/fuji --reduxdir $DESI_ROOT_READONLY/spectro/redux/fuji --specprod fuji --mp 4 --targetphot
 
@@ -38,6 +35,9 @@ log = get_logger()
 
 ALLSURVEYS = ['sv1', 'sv2', 'sv3', 'cmx', 'special', 'main']
 #ALLSURVEYS = ['sv1']
+
+MINIPHOT_COLUMNS = ['TARGETID', 'SURVEY', 'PROGRAM', 'TILEID', 'PHOTSYS',
+                    'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']
 
 def _read_one_zcat(args):
     """Multiprocessing wrapper."""
@@ -193,6 +193,11 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
             targetphot.meta['FILENSID'] = (nside, 'HEALPix nside number')
             targetphot.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
             targetphot.meta['FILEHPIX'] = (healpix, 'HEALPix number')
+        else:
+            for popkey in ['FILENSID', 'FILENEST', 'FILEHPIX']:
+                if popkey in targetphot.meta.keys():
+                    targetphot.meta.pop(popkey)
+                    
         targetphot.meta['EXTNAME'] = 'TARGETPHOT'
         
         log.info(f'Writing {len(targetphot):,d} objects to {targetphot_outfile}')
@@ -214,7 +219,7 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
 
     # Build a "mini" ancillary catalog that we will use to query the Tractor
     # catalogs, below.
-    miniphot = targetphot['TARGETID', 'SURVEY', 'PROGRAM', 'TILEID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']
+    miniphot = targetphot[MINIPHOT_COLUMNS]
     if miniphot_outfile is not None:
         add_dependencies(miniphot.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'])
         if survey is not None:
@@ -222,6 +227,15 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
         else:
             if 'SURVEY' in miniphot.meta.keys():
                 miniphot.meta.pop('SURVEY')
+        if nside is not None and healpix is not None:
+            miniphot.meta['FILENSID'] = (nside, 'HEALPix nside number')
+            miniphot.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
+            miniphot.meta['FILEHPIX'] = (healpix, 'HEALPix number')
+        else:
+            for popkey in ['FILENSID', 'FILENEST', 'FILEHPIX']:
+                if popkey in miniphot.meta.keys():
+                    miniphot.meta.pop(popkey)
+                    
         miniphot.meta['EXTNAME'] = 'MINIPHOT'
         log.info(f'Writing {len(miniphot):,d} objects to {miniphot_outfile}')
         miniphot.write(miniphot_outfile, overwrite=True)
@@ -263,7 +277,7 @@ def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1):
         zcatfiles = glob(os.path.join(reduxdir, 'zcatalog', f'ztile-{survey}-*-cumulative.fits'))
         if len(zcatfiles) == 0:
             if rank == 0:
-                log.info(f'No redshift catalogs for survey:specprod {survey}:{specprod}')
+                log.info(f'No redshift catalogs for survey:{survey} specprod:{specprod}')
             continue
 
         # Read all the ztile programs/catalogs in parallel on rank 0.
@@ -291,7 +305,7 @@ def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1):
                 print('Testing...')
                 utiles = np.unique(zcat_survey['TILEID'])
                 if len(utiles) > 1:
-                    I = np.random.choice(len(utiles), 16, replace=False)
+                    I = np.random.choice(len(utiles), 2, replace=False)
                     zcat_survey = zcat_survey[np.isin(zcat_survey['TILEID'], utiles[I])]
 
             utiles, npertile = np.unique(zcat_survey['TILEID'], return_counts=True)
@@ -559,7 +573,7 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
                         targetphot_pixel, zcat_pixel, targetphot_outfile=targetphot_pixel_outfile,
                         zcat_outfile=None, miniphot_outfile=None, survey=survey, sort=True,
                         healpix=f'{pixel:02d}', nside=nside_targetphot)
-                    miniphot_survey.append(targetphot_pixel['TARGETID', 'TILEID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID'])
+                    miniphot_survey.append(targetphot_pixel[MINIPHOT_COLUMNS])
 
             if comm:
                 comm.barrier()
@@ -716,7 +730,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
         log.info(f'Selecting {len(cat):,d} unique targets')
 
         # Create a mini-cat that we'll use for the searching.
-        miniphot = cat['TARGETID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']#, 'RA', 'DEC']
+        miniphot = cat['TARGETID', 'SURVEY', 'PROGRAM', 'TILEID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']
         miniphot[RACOLUMN] = zcat[RACOLUMN]
         miniphot[DECCOLUMN] = zcat[DECCOLUMN]
 
