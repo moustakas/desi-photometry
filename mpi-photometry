@@ -37,7 +37,7 @@ from desiutil.log import get_logger, DEBUG
 log = get_logger()
 
 ALLSURVEYS = ['sv1', 'sv2', 'sv3', 'cmx', 'special', 'main']
-ALLSURVEYS = ['main']
+#ALLSURVEYS = ['main']
 
 def _read_one_zcat(args):
     """Multiprocessing wrapper."""
