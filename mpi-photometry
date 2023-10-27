@@ -37,7 +37,7 @@ from desiutil.log import get_logger, DEBUG
 log = get_logger()
 
 ALLSURVEYS = ['sv1', 'sv2', 'sv3', 'cmx', 'special', 'main']
-#ALLSURVEYS = ['main']
+#ALLSURVEYS = ['sv1']
 
 def _read_one_zcat(args):
     """Multiprocessing wrapper."""
@@ -442,10 +442,16 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
         #alltargetphot = []
         allminiphot = []
 
+        allsurveys = np.unique(surveys)
+
         tall = time.time()
+    else:
+        allsurveys = []
+
+    allsurveys = comm.bcast(allsurveys, root=0)
 
     # Divide by survey.
-    for survey in ALLSURVEYS:
+    for survey in allsurveys:
         tone = time.time()
 
         # initialize
@@ -464,18 +470,15 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
                 os.remove(targetphot_survey_tmpfile)
                 
             S = np.where(survey == zcat['SURVEY'])[0]
-            if len(S) == 0:
-                log.info(f'No redshift catalogs for survey:specprod {survey}:{specprod}')
-            else:
-                zcat_survey = zcat[S]
-                allzcat.append(zcat_survey)
+            zcat_survey = zcat[S]
+            allzcat.append(zcat_survey)
 
-                utiles, npertile = np.unique(zcat_survey['TILEID'].data, return_counts=True)
-                log.info(f'Found {len(zcat_survey):,d} TARGETIDs and {len(utiles):,d} unique tiles from survey: {survey}')
+            utiles, npertile = np.unique(zcat_survey['TILEID'].data, return_counts=True)
+            log.info(f'Found {len(zcat_survey):,d} TARGETIDs and {len(utiles):,d} unique tiles from survey: {survey}')
 
-                pixels = radec2pix(nside_targetphot, zcat_survey['RA'], zcat_survey['DEC'])
-                if survey != 'main':
-                    groups = weighted_partition(npertile, size)
+            pixels = radec2pix(nside_targetphot, zcat_survey['RA'], zcat_survey['DEC'])
+            if survey != 'main':
+                groups = weighted_partition(npertile, size)
 
         # broadcast the work to the other ranks
         if comm:
