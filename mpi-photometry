@@ -815,7 +815,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
             #    raise ValueError(errmsg)            
             #tractorphot_pixel = vstack(tractorphot_pixel)
 
-            tractorphot_tmpfile = glob(os.path.join(outdir, targets_subdir, 'tractorphot', f'tmp-rank{rank}-tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits'))
+            tractorphot_pixel_tmpfiles = glob(os.path.join(outdir, targets_subdir, 'tractorphot', f'tmp-rank*-tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits'))
             if len(tractorphot_pixel_tmpfiles) == 0:
                 errmsg = 'No targeting catalogs were generated!'
                 log.critical(errmsg)
