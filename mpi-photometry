@@ -800,7 +800,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
             
         if len(tractorphot_pixel) > 0:            
             tractorphot_pixel = vstack(tractorphot_pixel)
-            tractorphot_pixel_tmpfile = glob(os.path.join(outdir, targets_subdir, 'tractorphot', f'tmp-rank{rank}-tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits'))
+            tractorphot_pixel_tmpfile = os.path.join(outdir, targets_subdir, 'tractorphot', f'tmp-rank{rank}-tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits')
             tractorphot_pixel.write(tractorphot_pixel_tmpfile, overwrite=True)
 
         if comm:
