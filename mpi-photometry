@@ -588,6 +588,8 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
                     miniphot_outfile = os.path.join(outdir, 'ancillary', f'targetphot-potential-miniphot-{survey}-{specprod}.fits')
                     write_targetphot(miniphot_survey, zcat_survey, zcat_outfile=zcat_outfile,
                                      miniphot_outfile=miniphot_outfile, survey=survey, sort=True)
+
+                    log.info(f'Total time for survey {survey}: {(time.time()-tone)/60.:.3f} min')            
                 
         else:
             #log.info(f'Rank {rank:03d} started at {time.asctime()} with {len(groups[rank])} tiles')
@@ -711,6 +713,11 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
             log.critical(errmsg)
             raise IOError(errmsg)
 
+        # clean up previous temp files, if any
+        tractorphot_pixel_tmpfiles = glob(os.path.join(outdir, targets_subdir, 'tractorphot', f'tmp-rank*-tractorphot-*-{specprod}.fits'))
+        for tractorphot_pixel_tmpfile in tractorphot_pixel_tmpfiles:
+            os.remove(tractorphot_pixel_tmpfile)
+
         log.info(f'Reading {targetfile}')
         cat = Table(fitsio.read(targetfile))
         log.info(f'Reading {zcatfile}')
@@ -790,18 +797,35 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
             _tractorphot_onebrick = tractorphot_onebrick(miniphot_pixel[I], RACOLUMN, DECCOLUMN)
             assert(np.all(_tractorphot_onebrick['TARGETID'] == miniphot_pixel[I]['TARGETID']))
             tractorphot_pixel.append(_tractorphot_onebrick)
+            
         if len(tractorphot_pixel) > 0:            
             tractorphot_pixel = vstack(tractorphot_pixel)
+            tractorphot_pixel_tmpfile = glob(os.path.join(outdir, targets_subdir, 'tractorphot', f'tmp-rank{rank}-tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits'))
+            tractorphot_pixel.write(tractorphot_pixel_tmpfile, overwrite=True)
 
         if comm:
-            tractorphot_pixel = comm.gather(tractorphot_pixel, root=0)
+            comm.barrier()
+            #tractorphot_pixel = comm.gather(tractorphot_pixel, root=0)
 
         # sort and write out on rank 0
         if rank == 0:
-            if len(tractorphot_pixel) == 0:
-                errmsg = 'No Tractor catalogs were generated!'
+            #if len(tractorphot_pixel) == 0:
+            #    errmsg = 'No Tractor catalogs were generated!'
+            #    log.critical(errmsg)
+            #    raise ValueError(errmsg)            
+            #tractorphot_pixel = vstack(tractorphot_pixel)
+
+            tractorphot_tmpfile = glob(os.path.join(outdir, targets_subdir, 'tractorphot', f'tmp-rank{rank}-tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits'))
+            if len(tractorphot_pixel_tmpfiles) == 0:
+                errmsg = 'No targeting catalogs were generated!'
                 log.critical(errmsg)
-                raise ValueError(errmsg)            
+                raise ValueError(errmsg)
+            
+            log.info(f'Gathering {len(tractorphot_pixel_tmpfiles)} intermediate tractorphot{suffix} files.')
+            tractorphot_pixel = []
+            for tractorphot_pixel_tmpfile in tractorphot_pixel_tmpfiles:
+                tractorphot_pixel.append(Table(fitsio.read(tractorphot_pixel_tmpfile)))
+                os.remove(tractorphot_pixel_tmpfile)
             tractorphot_pixel = vstack(tractorphot_pixel)
 
             tractorphot_outfile = os.path.join(outdir, targets_subdir, 'tractorphot', f'tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits')
