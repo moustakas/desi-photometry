@@ -407,7 +407,7 @@ def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1):
     #log.info(f'Rank {rank:03d} is all done!')
 
 
-def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
+def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2, overwrite=False):
     """Gather targeting photometry for potential targets.
 
     """
@@ -669,7 +669,8 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2):
     #log.info(f'Rank {rank:03d} is all done!')
 
 
-def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potential=False):
+def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potential=False,
+                overwrite=False):
     """Gather targeting photometry for observed targets.
 
     """
@@ -772,6 +773,13 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
 
     upixels = sorted(set(pixels))
     for ipix, pixel in enumerate(upixels):
+
+        tractorphot_outfile = os.path.join(outdir, targets_subdir, 'tractorphot', f'tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits')
+        if os.path.isfile(tractorphot_outfile) or overwrite:
+            if rank == 0:
+                log.warning(f'Skipping existing tractorphot file {tractorphot_outfile}')
+            continue
+        
         if rank == 0:
             P = pixel == pixels
             miniphot_pixel = miniphot[P]
@@ -821,14 +829,12 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
                 log.critical(errmsg)
                 raise ValueError(errmsg)
             
-            log.info(f'Gathering {len(tractorphot_pixel_tmpfiles)} intermediate tractorphot{suffix} files.')
+            log.info(f'Gathering {len(tractorphot_pixel_tmpfiles)} intermediate tractorphot{suffix} files from {size} ranks')
             tractorphot_pixel = []
             for tractorphot_pixel_tmpfile in tractorphot_pixel_tmpfiles:
                 tractorphot_pixel.append(Table(fitsio.read(tractorphot_pixel_tmpfile)))
                 os.remove(tractorphot_pixel_tmpfile)
             tractorphot_pixel = vstack(tractorphot_pixel)
-
-            tractorphot_outfile = os.path.join(outdir, targets_subdir, 'tractorphot', f'tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits')
 
             # sort
             tractorphot_pixel = tractorphot_pixel[geomask.match_to(tractorphot_pixel['TARGETID'], miniphot_pixel['TARGETID'])]
@@ -845,6 +851,10 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
                 log.info(f'Writing {len(tractorphot_pixel):,d} objects to {tractorphot_outfile}')
                 tractorphot_pixel[igood].write(tractorphot_outfile, overwrite=True)
 
+            inone = np.where(tractorphot_pixel['BRICKNAME'] == '')[0]
+            if len(inone) > 0:
+                log.info(f"No Tractor photometry found for {len(inone):,d} objects from {len(set(tractorphot_pixel['BRICKNAME'])):,d} unique bricks")
+                
     # For testing and validation, gather the set of targets "missing" LS/DR9
     # photometry.
     if rank == 0:
@@ -901,8 +911,8 @@ def main():
     parser.add_argument('--nside-tractorphot', type=int, default=4, help='healpix nside for tractorphot catalogs.')
     parser.add_argument('--nside-targetphot', type=int, default=2, help='healpix nside for targetphot-main catalogs.')
 
-    parser.add_argument('--plan', action='store_true', help='Plan how many nodes to use and how to distribute the targets.')
     parser.add_argument('--nompi', action='store_true', help='Do not use MPI parallelism.')
+    parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files; use with care.')
     
     args = parser.parse_args()
     log = get_logger()    
@@ -933,15 +943,15 @@ def main():
         
     if args.targetphot_potential:
         targetphot_potential(args.specprod, args.outdir, comm=comm, mp=args.mp,
-                             nside_targetphot=args.nside_targetphot)
+                             nside_targetphot=args.nside_targetphot, overwrite=args.overwrite)
                     
     if args.tractorphot:
         tractorphot(args.specprod, args.outdir, comm=comm, potential=False,
-                    nside_tractorphot=args.nside_tractorphot)
+                    nside_tractorphot=args.nside_tractorphot, overwrite=args.overwrite)
         
     if args.tractorphot_potential:
         tractorphot(args.specprod, args.outdir, comm=comm, potential=True,
-                    nside_tractorphot=args.nside_tractorphot)
+                    nside_tractorphot=args.nside_tractorphot, overwrite=args.overwrite)
 
 if __name__ == '__main__':
     main()
