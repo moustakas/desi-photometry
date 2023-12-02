@@ -6,8 +6,12 @@
 Set up the software dependencies:
   salloc -N 1 -C cpu -A desi -t 01:00:00 --qos interactive
 
-  source /dvs_ro/common/software/desi/desi_environment.sh 23.6
-  export PYTHONPATH=$HOME/code/desihub/desispec/py:${PYTHONPATH}
+  source /dvs_ro/common/software/desi/desi_environment.sh main
+  module swap desiutil/3.4.2
+  module swap desispec/0.60.2
+  module swap desitarget/2.6.1
+  module swap desimodel/0.19.0
+  module swap speclite/v0.17
 
 srun --ntasks 64 --cpus-per-task $((2 * 128 / 64)) --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --outdir $PSCRATCH/lsdr9/fuji --reduxdir $DESI_ROOT_READONLY/spectro/redux/fuji --specprod fuji --mp 4 --targetphot
 
@@ -28,13 +32,13 @@ from astropy.table import Table, vstack
 
 from desitarget import geomask
 from desispec.parallel import weighted_partition
-from desiutil.depend import add_dependencies
+from desiutil.depend import add_dependencies, possible_dependencies
 
 from desiutil.log import get_logger, DEBUG
 log = get_logger()
 
 ALLSURVEYS = ['sv1', 'sv2', 'sv3', 'cmx', 'special', 'main']
-#ALLSURVEYS = ['sv1']
+#ALLSURVEYS = ['cmx']
 
 MINIPHOT_COLUMNS = ['TARGETID', 'SURVEY', 'PROGRAM', 'TILEID', 'PHOTSYS',
                     'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']
@@ -132,6 +136,7 @@ def _targetphot_onetile(args):
 def targetphot_onetile(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC', survey=None):
     """Simple wrapper on desispec.io.photo.gather_targetphot."""
     from desispec.io.photo import gather_targetphot
+    from desiutil.names import radec_to_desiname
 
     # should be unique!
     assert(len(input_cat) == len(np.unique(input_cat['TARGETID'])))
@@ -144,6 +149,7 @@ def targetphot_onetile(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC', 
     targetphot['SURVEY'] = input_cat['SURVEY']
     targetphot['PROGRAM'] = input_cat['PROGRAM']
     targetphot['TILEID'] = input_cat['TILEID']
+    targetphot['DESINAME'] = radec_to_desiname(targetphot['RA'], targetphot['DEC'])
 
     # Replace proper-motion NaNs with zeros.
     inan = np.logical_or(np.isnan(targetphot['PMRA']), np.isnan(targetphot['PMDEC']))
@@ -183,7 +189,8 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
                 targetphot.remove_column(remcol)
 
     if targetphot_outfile is not None:                
-        add_dependencies(targetphot.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'])
+        add_dependencies(targetphot.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'],
+                         module_names=possible_dependencies)
         if survey is not None:
             targetphot.meta['SURVEY'] = (survey, 'survey name')
         else:
@@ -207,7 +214,8 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
         targetphot['SURVEY'] = survey                    
 
     if zcat_outfile is not None:
-        add_dependencies(zcat.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'])
+        add_dependencies(zcat.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'],
+                         module_names=possible_dependencies)
         if survey is not None:
             zcat.meta['SURVEY'] = (survey, 'survey name')
         else:
@@ -221,7 +229,8 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
     # catalogs, below.
     miniphot = targetphot[MINIPHOT_COLUMNS]
     if miniphot_outfile is not None:
-        add_dependencies(miniphot.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'])
+        add_dependencies(miniphot.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'],
+                         module_names=possible_dependencies)
         if survey is not None:
             miniphot.meta['SURVEY'] = (survey, 'survey name')
         else:
@@ -842,7 +851,8 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
             
             igood = np.where(tractorphot_pixel['BRICKNAME'] != '')[0]
             if len(igood) > 0:
-                add_dependencies(tractorphot_pixel.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'])
+                add_dependencies(tractorphot_pixel.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'],
+                                 module_names=possible_dependencies)
                 tractorphot_pixel.meta['FILENSID'] = (nside_tractorphot, 'HEALPix nside number')
                 tractorphot_pixel.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
                 tractorphot_pixel.meta['FILEHPIX'] = (pixel, 'HEALPix number')
@@ -879,7 +889,8 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
         if len(missing) > 0:
             missing = vstack(missing)
             missing_outfile = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-missing-{specprod}.fits')
-            add_dependencies(missing.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'])
+            add_dependencies(missing.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'],
+                         module_names=possible_dependencies)
             missing.meta['EXTNAME'] = 'TARGETPHOT'
             log.info(f'Writing {len(missing):,d} objects to {missing_outfile}')
             missing.write(missing_outfile, overwrite=True)
