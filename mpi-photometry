@@ -13,13 +13,7 @@ Set up the software dependencies:
   module swap desimodel/0.19.0
   module swap speclite/v0.17
 
-srun --ntasks 64 --cpus-per-task $((2 * 128 / 64)) --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --outdir $PSCRATCH/lsdr9/fuji --zcatdir $DESI_ROOT_READONLY/spectro/redux/fuji/zcatalog --specprod fuji --mp 4 --targetphot
-
-alloc -N 1 -C cpu -A desi -t 01:00:00 --qos interactive
-srun --ntasks=8 --cpus-per-task=32 --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --zcatdir $DESI_ROOT_READONLY/spectro/redux/fuji/zcatalog --outdir $PSCRATCH/lsdr9/fuji --specprod fuji --targetphot
-
-alloc -N 2 -C cpu -A desi -t 01:00:00 --qos interactive
-srun --ntasks=16 --cpus-per-task=32 --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --zcatdir $DESI_ROOT_READONLY/spectro/redux/fuji/zcatalog --outdir $PSCRATCH/lsdr9/fuji --specprod fuji --targetphot
+srun --ntasks 128 $HOME/code/desihub/desi-photometry/mpi-photometry --outdir $PSCRATCH/lsdr9/fuji --zcatdir $DESI_ROOT_READONLY/spectro/redux/fuji/zcatalog --specprod fuji --targetphot
 
 """
 import pdb # for debugging
