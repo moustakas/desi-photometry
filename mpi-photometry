@@ -13,13 +13,13 @@ Set up the software dependencies:
   module swap desimodel/0.19.0
   module swap speclite/v0.17
 
-srun --ntasks 64 --cpus-per-task $((2 * 128 / 64)) --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --outdir $PSCRATCH/lsdr9/fuji --reduxdir $DESI_ROOT_READONLY/spectro/redux/fuji --specprod fuji --mp 4 --targetphot
+srun --ntasks 64 --cpus-per-task $((2 * 128 / 64)) --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --outdir $PSCRATCH/lsdr9/fuji --zcatdir $DESI_ROOT_READONLY/spectro/redux/fuji/zcatalog --specprod fuji --mp 4 --targetphot
 
 alloc -N 1 -C cpu -A desi -t 01:00:00 --qos interactive
-srun --ntasks=8 --cpus-per-task=32 --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --reduxdir $DESI_ROOT_READONLY/spectro/redux/fuji --outdir $PSCRATCH/lsdr9/fuji --specprod fuji --targetphot
+srun --ntasks=8 --cpus-per-task=32 --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --zcatdir $DESI_ROOT_READONLY/spectro/redux/fuji/zcatalog --outdir $PSCRATCH/lsdr9/fuji --specprod fuji --targetphot
 
 alloc -N 2 -C cpu -A desi -t 01:00:00 --qos interactive
-srun --ntasks=16 --cpus-per-task=32 --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --reduxdir $DESI_ROOT_READONLY/spectro/redux/fuji --outdir $PSCRATCH/lsdr9/fuji --specprod fuji --targetphot
+srun --ntasks=16 --cpus-per-task=32 --cpu-bind=cores $HOME/code/desihub/desi-photometry/mpi-photometry --zcatdir $DESI_ROOT_READONLY/spectro/redux/fuji/zcatalog --outdir $PSCRATCH/lsdr9/fuji --specprod fuji --targetphot
 
 """
 import pdb # for debugging
@@ -251,7 +251,7 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
         
     return targetphot, zcat, miniphot
 
-def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1):
+def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
     """Gather targeting photometry for observed targets.
 
     """
@@ -283,7 +283,7 @@ def targetphot_observed(specprod, reduxdir, outdir, comm=None, mp=1):
         utiles = np.array([])
         groups = [np.array([])]
 
-        zcatfiles = glob(os.path.join(reduxdir, 'zcatalog', f'ztile-{survey}-*-cumulative.fits'))
+        zcatfiles = glob(os.path.join(zcatdir, f'ztile-{survey}-*-cumulative.fits'))
         if len(zcatfiles) == 0:
             if rank == 0:
                 log.info(f'No redshift catalogs for survey:{survey} specprod:{specprod}')
@@ -903,11 +903,10 @@ def main():
 
     """
     import argparse
-    from desispec.io import specprod_root
     
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--specprod', type=str, required=True, help='Spectroscopic production; output file prefix.')
-    parser.add_argument('--reduxdir', type=str, help='spectro redux base dir overrides $DESI_SPECTRO_REDUX/$SPECPROD')
+    parser.add_argument('--zcatdir', type=str, required=True, help='Redshift catalog base directory.')
     parser.add_argument('--outdir', default='$PSCRATCH/lsdr9', type=str, help='Base output data directory.')
 
     parser.add_argument('--targetphot', action='store_true', help='Build the observed targets targeting catalogs.')
@@ -932,9 +931,6 @@ def main():
     if not os.path.isdir(args.outdir):
         os.makedirs(args.outdir, exist_ok=True)
 
-    if args.reduxdir is None:
-        args.reduxdir = specprod_root()
-        
     if args.nompi:
         comm = None
     else:
@@ -950,7 +946,7 @@ def main():
         multiprocessing.set_start_method('spawn')
 
     if args.targetphot:
-        targetphot_observed(args.specprod, args.reduxdir, args.outdir, comm=comm, mp=args.mp)
+        targetphot_observed(args.specprod, args.zcatdir, args.outdir, comm=comm, mp=args.mp)
         
     if args.targetphot_potential:
         targetphot_potential(args.specprod, args.outdir, comm=comm, mp=args.mp,
