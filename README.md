@@ -10,7 +10,6 @@ Table of Contents
   * [Targeting (*targetphot*) Catalogs](#observed-targetphot)  
   * [Tractor (*tractorphot*) Catalogs](#observed-tractorphot)  
   * [Potential Targets](#potential)  
-* [Reproducibility](#reproducibility)  
 * [Known Issues & Previous Versions](#known)  
 * [Contact & Contributors](#contact)  
 * [Required Acknowledgment](#acknowledgment)  
@@ -57,15 +56,15 @@ The LS/DR9 value-added catalogs (VACs) can be accessed at the following links:
 | Data Release | URL |
 |------------|-----|
 | Fuji (EDR) | https://data.desi.lbl.gov/public/edr/vac/edr/lsdr9-photometry/fuji/v2.1 |
-| Iron (DR1) | https://data.desi.lbl.gov/public/dr1/vac/dr1/lsdr9-photometry/iron/v1.0 |
-| Guadalupe (DR1 supplement) | https://data.desi.lbl.gov/public/dr1/vac/dr1/lsdr9-photometry/guadalupe/v2.0 |
+| Iron (DR1) | https://data.desi.lbl.gov/public/dr1/vac/dr1/lsdr9-photometry/iron/v1.1 |
+| Guadalupe (DR1 supplement) | https://data.desi.lbl.gov/public/dr1/vac/dr1/lsdr9-photometry/guadalupe/v2.1 |
 
 > **For DESI Collaborators:** At NERSC, the catalogs can also be accessed at the
     following top-level directories:
   ```
   /global/cfs/cdirs/desi/public/edr/vac/edr/lsdr9-photometry/fuji/v2.1
-  /global/cfs/cdirs/desi/public/dr1/vac/dr1/lsdr9-photometry/iron/v1.0
-  /global/cfs/cdirs/desi/public/dr1/vac/dr1/lsdr9-photometry/guadalupe/v2.0
+  /global/cfs/cdirs/desi/public/dr1/vac/dr1/lsdr9-photometry/iron/v1.1
+  /global/cfs/cdirs/desi/public/dr1/vac/dr1/lsdr9-photometry/guadalupe/v2.1
   ```
 
 The VAC contains two basic kinds of files: targeting (*targetphot*) catalogs,
@@ -114,13 +113,13 @@ stack of all six catalogs:
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
-| observed-targets/targetphot-cmx-iron.fits | 4.39 MB | 4,146 | Commissioning Survey |
-| observed-targets/targetphot-special-iron.fits | 177 MB | 168,328 | Special targets |
-| observed-targets/targetphot-sv1-iron.fits | 755 MB | 716,948 | Survey Validation 1 |
-| observed-targets/targetphot-sv2-iron.fits | 129 MB | 122,189 | Survey Validation 2 |
-| observed-targets/targetphot-sv3-iron.fits | 1.92 GB | 1,865,908 | Survey Validation 3 |
-| observed-targets/targetphot-main-iron.fits | 22.6 GB | 22,019,411 | Main Survey |
-| observed-targets/targetphot-iron.fits | 25.6 GB | 24,896,930 | Stack of the preceding 6 catalogs. |
+| observed-targets/targetphot-cmx-iron.fits | 4.46 MB | 4,146 | Commissioning Survey |
+| observed-targets/targetphot-special-iron.fits | 164 MB | 168,328 | Special targets |
+| observed-targets/targetphot-sv1-iron.fits | 767 MB | 716,948 | Survey Validation 1 |
+| observed-targets/targetphot-sv2-iron.fits | 131 MB | 122,189 | Survey Validation 2 |
+| observed-targets/targetphot-sv3-iron.fits | 1.95 GB | 1,865,908 | Survey Validation 3 |
+| observed-targets/targetphot-main-iron.fits | 20.9 GB | 22,019,411 | Main Survey |
+| observed-targets/targetphot-iron.fits | 26.1 GB | 24,896,930 | Stack of the preceding 6 catalogs. |
 
 #### Guadalupe
 
@@ -130,9 +129,9 @@ stack of those two catalogs.
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
-| observed-targets/targetphot-special-guadalupe.fits | 17.1 MB | 16,248 | Special targets |
-| observed-targets/targetphot-main-guadalupe.fits | 2.69 GB | 2,617,551 | Main Survey |
-| observed-targets/targetphot-guadalupe.fits | 2.71 GB | 2,633,799 | Stack of the preceding 2 catalogs. |
+| observed-targets/targetphot-special-guadalupe.fits | 15.9 MB | 16,248 | Special targets |
+| observed-targets/targetphot-main-guadalupe.fits | 2.48 GB | 2,617,551 | Main Survey |
+| observed-targets/targetphot-guadalupe.fits | 2.51 GB | 2,633,799 | Stack of the preceding 2 catalogs. |
 
 **Note:**
 
@@ -256,18 +255,18 @@ below:
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
-| potential-targets/targetphot-potential-cmx-fuji.fits | 22.1 MB | 20,956 | Commissioning Survey |
-| potential-targets/targetphot-potential-special-fuji.fits | 378 MB | 358,817 | Special targets |
-| potential-targets/targetphot-potential-sv1-fuji.fits | 4.78 GB | 4,645,741 | Survey Validation 1 |
-| potential-targets/targetphot-potential-sv2-fuji.fits | 790 MB | 750,431 | Survey Validation 2 |
-| potential-targets/targetphot-potential-sv3-fuji.fits | 11 GB | 10,684,616 | Survey Validation 3 |
-| potential-targets/targetphot-potential-nside2-hp[0-9][0-9]-main-iron.fits | 137 GB | 133,235,021 | Main Survey |
+| potential-targets/targetphot-potential-cmx-iron.fits | 22.5 MB | 20,956 | Commissioning Survey |
+| potential-targets/targetphot-potential-special-iron.fits | 2.08 GB | 2,182,278 | Special targets |
+| potential-targets/targetphot-potential-sv1-iron.fits | 4.82 GB | 4,592,843 | Survey Validation 1 |
+| potential-targets/targetphot-potential-sv2-iron.fits | 755 MB | 703,147 | Survey Validation 2 |
+| potential-targets/targetphot-potential-sv3-iron.fits | 11.2 GB | 10,684,616 | Survey Validation 3 |
+| potential-targets/targetphot-potential-nside2-hp[0-9][0-9]-main-iron.fits | 127 GB | 133,235,021 | Main Survey |
 
 #### Guadalupe (*targetphot*)
 
 | File Name | File Size | Number of Targets | Notes |
 |-----------|:---------:|:-----------------:|-------|
-| potential-targets/targetphot-potential-special-guadalupe.fits | 84.4 MB | 80,182 | Special targets |
+| potential-targets/targetphot-potential-special-guadalupe.fits | 78.2 MB | 80,182 | Special targets |
 | potential-targets/targetphot-potential-main-guadalupe.fits | 17.1 GB | 16,603,258 | Main Survey |
 | potential-targets/targetphot-potential-guadalupe.fits | 17.2 GB | 16,683,440 | Stack of the preceding 2 catalogs. |
 
@@ -278,48 +277,6 @@ below:
 | Fuji | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-fuji.fits | 71 | 11.9 GB | 6,031,271 |
 | Iron | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-iron.fits | 104 | 141 GB | 71,303,690 |
 | Guadalupe | potential-targets/tractorphot/tractorphot-potential-nside4-hp[0-9][0-9][0-9]-guadalupe.fits | 43 | 31.1 GB | 15,758,409 |
-
-<a name="reproducibility"/>
-
-Reproducibility
----------------
-
-DESI collaborators (or others with all the necessary underlying files, software
-dependencies, and access to [NERSC](https://nersc.gov/)) can reproduce the VACs
-presented here using the following example instructions (illustrated here just
-for Fuji).
-
-1. First, clone this repository:
-```bash
-cd /path/to/code
-git clone https://github.com/moustakas/desi-photometry.git
-cd desi-photometry && git checkout tags/fuji-v2.1 && cd ..
-```
-
-2. Next, edit the following [Perlmutter Slurm
-script](https://docs.nersc.gov/systems/perlmutter) with your specific paths in order to
-gather targeting and Tractor photometry for both *observed* and *potential* targets:
-```bash
-#! /bin/bash
-#SBATCH -A desi
-#SBATCH -C cpu
-#SBATCH -o /path/to/logfile/fuji.log.%j
-#SBATCH -q regular
-#SBATCH -N 1
-#SBATCH -n 1
-#SBATCH -t 04:00:00
-
-source /global/common/software/desi/desi_environment.sh 23.1
-module swap desispec/0.58.4
-
-time srun -n 1 -c 128 /path/to/code/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot
-time srun -n 1 -c 128 /path/to/code/desi-photometry/lsdr9-photometry --reduxdir ${DESI_ROOT}/spectro/redux/fuji -o ${SCRATCH}/lsdr9/fuji --specprod fuji --mp 128 --targetphot --tractorphot --potential
-```
-
-3. Finally, submit the job to the queue with:
-```bash
-sbatch /path/to/script.slurm
-```
 
 <a name="known"/>
 
