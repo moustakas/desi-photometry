@@ -280,17 +280,17 @@ below:
 
 <a name="known"/>
 
-Notes & Known Issues
---------------------
+Known Issues & Previous Versions
+--------------------------------
 
-#### Fuji
+### Fuji
 
-##### v2.1 (latest release)
+#### v2.1 (latest release)
 
 * Release date: June 2023
 * No known issues.
 
-##### v2.0
+#### v2.0
 
 * Release date: May 2023
 * **Bug**: A total of 367 targets on tiles 80611, 80612, and 80616 have
@@ -298,14 +298,14 @@ Notes & Known Issues
   al. 2023](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M). This issue
   is explored in [this notebook]().
 
-#### Iron
+### Iron
 
-##### v1.1 (latest release)
+#### v1.1 (latest release)
 
 * Release date: December 2023
 * No known issues.
 
-##### v1.0
+#### v1.0
 
 * Release date: May 2023
 * **Bug**: A total of 367 targets on tiles 80611, 80612, and 80616 have
@@ -315,14 +315,14 @@ Notes & Known Issues
 * **Bug**: The summary redshift catalogs contain metadata errors for a few
   percent of objects, as documented in the (in preparation) DR1 paper.
 
-#### Guadalupe
+### Guadalupe
 
-##### v2.1 (latest release)
+#### v2.1 (latest release)
 
 * Release date: December 2023
 * No known issues.
 
-##### v2.0
+#### v2.0
 
 * Release date: May 2023
 * **Bug**: The summary redshift catalogs contain metadata errors for a few
