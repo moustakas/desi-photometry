@@ -298,6 +298,10 @@ Known Issues & Previous Versions
   al. 2023](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M). This issue
   is explored in [this notebook]().
 
+#### v1.0
+
+* Never released.
+
 ### Iron
 
 #### v1.1 (latest release)
@@ -327,6 +331,10 @@ Known Issues & Previous Versions
 * Release date: May 2023
 * **Bug**: The summary redshift catalogs contain metadata errors for a few
   percent of objects, as documented in the (in preparation) DR1 paper.
+
+#### v1.0
+
+* Never released.
 
 <a name="contact"/>
 
