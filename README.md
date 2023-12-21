@@ -42,7 +42,7 @@ Getting Started Quickly
 -----------------------
 
 This [example
-notebook](https://nbviewer.org/github/moustakas/desi-photometry/blob/main/example-sv.ipynb)
+notebook](https://github.com/moustakas/desi-photometry/blob/main/nb/example-sv.ipynb)
 shows how to quickly grab targeting and Tractor photometry from the Fuji
 value-added catalog for a hypothetical set of observed targets. However, be sure
 to read the documentation below for all the details!
@@ -280,15 +280,53 @@ below:
 
 <a name="known"/>
 
-Known Issues & Previous Versions
---------------------------------
+Notes & Known Issues
+--------------------
 
-#### Fuji/v2.0
+#### Fuji
 
-A total of 367 targets on tiles 80611, 80612, and 80616 have incorrect
-coordinates due to the bug described in Section 5.3 of [Myers et
-al. 2023](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M). This issue was
-fixed in Fuji/v2.1.
+##### v2.1 (latest release)
+
+* Release date: June 2023
+* No known issues.
+
+##### v2.0
+
+* Release date: May 2023
+* **Bug**: A total of 367 targets on tiles 80611, 80612, and 80616 have
+  incorrect coordinates due to the bug described in Section 5.3 of [Myers et
+  al. 2023](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M). This issue
+  is explored in [this notebook]().
+
+#### Iron
+
+##### v1.1 (latest release)
+
+* Release date: December 2023
+* No known issues.
+
+##### v1.0
+
+* Release date: May 2023
+* **Bug**: A total of 367 targets on tiles 80611, 80612, and 80616 have
+  incorrect coordinates due to the bug described in Section 5.3 of [Myers et
+  al. 2023](https://ui.adsabs.harvard.edu/abs/2023AJ....165...50M). This issue
+  is explored in [this notebook](https://github.com/moustakas/desi-photometry/blob/main/nb/release9010-bug.ipynb). 
+* **Bug**: The summary redshift catalogs contain metadata errors for a few
+  percent of objects, as documented in the (in preparation) DR1 paper.
+
+#### Guadalupe
+
+##### v2.1 (latest release)
+
+* Release date: December 2023
+* No known issues.
+
+##### v2.0
+
+* Release date: May 2023
+* **Bug**: The summary redshift catalogs contain metadata errors for a few
+  percent of objects, as documented in the (in preparation) DR1 paper.
 
 <a name="contact"/>
 
