@@ -7,6 +7,13 @@ TBD tag (not released yet)
 
 * No changes yet.
 
+iron-v1.1 (2023-12-21)
+----------------------
+
+* Code and documentation for the Iron v1.1 and Guadalupe v2.2 VACs [`PR #19`_]. 
+  
+.. _`PR #19`: https://github.com/moustakas/desi-photometry/pull/19
+
 iron-v1.0 (2023-03-27)
 ----------------------
 
