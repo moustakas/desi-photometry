@@ -359,28 +359,5 @@ Required Acknowledgment
 -----------------------
 
 Any use of the data products described in this document must include the text of
-the following
-[acknowledgment](https://data.desi.lbl.gov/public/doc/acknowledgments)
+[this acknowledgment](https://data.desi.lbl.gov/public/doc/acknowledgments)
 verbatim:
-
-> This research used data obtained with the Dark Energy Spectroscopic Instrument
-(DESI). DESI construction and operations is managed by the Lawrence Berkeley
-National Laboratory. This material is based upon work supported by the
-U.S. Department of Energy, Office of Science, Office of High-Energy Physics,
-under Contract No. DE–AC02–05CH11231, and by the National Energy Research
-Scientific Computing Center, a DOE Office of Science User Facility under the
-same contract. Additional support for DESI was provided by the U.S. National
-Science Foundation (NSF), Division of Astronomical Sciences under Contract
-No. AST-0950945 to the NSF’s National Optical-Infrared Astronomy Research
-Laboratory; the Science and Technologies Facilities Council of the United
-Kingdom; the Gordon and Betty Moore Foundation; the Heising-Simons Foundation;
-the French Alternative Energies and Atomic Energy Commission (CEA); the National
-Council of Science and Technology of Mexico (CONACYT); the Ministry of Science
-and Innovation of Spain (MICINN), and by the DESI Member Institutions:
-https://www.desi.lbl.gov/collaborating-institutions. The DESI collaboration is
-honored to be permitted to conduct scientific research on Iolkam Du’ag (Kitt
-Peak), a mountain with particular significance to the Tohono O’odham Nation. Any
-opinions, findings, and conclusions or recommendations expressed in this
-material are those of the author(s) and do not necessarily reflect the views of
-the National Science Foundation, the Department of Energy, or any of the listed
-funding agencies.
