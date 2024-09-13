@@ -16,8 +16,6 @@ Set up the software dependencies:
 srun --ntasks 128 $HOME/code/desihub/desi-photometry/mpi-photometry --outdir $PSCRATCH/lsdr9/fuji --zcatdir $DESI_ROOT_READONLY/spectro/redux/fuji/zcatalog --specprod fuji --targetphot
 
 """
-import pdb # for debugging
-
 import os, sys, time
 import numpy as np
 import fitsio
@@ -95,7 +93,7 @@ def read_one_potential_targets(tileid, survey, program):
     from desitarget.targets import decode_targetid
 
     fiberassign_dir = os.path.join(os.getenv('DESI_ROOT_READONLY'), 'target', 'fiberassign', 'tiles', 'trunk')
-    
+
     stileid = '{:06d}'.format(tileid)
     fiberfile = os.path.join(fiberassign_dir, stileid[:3], 'fiberassign-{}.fits.gz'.format(stileid))
     #log.info('Reading {}'.format(fiberfile))
@@ -169,10 +167,10 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
         zsrt = geomask.match_to(tkey, zkey)
         targetphot = targetphot[zsrt]
         assert(np.all(targetphot['TARGETID'] == zcat['TARGETID']))
-    
+
     # remove extraneous targeting bits -
     # https://github.com/moustakas/desi-photometry/issues/13
-    if survey == 'main' or survey == 'special':                
+    if survey == 'main' or survey == 'special':
         remcols = ['CMX_TARGET',
                    'SV1_DESI_TARGET', 'SV1_BGS_TARGET', 'SV1_MWS_TARGET',
                    'SV2_DESI_TARGET', 'SV2_BGS_TARGET', 'SV2_MWS_TARGET',
@@ -182,7 +180,7 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
             if remcol in targetphot.colnames:
                 targetphot.remove_column(remcol)
 
-    if targetphot_outfile is not None:                
+    if targetphot_outfile is not None:
         add_dependencies(targetphot.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'],
                          module_names=possible_dependencies)
         if survey is not None:
@@ -198,14 +196,14 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
             for popkey in ['FILENSID', 'FILENEST', 'FILEHPIX']:
                 if popkey in targetphot.meta.keys():
                     targetphot.meta.pop(popkey)
-                    
+
         targetphot.meta['EXTNAME'] = 'TARGETPHOT'
-        
+
         log.info(f'Writing {len(targetphot):,d} objects to {targetphot_outfile}')
         targetphot.write(targetphot_outfile, overwrite=True)
 
     if survey is not None and 'SURVEY' not in targetphot.colnames:
-        targetphot['SURVEY'] = survey                    
+        targetphot['SURVEY'] = survey
 
     if zcat_outfile is not None:
         add_dependencies(zcat.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'],
@@ -238,11 +236,11 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
             for popkey in ['FILENSID', 'FILENEST', 'FILEHPIX']:
                 if popkey in miniphot.meta.keys():
                     miniphot.meta.pop(popkey)
-                    
+
         miniphot.meta['EXTNAME'] = 'MINIPHOT'
         log.info(f'Writing {len(miniphot):,d} objects to {miniphot_outfile}')
         miniphot.write(miniphot_outfile, overwrite=True)
-        
+
     return targetphot, zcat, miniphot
 
 def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
@@ -263,7 +261,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
             os.makedirs(os.path.join(outdir, 'observed-targets'), exist_ok=True)
         if not os.path.isdir(os.path.join(outdir, 'ancillary')):
             os.makedirs(os.path.join(outdir, 'ancillary'), exist_ok=True)
-        
+
         allzcat = []
         alltargetphot = []
         #allminiphot = []
@@ -271,7 +269,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
     # Divide by survey.
     for survey in ALLSURVEYS:
         tone = time.time()
-        
+
         # initialize
         zcat_survey = Table()
         utiles = np.array([])
@@ -286,12 +284,12 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
         # Read all the ztile programs/catalogs in parallel on rank 0.
         if rank == 0:
             log.info(f'Working on survey {survey}')
-            
+
             # clean up previous temp files, if any
             targetphot_survey_tmpfiles = glob(os.path.join(outdir, 'observed-targets', f'tmp-rank*-targetphot-{survey}-{specprod}.fits'))
             for targetphot_survey_tmpfile in targetphot_survey_tmpfiles:
                 os.remove(targetphot_survey_tmpfile)
-        
+
             targetphot_outfile = os.path.join(outdir, 'observed-targets', f'targetphot-{survey}-{specprod}.fits')
             zcat_outfile = os.path.join(outdir, 'ancillary', f'targetphot-zcat-{survey}-{specprod}.fits')
 
@@ -334,7 +332,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
             targetphot_survey.append(_targetphot_onetile)
             del _targetphot_onetile
 
-        # We hit the 2GB pickling limit when gathering, so hit the disk.            
+        # We hit the 2GB pickling limit when gathering, so hit the disk.
         if len(targetphot_survey) > 0:
             targetphot_survey = vstack(targetphot_survey)
             targetphot_survey_tmpfile = os.path.join(outdir, 'observed-targets', f'tmp-rank{rank}-targetphot-{survey}-{specprod}.fits')
@@ -357,7 +355,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
                 errmsg = 'No targeting catalogs were generated!'
                 log.critical(errmsg)
                 raise ValueError(errmsg)
-            
+
             log.info(f'Gathering {len(targetphot_survey_tmpfiles)} intermediate targetphot files.')
             targetphot_survey = []
             for targetphot_survey_tmpfile in targetphot_survey_tmpfiles:
@@ -369,7 +367,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
                                                                  targetphot_outfile=targetphot_outfile,
                                                                  zcat_outfile=zcat_outfile,
                                                                  survey=survey, sort=True)
-            assert(np.all(targetphot_survey['TARGETID'] == zcat_survey['TARGETID']))            
+            assert(np.all(targetphot_survey['TARGETID'] == zcat_survey['TARGETID']))
 
             alltargetphot.append(targetphot_survey)
             allzcat.append(zcat_survey)
@@ -389,10 +387,10 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
         if len(allzcat) > 0:
             allzcat = vstack(allzcat, metadata_conflicts='silent')
             allzcat.meta.pop('SURVEY')
-    
+
             log.info(f'Writing {len(allzcat):,d} objects to {zcat_outfile}')
             allzcat.write(zcat_outfile, overwrite=True)
-    
+
             alltargetphot = vstack(alltargetphot, metadata_conflicts='silent')
             try:
                 assert(np.all(alltargetphot['TARGETID'] == allzcat['TARGETID']))
@@ -400,11 +398,11 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
                 errmsg = 'TARGETID mismatch!'
                 log.critical(errmsg)
                 raise IOError(errmsg)
-            
+
             alltargetphot.meta.pop('SURVEY')
             log.info(f'Writing {len(alltargetphot):,d} objects to {targetphot_outfile}')
             alltargetphot.write(targetphot_outfile, overwrite=True)
-    
+
             log.info(f'Total time for all surveys: {(time.time()-tall)/60.:.3f} min')
 
     #log.info(f'Rank {rank:03d} is all done!')
@@ -415,18 +413,18 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2, 
 
     """
     from desimodel.footprint import radec2pix
-    
+
     if comm is None:
         rank, size = 0, 1
     else:
         rank, size = comm.rank, comm.size
 
     RACOLUMN, DECCOLUMN = 'RA', 'DEC'
-    
+
     if rank == 0:
         if not os.path.isdir(os.path.join(outdir, 'potential-targets')):
             os.makedirs(os.path.join(outdir, 'potential-targets'), exist_ok=True)
-        
+
         # Assume that the nominal/parent zcat catalog has been previously generated.
         parent_zcatfile = os.path.join(outdir, 'ancillary', f'targetphot-zcat-{specprod}.fits')
         if not os.path.isfile(parent_zcatfile):
@@ -476,7 +474,7 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2, 
         utiles = np.array([])
         groups = [np.array([])]
         zcat_survey = None
-            
+
         # Read all the ztile programs/catalogs in parallel on rank 0.
         if rank == 0:
             log.info(f'Working on survey {survey}')
@@ -485,7 +483,7 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2, 
             targetphot_survey_tmpfiles = glob(os.path.join(outdir, 'potential-targets', f'tmp-rank*-targetphot-potential*-{survey}-{specprod}.fits'))
             for targetphot_survey_tmpfile in targetphot_survey_tmpfiles:
                 os.remove(targetphot_survey_tmpfile)
-                
+
             S = np.where(survey == zcat['SURVEY'])[0]
             zcat_survey = zcat[S]
             allzcat.append(zcat_survey)
@@ -539,12 +537,12 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2, 
                     _targetphot_onetile = targetphot_onetile(zcat_pixel[I], RACOLUMN, DECCOLUMN, survey)
                     assert(np.all(_targetphot_onetile['TARGETID'] == zcat_pixel[I]['TARGETID']))
                     targetphot_pixel.append(_targetphot_onetile)
-                    
-                if len(targetphot_pixel) > 0:            
+
+                if len(targetphot_pixel) > 0:
                     targetphot_pixel = vstack(targetphot_pixel)
                     targetphot_pixel_tmpfile = os.path.join(outdir, 'potential-targets', f'tmp-rank{rank}-targetphot-potential-hp{pixel:02d}-{survey}-{specprod}.fits')
                     targetphot_pixel.write(targetphot_pixel_tmpfile, overwrite=True)
-                    
+
                 if comm:
                     comm.barrier()
                     #targetphot_pixel = comm.gather(targetphot_pixel, root=0)
@@ -562,14 +560,14 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2, 
                         errmsg = 'No targeting catalogs were generated!'
                         log.critical(errmsg)
                         raise ValueError(errmsg)
-                    
+
                     log.info(f'Gathering {len(targetphot_pixel_tmpfiles)} intermediate targetphot-potential files.')
                     targetphot_pixel = []
                     for targetphot_pixel_tmpfile in targetphot_pixel_tmpfiles:
                         targetphot_pixel.append(Table(fitsio.read(targetphot_pixel_tmpfile)))
                         os.remove(targetphot_pixel_tmpfile)
                     targetphot_pixel = vstack(targetphot_pixel)
-                        
+
                     targetphot_pixel_outfile = f'targetphot-potential-nside{nside_targetphot}-hp{pixel:02d}-{survey}-{specprod}.fits'
                     targetphot_pixel_outfile = os.path.join(outdir, 'potential-targets', targetphot_pixel_outfile)
                     targetphot_pixel, _, _ = write_targetphot(
@@ -592,11 +590,11 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2, 
                     write_targetphot(miniphot_survey, zcat_survey, zcat_outfile=zcat_outfile,
                                      miniphot_outfile=miniphot_outfile, survey=survey, sort=True)
 
-                    log.info(f'Total time for survey {survey}: {(time.time()-tone)/60.:.3f} min')            
-                
+                    log.info(f'Total time for survey {survey}: {(time.time()-tone)/60.:.3f} min')
+
         else:
             #log.info(f'Rank {rank:03d} started at {time.asctime()} with {len(groups[rank])} tiles')
-            
+
             targetphot_survey = []
             for itile, tileid in enumerate(utiles[groups[rank]]):
                 log.info(f'Rank {rank:03d} is working on {survey} tile {tileid:05d} ({itile+1:04d}/{len(utiles[groups[rank]]):04d})')
@@ -606,12 +604,12 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2, 
                 targetphot_survey.append(_targetphot_onetile)
                 del _targetphot_onetile
 
-            # We hit the 2GB pickling limit when gathering, so hit the disk.            
+            # We hit the 2GB pickling limit when gathering, so hit the disk.
             if len(targetphot_survey) > 0:
                 targetphot_survey = vstack(targetphot_survey)
                 targetphot_survey_tmpfile = os.path.join(outdir, 'potential-targets', f'tmp-rank{rank}-targetphot-potential-{survey}-{specprod}.fits')
                 targetphot_survey.write(targetphot_survey_tmpfile, overwrite=True)
-                
+
             if comm:
                 comm.barrier()
                 #targetphot_survey = comm.gather(targetphot_survey, root=0)
@@ -629,7 +627,7 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2, 
                     errmsg = 'No targeting catalogs were generated!'
                     log.critical(errmsg)
                     raise ValueError(errmsg)
-                
+
                 log.info(f'Gathering {len(targetphot_survey_tmpfiles)} intermediate targetphot-potential files.')
                 targetphot_survey = []
                 for targetphot_survey_tmpfile in targetphot_survey_tmpfiles:
@@ -647,12 +645,12 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside_targetphot=2, 
                     zcat_outfile=zcat_outfile, miniphot_outfile=miniphot_outfile, survey=survey,
                     sort=True)
                 assert(np.all(targetphot_survey['TARGETID'] == zcat_survey['TARGETID']))
-    
+
                 #alltargetphot.append(targetphot_survey)
                 allminiphot.append(miniphot_survey)
                 #del targetphot_survey, zcat_survey, miniphot_survey
-    
-                log.info(f'Total time for survey {survey}: {(time.time()-tone)/60.:.3f} min')            
+
+                log.info(f'Total time for survey {survey}: {(time.time()-tone)/60.:.3f} min')
 
         #log.info(f'Rank {rank:03d} is all done!')
 
@@ -679,7 +677,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
     """
     from desitarget.targets import decode_targetid
     from desiutil.brick import brickname as get_brickname
-    from desimodel.footprint import radec2pix    
+    from desimodel.footprint import radec2pix
 
     if comm is None:
         rank, size = 0, 1
@@ -694,13 +692,13 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
         RACOLUMN, DECCOLUMN = 'TARGET_RA', 'TARGET_DEC'
         targets_subdir = 'observed-targets'
         suffix = ''
-        
+
     if rank == 0:
         tall = time.time()
 
         if not os.path.isdir(os.path.join(outdir, targets_subdir, 'tractorphot')):
             os.makedirs(os.path.join(outdir, targets_subdir, 'tractorphot'), exist_ok=True)
-            
+
         zcatfile = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-zcat-{specprod}.fits')
         if potential:
             targetfile = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-miniphot-{specprod}.fits')
@@ -782,7 +780,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
             if rank == 0:
                 log.warning(f'Skipping existing tractorphot file {tractorphot_outfile}')
             continue
-        
+
         if rank == 0:
             P = pixel == pixels
             miniphot_pixel = miniphot[P]
@@ -808,8 +806,8 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
             _tractorphot_onebrick = tractorphot_onebrick(miniphot_pixel[I], RACOLUMN, DECCOLUMN)
             assert(np.all(_tractorphot_onebrick['TARGETID'] == miniphot_pixel[I]['TARGETID']))
             tractorphot_pixel.append(_tractorphot_onebrick)
-            
-        if len(tractorphot_pixel) > 0:            
+
+        if len(tractorphot_pixel) > 0:
             tractorphot_pixel = vstack(tractorphot_pixel)
             tractorphot_pixel_tmpfile = os.path.join(outdir, targets_subdir, 'tractorphot', f'tmp-rank{rank}-tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits')
             tractorphot_pixel.write(tractorphot_pixel_tmpfile, overwrite=True)
@@ -823,7 +821,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
             #if len(tractorphot_pixel) == 0:
             #    errmsg = 'No Tractor catalogs were generated!'
             #    log.critical(errmsg)
-            #    raise ValueError(errmsg)            
+            #    raise ValueError(errmsg)
             #tractorphot_pixel = vstack(tractorphot_pixel)
 
             tractorphot_pixel_tmpfiles = glob(os.path.join(outdir, targets_subdir, 'tractorphot', f'tmp-rank*-tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits'))
@@ -831,7 +829,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
                 errmsg = 'No targeting catalogs were generated!'
                 log.critical(errmsg)
                 raise ValueError(errmsg)
-            
+
             log.info(f'Gathering {len(tractorphot_pixel_tmpfiles)} intermediate tractorphot{suffix} files from {size} ranks')
             tractorphot_pixel = []
             for tractorphot_pixel_tmpfile in tractorphot_pixel_tmpfiles:
@@ -842,7 +840,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
             # sort
             tractorphot_pixel = tractorphot_pixel[geomask.match_to(tractorphot_pixel['TARGETID'], miniphot_pixel['TARGETID'])]
             assert(np.all(tractorphot_pixel['TARGETID'] == miniphot_pixel['TARGETID']))
-            
+
             igood = np.where(tractorphot_pixel['BRICKNAME'] != '')[0]
             if len(igood) > 0:
                 add_dependencies(tractorphot_pixel.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'],
@@ -851,26 +849,26 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
                 tractorphot_pixel.meta['FILENEST'] = (True, 'HEALPix nested (not ring) ordering')
                 tractorphot_pixel.meta['FILEHPIX'] = (pixel, 'HEALPix number')
                 tractorphot_pixel.meta['EXTNAME'] = 'TRACTORPHOT'
-        
+
                 log.info(f'Writing {len(tractorphot_pixel):,d} objects to {tractorphot_outfile}')
                 tractorphot_pixel[igood].write(tractorphot_outfile, overwrite=True)
 
             inone = np.where(tractorphot_pixel['BRICKNAME'] == '')[0]
             if len(inone) > 0:
                 log.info(f"No Tractor photometry found for {len(inone):,d} objects from {len(set(tractorphot_pixel['BRICKNAME'])):,d} unique bricks")
-                
+
     # For testing and validation, gather the set of targets "missing" LS/DR9
     # photometry.
     if rank == 0:
         missing_outfile = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-missing-{specprod}.fits')
-        
+
         missing = []
         for ipix, pixel in enumerate(sorted(set(pixels))):
             log.info(f'Gathering missing targets on healpix {pixel:03d}')
 
             tractorphot_outfile = os.path.join(outdir, targets_subdir, 'tractorphot', f'tractorphot{suffix}-nside{nside_tractorphot}-hp{pixel:03d}-{specprod}.fits')
 
-            P = np.where(pixel == pixels)[0]        
+            P = np.where(pixel == pixels)[0]
             if os.path.isfile(tractorphot_outfile):
                 _targetid = fitsio.read(tractorphot_outfile, columns='TARGETID')
                 imiss = np.where(np.logical_not(np.isin(miniphot['TARGETID'][P], _targetid)))[0]
@@ -891,13 +889,13 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside_tractorphot=4, potentia
 
         log.info(f'Total time: {(time.time()-tall)/60.:.3f} min')
 
-        
+
 def main():
     """Main wrapper.
 
     """
     import argparse
-    
+
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--specprod', type=str, required=True, help='Spectroscopic production; output file prefix.')
     parser.add_argument('--zcatdir', type=str, required=True, help='Redshift catalog base directory.')
@@ -910,16 +908,16 @@ def main():
 
     parser.add_argument('--validate-targetphot', action='store_true', help='Validate the targetphot catalogs.')
     parser.add_argument('--validate-tractorphot', action='store_true', help='Validate the photo-tractor catalogs.')
-    
+
     parser.add_argument('--mp', type=int, default=1, help='Number of multiprocessing processes per MPI rank or node.')
     parser.add_argument('--nside-tractorphot', type=int, default=4, help='healpix nside for tractorphot catalogs.')
     parser.add_argument('--nside-targetphot', type=int, default=2, help='healpix nside for targetphot-main catalogs.')
 
     parser.add_argument('--nompi', action='store_true', help='Do not use MPI parallelism.')
     parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files; use with care.')
-    
+
     args = parser.parse_args()
-    log = get_logger()    
+    log = get_logger()
 
     args.outdir = os.path.expandvars(args.outdir)
     if not os.path.isdir(args.outdir):
@@ -941,15 +939,15 @@ def main():
 
     if args.targetphot:
         targetphot_observed(args.specprod, args.zcatdir, args.outdir, comm=comm, mp=args.mp)
-        
+
     if args.targetphot_potential:
         targetphot_potential(args.specprod, args.outdir, comm=comm, mp=args.mp,
                              nside_targetphot=args.nside_targetphot, overwrite=args.overwrite)
-                    
+
     if args.tractorphot:
         tractorphot(args.specprod, args.outdir, comm=comm, potential=False,
                     nside_tractorphot=args.nside_tractorphot, overwrite=args.overwrite)
-        
+
     if args.tractorphot_potential:
         tractorphot(args.specprod, args.outdir, comm=comm, potential=True,
                     nside_tractorphot=args.nside_tractorphot, overwrite=args.overwrite)
