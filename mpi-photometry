@@ -76,9 +76,11 @@ def read_one_zcat(catfile):
         log.info(f'Read {len(cat):,d}/{len(alltargetids):,d} objects from {catfile}')
     return cat
 
+
 def _read_one_potential_targets(args):
     """Multiprocessing wrapper."""
     return read_one_potential_targets(*args)
+
 
 def read_one_potential_targets(tileid, survey, program):
     """Read the potential targets in a given fiberassign tile.
@@ -111,9 +113,11 @@ def read_one_potential_targets(tileid, survey, program):
 
     return out
 
+
 def _tractorphot_onebrick(args):
     """Multiprocessing wrapper."""
     return tractorphot_onebrick(*args)
+
 
 def tractorphot_onebrick(cat, RACOLUMN='TARGET_RA', DECCOLUMN='TARGET_DEC'):
     """Simple wrapper on desispec.io.photo.gather_tractorphot."""
@@ -121,9 +125,11 @@ def tractorphot_onebrick(cat, RACOLUMN='TARGET_RA', DECCOLUMN='TARGET_DEC'):
     tractorphot = gather_tractorphot(cat, racolumn=RACOLUMN, deccolumn=DECCOLUMN)
     return tractorphot
 
+
 def _targetphot_onetile(args):
     """Multiprocessing wrapper."""
     return targetphot_onetile(*args)
+
 
 def targetphot_onetile(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC', survey=None):
     """Simple wrapper on desispec.io.photo.gather_targetphot."""
@@ -150,6 +156,7 @@ def targetphot_onetile(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC', 
         targetphot['PMDEC'][inan] = 0.0
 
     return targetphot
+
 
 def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
                      zcat_outfile=None, miniphot_outfile=None, sort=True,
