@@ -29,15 +29,15 @@ from desiutil.depend import add_dependencies, possible_dependencies
 from desiutil.log import get_logger, DEBUG
 log = get_logger()
 
-ALLSURVEYS = ['sv1', 'sv2', 'sv3', 'cmx', 'special', 'main']
-#ALLSURVEYS = ['cmx']
 
 MINIPHOT_COLUMNS = ['TARGETID', 'SURVEY', 'PROGRAM', 'TILEID', 'PHOTSYS',
                     'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']
 
+
 def _read_one_zcat(args):
     """Multiprocessing wrapper."""
     return read_one_zcat(*args)
+
 
 def read_one_zcat(catfile):
     """Read a single redshift catalog, e.g., ztile-sv1-dark-cumulative.fits.
@@ -243,7 +243,9 @@ def write_targetphot(targetphot, zcat, survey=None, targetphot_outfile=None,
 
     return targetphot, zcat, miniphot
 
-def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
+
+def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1,
+                        surveys=['cmx','sv1','sv2','sv3','special','main']):
     """Gather targeting photometry for observed targets.
 
     """
@@ -267,7 +269,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
         #allminiphot = []
 
     # Divide by survey.
-    for survey in ALLSURVEYS:
+    for survey in surveys:
         tone = time.time()
 
         # initialize
@@ -902,6 +904,7 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--specprod', type=str, required=True, help='Spectroscopic production; output file prefix.')
     parser.add_argument('--zcatdir', type=str, required=True, help='Redshift catalog base directory.')
+    parser.add_argument('--surveys', type=str, default='cmx,sv1,sv2,sv3,special,main', help='Comma-separated list of surveys to process.')
     parser.add_argument('--outdir', default='$PSCRATCH/lsdr9', type=str, help='Base output data directory.')
 
     parser.add_argument('--targetphot', action='store_true', help='Build the observed targets targeting catalogs.')
@@ -940,8 +943,11 @@ def main():
         import multiprocessing
         multiprocessing.set_start_method('spawn')
 
+    args.surveys = np.atleast_1d(args.surveys.split(','))
+
     if args.targetphot:
-        targetphot_observed(args.specprod, args.zcatdir, args.outdir, comm=comm, mp=args.mp)
+        targetphot_observed(args.specprod, args.zcatdir, args.outdir, comm=comm,
+                            mp=args.mp, surveys=args.surveys)
 
     if args.targetphot_potential:
         targetphot_potential(args.specprod, args.outdir, comm=comm, mp=args.mp,
