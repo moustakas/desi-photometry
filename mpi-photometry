@@ -292,6 +292,9 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1):
 
             targetphot_outfile = os.path.join(outdir, 'observed-targets', f'targetphot-{survey}-{specprod}.fits')
             zcat_outfile = os.path.join(outdir, 'ancillary', f'targetphot-zcat-{survey}-{specprod}.fits')
+            if os.path.isfile(targetphot_outfile) and os.path.isfile(zcat_outfile):
+                log.warning(f'Skipping existing targetphot file {targetphot_outfile}')
+                continue
 
             mpargs = [[zcatfile] for zcatfile in zcatfiles]
             if mp > 1:
