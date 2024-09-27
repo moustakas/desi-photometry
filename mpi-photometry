@@ -56,11 +56,13 @@ def read_one_zcat(catfile, rows=None):
         survey, program = hdr['SURVEY'], hdr['PROGRAM']
         # Remove sky fibers and negative targetids (stuck fibers).
         alltargetids = fitsio.read(catfile, ext='ZCATALOG', columns='TARGETID')
+        original_row = np.arange(len(alltargetids))
         _, _, _, _, sky, _ = decode_targetid(alltargetids)
         I = np.where((sky == 0) * (alltargetids > 0))[0]
         if len(I) > 0:
             cat = Table(fitsio.read(catfile, ext='ZCATALOG', rows=I, columns=[
                 'TARGETID', 'TILEID', 'TARGET_RA', 'TARGET_DEC', 'PETAL_LOC']))
+            original_row = original_row[I]
             # Remove duplicate observations within a given tile; e.g., in survey=sv1,
             # program=other, tileid=80870 there are 8384 observations, but only 4192 of
             # those are unique targetids.
@@ -71,16 +73,18 @@ def read_one_zcat(catfile, rows=None):
                 indx.append(I[uindx])
             indx = np.hstack(indx)
             cat = cat[indx]
+            original_row = original_row[indx]
             cat['SURVEY'] = survey
             cat['PROGRAM'] = program
+            cat['ROW'] = original_row
             log.info(f'Read {len(cat):,d}/{len(alltargetids):,d} objects from {catfile}')
-        else:
-            hdr = fitsio.read_header(catfile, ext='ZCATALOG')
-            survey, program = hdr['SURVEY'], hdr['PROGRAM']
-            cat = Table(fitsio.read(catfile, ext='ZCATALOG', rows=rows, columns=[
-                'TARGETID', 'TILEID', 'TARGET_RA', 'TARGET_DEC', 'PETAL_LOC']))
-            cat['SURVEY'] = survey
-            cat['PROGRAM'] = program
+    else:
+        hdr = fitsio.read_header(catfile, ext='ZCATALOG')
+        survey, program = hdr['SURVEY'], hdr['PROGRAM']
+        cat = Table(fitsio.read(catfile, ext='ZCATALOG', rows=rows, columns=[
+            'TARGETID', 'TILEID', 'TARGET_RA', 'TARGET_DEC', 'PETAL_LOC']))
+        cat['SURVEY'] = survey
+        cat['PROGRAM'] = program
 
     return cat
 
@@ -285,7 +289,7 @@ def write_targetphot(targetphot, zcat, survey=None, program=None, targetphot_out
 
 
 def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, debug=False,
-                        surveys=['cmx','sv1','sv2','sv3','special','main'],
+                        overwrite=False, surveys=['cmx','sv1','sv2','sv3','special','main'],
                         programs=['backup','bright','dark']):
     """Gather targeting photometry for observed targets.
 
@@ -297,7 +301,8 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, debug=False,
 
     RACOLUMN, DECCOLUMN = 'TARGET_RA', 'TARGET_DEC'
 
-    max_tiles = 100
+    # maximum number of tiles to read at one time
+    nmax_tiles = 100
 
     if rank == 0:
         tall = time.time()
@@ -321,8 +326,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, debug=False,
 
             # initialize
             utiles_byrank = None
-            #zcat_survey = Table()
-            #groups = [np.array([])]
+            zcat_indices_byrank = None
 
             zcatfile = os.path.join(zcatdir, f'ztile-{survey}-{program}-cumulative.fits')
             if len(zcatfile) == 0:
@@ -330,18 +334,13 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, debug=False,
                     log.info(f'No redshift catalogs for {specprod}:{survey}:{program}')
                 continue
 
-            # Read all the ztile programs/catalogs in parallel on rank 0.
+            # Read the appropriate redshift catalog on rank 0.
             if rank == 0:
                 log.info(f'Working on {survey}:{program}')
 
-                ## clean up previous temp files, if any
-                #targetphot_survey_tmpfiles = glob(os.path.join(outdir, 'observed-targets', f'tmp-rank*-targetphot-{survey}-{specprod}.fits'))
-                #for targetphot_survey_tmpfile in targetphot_survey_tmpfiles:
-                #    os.remove(targetphot_survey_tmpfile)
-
                 targetphot_outfile = os.path.join(outdir, 'observed-targets', f'targetphot-{survey}-{program}-{specprod}.fits')
                 zcat_outfile = os.path.join(outdir, 'ancillary', f'targetphot-zcat-{survey}-{program}-{specprod}.fits')
-                if os.path.isfile(targetphot_outfile) and os.path.isfile(zcat_outfile):
+                if os.path.isfile(targetphot_outfile) and os.path.isfile(zcat_outfile) and not overwrite:
                     log.warning(f'Skipping existing targetphot file {targetphot_outfile}')
                     continue
 
@@ -355,7 +354,6 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, debug=False,
                         zcat_program = zcat_program[np.isin(zcat_program['TILEID'], utiles[I])]
 
                 utiles = np.unique(zcat_program['TILEID'].value)
-                #utiles, npertile = np.unique(zcat_program['TILEID'], return_counts=True)
 
                 if comm is not None and size > 1:
                     log.info(f'Distributing {len(zcat_program):,d} TARGETIDs and {len(utiles):,d} ' +
@@ -365,115 +363,56 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, debug=False,
                     # For each rank, loop over tileid and store the indices back to
                     # the redshift catalog.
                     zcat_indices_byrank = []
-                    for onerank in range(1, size):
-                        print(f'Building index list for rank {onerank}')
+                    for onerank in range(size-1):
+                        log.info(f'Rank 0: building index list for rank {onerank+1}')
                         zcat_indices_bytile = []
-                        for tileid in utiles_byrank[onerank-1]:
-                            zcat_indices_bytile.append(np.where(zcat_program['TILEID'] == tileid)[0])
+                        for tileid in utiles_byrank[onerank]:
+                            I = np.where(zcat_program['TILEID'] == tileid)[0]
+                            zcat_indices_bytile.append(zcat_program[I]['ROW'].value)
                         zcat_indices_byrank.append(zcat_indices_bytile)
                 else:
                     log.info(f'Working on {len(zcat_program):,d} TARGETIDs and {len(utiles):,d} ' +
                              f'unique tiles from {survey}:{program} on one rank.')
-                    utiles_byrank = utiles
                     zcat_indices_bytile = []
-                    for tileid in utiles_byrank:
-                        zcat_indices_bytile.append(np.where(zcat_program['TILEID'] == tileid)[0])
-                    zcat_indices_byrank = zcat_indices_bytile
+                    for tileid in np.atleast_1d(utiles):
+                        I = np.where(zcat_program['TILEID'] == tileid)[0]
+                        zcat_indices_bytile.append(I)
 
-            # Broadcast the assigned list of tiles to the other ranks.
+            # Broadcast the assigned list of tiles and indices.
             if comm is not None and size > 1:
                 utiles_byrank = comm.bcast(utiles_byrank, root=0)
-                zcat_indices_byrank = comm.bcast(utiles_byrank, root=0)
+                zcat_indices_byrank = comm.bcast(zcat_indices_byrank, root=0)
 
             #log.info(f'Rank {rank:03d} started at {time.asctime()} with {len(groups[rank])} tiles')
 
             targetphot_program = []
             if comm is not None and size > 1:
-                zcat_small = None
-
-                ## Rank 0 sends the relevant rows of the redshift catalog to
-                ## all the other ranks (excluding itself).
-                #if rank == 0:
-                #    for onerank in range(1, size):
-                #        for itile, tileid in enumerate(utiles_byrank[onerank]):
-                #            I = np.where(zcat_program['TILEID'] == tileid)[0]
-                #            zcat_small = zcat_program[I]
-                #            print(f'Rank 0: Sending {len(zcat_small):,d} targets from tile {tileid} to rank {onerank}.')
-                #            comm.send(zcat_small, dest=onerank)
-
-                if rank == 0:
-                    # Rank 0 sends the relevant rows of the redshift catalog to
-                    # all the other ranks (excluding itself).
-                    for onerank in range(1, size):
-                        for itile, tileid in enumerate(utiles_byrank[onerank]):
-                            I = np.where(zcat_program['TILEID'] == tileid)[0]
-                            zcat_small = zcat_program[I]
-                            print(f'Rank 0: Sending {len(zcat_small):,d} targets from tile {tileid} to rank {onerank}.')
-                            comm.send(zcat_small, dest=onerank)
-                else:
-                    # Each rank receives just the portion of the redshift
-                    # catalog corresponding to this tile and builds the
+                if rank > 0:
+                    # Ranks >0 loop over tiles and build the per-tile
                     # targetphot catalog.
-                    zcat_small = comm.recv(source=0)
-                    tileid = zcat_small['TILEID'][0]
-                    print(f'Rank {rank}: received redshift catalog for {len(zcat_small):,d} targets on tile {tileid} from rank 0.')
-                    _targetphot_onetile = targetphot_onetile(zcat_small, RACOLUMN, DECCOLUMN)
-                    print(f'Rank {rank}: sending targeting photometry for {len(_targetphot_onetile):,d} targets back to rank 0.')
-                    comm.send(_targetphot_onetile, dest=0)
-
-                if rank == 0:
+                    zcat_indices_bytile = zcat_indices_byrank[rank-1]
+                    targetphot_onerank = []
+                    for itile, tileid in enumerate(utiles_byrank[rank-1]):
+                        zcat_indices = zcat_indices_bytile[itile]
+                        log.info(f'Rank {rank}: working on tile {tileid}: reading {len(zcat_indices):,d} targets')
+                        zcat_onetile = read_one_zcat(zcatfile, rows=zcat_indices)
+                        _targetphot_onetile = targetphot_onetile(zcat_onetile, RACOLUMN, DECCOLUMN)
+                        targetphot_onerank.append(_targetphot_onetile)
+                    targetphot_onerank = vstack(targetphot_onerank)
+                    log.info(f'Rank {rank}: sending targeting photometry for {len(targetphot_onerank):,d} ' + \
+                             f'targets on {len(utiles_byrank[rank-1]):,d} tiles back to rank 0.')
+                    comm.send(targetphot_onerank, dest=0)
+                else:
+                    # Rank 0 loops through the remaining ranks and receives all the targetphot catalogs.
                     for onerank in range(1, size):
-                        targphot = comm.recv(source=onerank)
-                        print(f'Rank 0: received targeting photometry for {len(targphot):,d} targets from rank {onerank}.')
-                        targetphot_program.append(targphot)
+                        targetphot_onerank = comm.recv(source=onerank)
+                        log.info(f'Rank 0: received targeting photometry for {len(targetphot_onerank):,d} targets from rank {onerank}.')
+                        targetphot_program.append(targetphot_onerank)
             else:
-                targetphot_program = []
-                for itile, (tileid, zcat_indices) in enumerate(zip(utiles_byrank, zcat_indices_byrank)):
-                    zcat_small = zcat_program[zcat_indices]
-                    _targetphot_onetile = targetphot_onetile(zcat_small, RACOLUMN, DECCOLUMN)
+                for itile, (tileid, zcat_indices) in enumerate(zip(utiles, zcat_indices_bytile)):
+                    zcat_onetile = zcat_program[zcat_indices]
+                    _targetphot_onetile = targetphot_onetile(zcat_onetile, RACOLUMN, DECCOLUMN)
                     targetphot_program.append(_targetphot_onetile)
-
-            ## divide the tiles into groups of tileid divided by 100
-            #nutiles = utiles[groups[rank]]
-            #tiles100 = utiles[groups[rank]] // 100
-            #utiles100 = np.unique(tiles100)
-            #for i100, utile100 in enumerate(utiles100):
-            #    tileids = utiles[utile100 == tiles100]
-            #    # Rank N sends the list of tiles it's working on and rank 0
-            #    # sends back the relevant rows of the redshift catalog.
-            #    if comm:
-            #        comm.send(tileids, dest=0)
-            #
-            #    if rank == 0:
-            #        if comm:
-            #            tileids = comm.recv(source=rank)
-            #        zcat_small = zcat_program[np.isin(zcat_program['TILEID'], tileids)]
-            #
-            #
-            #    for itile, tileid in enumerate(tileids):
-            #        log.info(f'Rank {rank:03d} is working on survey:program {survey}:{program} ' + \
-            #                 f'tileid {tileid:05d} ({itile+1:04d}/{nutiles:04d})')
-            #
-            #
-            #        _targetphot_onetile = targetphot_onetile(zcat_survey[I], RACOLUMN, DECCOLUMN, survey)
-            #        #print(len(zcat_survey[I]), len(_targetphot_onetile))
-            #        assert(np.all(_targetphot_onetile['TARGETID'] == zcat_survey[I]['TARGETID']))
-            #        targetphot_survey.append(_targetphot_onetile)
-
-            #targetphot_survey = []
-            #for itile, tileid in enumerate(utiles[groups[rank]]):
-            #    log.info(f'Rank {rank:03d} is working on {survey} tile {tileid:05d} ({itile+1:04d}/{len(utiles[groups[rank]]):04d})')
-            #    I = zcat_survey['TILEID'] == tileid
-            #    _targetphot_onetile = targetphot_onetile(zcat_survey[I], RACOLUMN, DECCOLUMN, survey)
-            #    #print(len(zcat_survey[I]), len(_targetphot_onetile))
-            #    assert(np.all(_targetphot_onetile['TARGETID'] == zcat_survey[I]['TARGETID']))
-            #    targetphot_survey.append(_targetphot_onetile)
-            #    del _targetphot_onetile
-
-            #if len(targetphot_program) > 0:
-            #    targetphot_program = vstack(targetphot_program)
-            #    targetphot_program_tmpfile = os.path.join(outdir, 'observed-targets', f'tmp-rank{rank}-targetphot-{survey}-{program}-{specprod}.fits')
-            #    targetphot_program.write(targetphot_program_tmpfile, overwrite=True)
 
             if comm is not None and size > 1:
                 comm.barrier()
@@ -486,22 +425,6 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, debug=False,
                     raise ValueError(errmsg)
                 targetphot_program = vstack(targetphot_program)
 
-                #targetphot_survey_tmpfiles = glob(os.path.join(outdir, 'observed-targets', f'tmp-rank*-targetphot-{survey}-{specprod}.fits'))
-                #if len(targetphot_survey_tmpfiles) == 0:
-                #    errmsg = 'No targeting catalogs were generated!'
-                #    log.critical(errmsg)
-                #    raise ValueError(errmsg)
-                #
-                #log.info(f'Gathering {len(targetphot_survey_tmpfiles)} intermediate targetphot files.')
-                #targetphot_survey = []
-                #for targetphot_survey_tmpfile in targetphot_survey_tmpfiles:
-                #    targetphot_survey.append(Table(fitsio.read(targetphot_survey_tmpfile)))
-                #    os.remove(targetphot_survey_tmpfile)
-                #targetphot_survey = vstack(targetphot_survey)
-
-                targetphot_program.write('junk-targetphot.fits', overwrite=True)
-                zcat_program.write('junk-zcat.fits', overwrite=True)
-                return
                 targetphot_program, zcat_program, _ = write_targetphot(targetphot_program, zcat_program,
                                                                        targetphot_outfile=targetphot_outfile,
                                                                        zcat_outfile=zcat_outfile,
@@ -1091,7 +1014,7 @@ def main():
     if args.targetphot:
         targetphot_observed(args.specprod, args.zcatdir, args.outdir, comm=comm,
                             mp=args.mp, surveys=args.surveys, programs=args.programs,
-                            debug=args.debug)
+                            debug=args.debug, overwrite=args.overwrite)
 
     if args.targetphot_potential:
         targetphot_potential(args.specprod, args.outdir, comm=comm, mp=args.mp,
