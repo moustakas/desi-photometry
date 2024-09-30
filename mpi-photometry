@@ -31,9 +31,10 @@ from desiutil.log import get_logger, DEBUG
 log = get_logger()
 
 
-MINIPHOT_COLUMNS = ['TARGETID', 'SURVEY', 'PROGRAM', 'TILEID', 'PHOTSYS',
-                    'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']
-
+MINIPHOT_COLUMNS = ['SURVEY', 'PROGRAM', 'TILEID', 'TARGETID', 'RA', 'DEC',
+                    'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']
+ALLSURVEYS = ['cmx', 'sv1', 'sv2', 'sv3', 'special', 'main']
+ALLPROGRAMS = ['backup', 'bright', 'dark', 'other']
 
 def get_targetphot_filenames(survey, program, specprod, outdir='.',
                              healpix=None, nside=None, potential=False):
@@ -334,8 +335,7 @@ def write_targetphot(targetphot=None, zcat=None, miniphot=None, survey=None,
 
 
 def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
-                        surveys=['cmx','sv1','sv2','sv3','special','main'],
-                        programs=['backup','bright','dark','other'],
+                        surveys=ALLSURVEYS, programs=ALLPROGRAMS,
                         debug_ntiles=None, overwrite=False):
     """Gather targeting photometry for observed targets.
 
@@ -410,7 +410,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                 # Loop on healpix
                 zcat_rows_bypixel = {}
                 for pixel in upixels:
-                    targetphot_outfile, _, _ = get_targetphot_filenames(
+                    targetphot_outfile, zcat_outfile, miniphot_outfile = get_targetphot_filenames(
                         survey, program, specprod, outdir=outdir, healpix=pixel, nside=nside)
                     if os.path.isfile(targetphot_outfile) and not overwrite:
                         log.warning(f'Skipping existing targetphot file {targetphot_outfile}')
@@ -463,10 +463,10 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                             raise ValueError(errmsg)
 
                         targetphot_pixel = vstack(targetphot_pixel)
-                        targetphot_pixel, zcat_pixel, _ = write_targetphot(
+                        targetphot_pixel, zcat_pixel, miniphot_pixel = write_targetphot(
                             targetphot_pixel, zcat=zcat_pixel, targetphot_outfile=targetphot_outfile,
-                            zcat_outfile=zcat_outfile, survey=survey, program=program,
-                            healpix=pixel, nside=nside, sort=True)
+                            zcat_outfile=zcat_outfile, miniphot_outfile=miniphot_outfile,
+                            survey=survey, program=program, healpix=pixel, nside=nside, sort=True)
 
 
             # If parralelizing, broadcast the per-pixel list of zcat rows
@@ -520,55 +520,68 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
 
                     # sort and write out on rank 0
                     if rank == 0:
-                        # this is only empty if all the catalogs already exist
+                        # This is only empty if all the catalogs already exist,
+                        # which is fine.
                         if len(targetphot_pixel) >= 0:
                             targetphot_pixel = vstack(targetphot_pixel)
 
                             P = np.where(pixel == allpixels)[0]
                             zcat_pixel = zcat_program[P]
 
-                            targetphot_outfile, zcat_outfile, _ = get_targetphot_filenames(
+                            targetphot_outfile, zcat_outfile, miniphot_outfile = get_targetphot_filenames(
                                 survey, program, specprod, outdir=outdir, healpix=pixel, nside=nside)
 
-                            targetphot_pixel, zcat_pixel, _ = write_targetphot(
+                            targetphot_pixel, zcat_pixel, mini_pixel = write_targetphot(
                                 targetphot_pixel, zcat=zcat_pixel, targetphot_outfile=targetphot_outfile,
-                                zcat_outfile=zcat_outfile, survey=survey, program=program,
-                                healpix=pixel, nside=nside, sort=True)
+                                zcat_outfile=zcat_outfile, miniphot_outfile=miniphot_outfile,
+                                survey=survey, program=program, healpix=pixel, nside=nside, sort=True)
 
 
             if rank == 0:
                 # For all surveys except 'main'/{bright,dark}, gather up the
                 # individual healpix files and merge them. Always gather up the
-                # zcat files.
-                targetphot_files, zcat_files, _ = get_targetphot_filenames(
+                # 'zcat' and 'miniphot' files.
+                targetphot_files, zcat_files, miniphot_files = get_targetphot_filenames(
                     survey, program, specprod, outdir=outdir, healpix='*', nside=nside)
-                targetphot_outfile, zcat_outfile, _ = get_targetphot_filenames(
+                targetphot_outfile, zcat_outfile, miniphot_outfile = get_targetphot_filenames(
                     survey, program, specprod, outdir=outdir)
 
                 if survey == 'main' and (program == 'bright' or program == 'dark'):
                     zcat_program = []
-                    for zcat_file in zcat_files:
+                    miniphot_program = []
+                    for zcat_file, miniphot_file in zip(zcat_files, miniphot_files):
                         zcat_program.append(Table(fitsio.read(zcat_file)))
+                        miniphot_program.append(Table(fitsio.read(miniphot_file)))
                         os.remove(zcat_file)
+                        os.remove(miniphot_file)
                     zcat_program = vstack(zcat_program)
+                    miniphot_program = vstack(miniphot_program)
 
-                    write_targetphot(zcat=zcat_program, zcat_outfile=zcat_outfile,
+                    write_targetphot(zcat=zcat_program, miniphot=miniphot_program,
+                                     zcat_outfile=zcat_outfile,
+                                     miniphot_outfile=miniphot_outfile,
                                      survey=survey, program=program)
                 else:
                     zcat_program = []
+                    miniphot_program = []
                     targetphot_program = []
-                    for targetphot_file, zcat_file in zip(targetphot_files, zcat_files):
+                    for targetphot_file, zcat_file, miniphot_file in zip(targetphot_files, zcat_files, miniphot_files):
                         zcat_program.append(Table(fitsio.read(zcat_file)))
+                        miniphot_program.append(Table(fitsio.read(miniphot_file)))
                         targetphot_program.append(Table(fitsio.read(targetphot_file)))
                         os.remove(zcat_file)
+                        os.remove(miniphot_file)
                         os.remove(targetphot_file)
-                    targetphot_program = vstack(targetphot_program)
                     zcat_program = vstack(zcat_program)
+                    miniphot_program = vstack(miniphot_program)
+                    targetphot_program = vstack(targetphot_program)
 
                     write_targetphot(targetphot_program, zcat=zcat_program,
+                                     miniphot=miniphot_program,
                                      targetphot_outfile=targetphot_outfile,
-                                     zcat_outfile=zcat_outfile, survey=survey,
-                                     program=program, sort=True)
+                                     zcat_outfile=zcat_outfile,
+                                     miniphot_outfile=miniphot_outfile,
+                                     survey=survey, program=program, sort=True)
 
                 log.info(f'Total time for {survey}:{program}: {(time.time()-tprogram)/60.:.3f} min')
 
@@ -580,8 +593,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
 
 
 def targetphot_potential(specprod, outdir, comm=None, mp=1, nside=2,
-                         surveys=['cmx','sv1','sv2','sv3','special','main'],
-                         programs=['backup','bright','dark','other'],
+                         surveys=ALLSURVEYS, programs=ALLPROGRAMS,
                          debug_ntiles=None, overwrite=False):
     """Gather targeting photometry for potential targets.
 
@@ -800,11 +812,8 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside=2,
         log.info(f'Total time for all surveys: {(time.time()-tall)/60.:.3f} min')
 
 
-
-
-
 def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
-                overwrite=False):
+                surveys=ALLSURVEYS, programs=ALLPROGRAMS, overwrite=False):
     """Gather targeting photometry for observed targets.
 
     """
@@ -816,14 +825,21 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
     else:
         rank, size = comm.rank, comm.size
 
+    RACOLUMN, DECCOLUMN = 'RA', 'DEC'
     if potential:
-        RACOLUMN, DECCOLUMN = 'RA', 'DEC'
+        #RACOLUMN, DECCOLUMN = 'RA', 'DEC'
         targets_subdir = 'potential-targets'
         suffix = '-potential'
     else:
-        RACOLUMN, DECCOLUMN = 'TARGET_RA', 'TARGET_DEC'
+        #RACOLUMN, DECCOLUMN = 'TARGET_RA', 'TARGET_DEC'
         targets_subdir = 'observed-targets'
         suffix = ''
+
+    # Initialize the variables we will be broadcasting.
+    if comm is not None and size > 1:
+        upixels = None
+        #pixels = None
+        #zcat_rows_bypixel = None
 
     if rank == 0:
         tall = time.time()
@@ -831,49 +847,72 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
         if not os.path.isdir(os.path.join(outdir, targets_subdir, 'tractorphot')):
             os.makedirs(os.path.join(outdir, targets_subdir, 'tractorphot'), exist_ok=True)
 
-        zcatfile = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-zcat-{specprod}.fits')
-        if potential:
-            targetfile = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-miniphot-{specprod}.fits')
-        else:
-            targetfile = os.path.join(outdir, 'observed-targets', f'targetphot-{specprod}.fits')
-
-        if not os.path.isfile(targetfile):
-            errmsg = f'Targeting photometric catalog {targetfile} missing'
-            log.critical(errmsg)
-            raise IOError(errmsg)
-
-        if not os.path.isfile(zcatfile):
-            errmsg = f'Targeting redshift catalog {zcatfile} missing'
-            log.critical(errmsg)
-            raise IOError(errmsg)
-
-        # clean up previous temp files, if any
-        tractorphot_pixel_tmpfiles = glob(os.path.join(outdir, targets_subdir, 'tractorphot', f'tmp-rank*-tractorphot-*-{specprod}.fits'))
-        for tractorphot_pixel_tmpfile in tractorphot_pixel_tmpfiles:
-            os.remove(tractorphot_pixel_tmpfile)
-
-        log.info(f'Reading {targetfile}')
-        cat = Table(fitsio.read(targetfile))
-        log.info(f'Reading {zcatfile}')
-        zcat = Table(fitsio.read(zcatfile))
-        try:
-            assert(np.all(cat['TARGETID'] == zcat['TARGETID']))
-        except:
-            errmsg = 'TARGETID mismatch!'
-            log.critical(errmsg)
-            raise IOError(errmsg)
+        # Gather up the miniphot catalogs across all surveys and programs.
+        miniphot = []
+        for survey in surveys:
+            for program in programs:
+                _, _, miniphot_file = get_targetphot_filenames(survey, program, specprod, outdir=outdir, potential=potential)
+                if os.path.isfile(miniphot_file): # not all survey-program combinations exist
+                    mini = Table(fitsio.read(miniphot_file))
+                    log.info(f'Read {len(mini):,d} objects from {miniphot_file}')
+                    miniphot.append(mini)
+        del mini
+        miniphot = vstack(miniphot)
+        nobj = len(miniphot)
 
         # TARGETIDs can repeat in and between surveys, so select just unique
         # targets here; that's fine.
-        _, uindx = np.unique(cat['TARGETID'], return_index=True)
-        cat = cat[uindx]
-        zcat = zcat[uindx]
-        log.info(f'Selecting {len(cat):,d} unique targets')
+        _, uindx = np.unique(miniphot['TARGETID'], return_index=True)
+        miniphot = miniphot[uindx]
+        log.info(f'Gathering Tractor photometry for {len(miniphot):,d}/{nobj:,d} unique targets')
 
-        # Create a mini-cat that we'll use for the searching.
-        miniphot = cat['TARGETID', 'SURVEY', 'PROGRAM', 'TILEID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']
-        miniphot[RACOLUMN] = zcat[RACOLUMN]
-        miniphot[DECCOLUMN] = zcat[DECCOLUMN]
+        # write out a temp file
+        tmp_miniphot_outfile = os.path.join(outdir, 'ancillary', f'tmp-targetphot{suffix}-miniphot-{specprod}.fits')
+        miniphot.write(tmp_miniphot_outfile, overwrite=True)
+
+        ##zcatfile = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-zcat-{specprod}.fits')
+        #if potential:
+        #    targetfile = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-miniphot-{specprod}.fits')
+        #else:
+        #    targetfile = os.path.join(outdir, 'observed-targets', f'targetphot-{specprod}.fits')
+        #
+        #if not os.path.isfile(targetfile):
+        #    errmsg = f'Targeting photometric catalog {targetfile} missing'
+        #    log.critical(errmsg)
+        #    raise IOError(errmsg)
+        #
+        #if not os.path.isfile(zcatfile):
+        #    errmsg = f'Targeting redshift catalog {zcatfile} missing'
+        #    log.critical(errmsg)
+        #    raise IOError(errmsg)
+
+        ## clean up previous temp files, if any
+        #tractorphot_pixel_tmpfiles = glob(os.path.join(outdir, targets_subdir, 'tractorphot', f'tmp-rank*-tractorphot-*-{specprod}.fits'))
+        #for tractorphot_pixel_tmpfile in tractorphot_pixel_tmpfiles:
+        #    os.remove(tractorphot_pixel_tmpfile)
+
+        #log.info(f'Reading {targetfile}')
+        #cat = Table(fitsio.read(targetfile))
+        #log.info(f'Reading {zcatfile}')
+        #zcat = Table(fitsio.read(zcatfile))
+        #try:
+        #    assert(np.all(cat['TARGETID'] == zcat['TARGETID']))
+        #except:
+        #    errmsg = 'TARGETID mismatch!'
+        #    log.critical(errmsg)
+        #    raise IOError(errmsg)
+
+        ## TARGETIDs can repeat in and between surveys, so select just unique
+        ## targets here; that's fine.
+        #_, uindx = np.unique(cat['TARGETID'], return_index=True)
+        #cat = cat[uindx]
+        #zcat = zcat[uindx]
+        #log.info(f'Selecting {len(cat):,d} unique targets')
+        #
+        ## Create a mini-cat that we'll use for the searching.
+        #miniphot = cat['TARGETID', 'SURVEY', 'PROGRAM', 'TILEID', 'PHOTSYS', 'RELEASE', 'BRICKNAME', 'BRICKID', 'BRICK_OBJID']
+        #miniphot[RACOLUMN] = zcat[RACOLUMN]
+        #miniphot[DECCOLUMN] = zcat[DECCOLUMN]
 
         # Some secondary programs (e.g., 39632961435338613, 39632966921487347)
         # have BRICKNAME!='' & BRICKID!=0, but BRICK_OBJID==0. Unpack those here
@@ -887,23 +926,23 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
 
         inobrickname = np.where(miniphot['BRICKNAME'] == '')[0]
         if len(inobrickname) > 0:
-            log.info(f'Inferring brickname for {len(inobrickname):,d} objects')
+            log.info(f'Inferring brickname for {len(inobrickname):,d}/{len(miniphot):,d} objects')
             miniphot['BRICKNAME'][inobrickname] = get_brickname(miniphot[RACOLUMN][inobrickname],
                                                                 miniphot[DECCOLUMN][inobrickname])
         assert(np.all(miniphot['BRICKNAME'] != ''))
 
-        # Divide the sample into nside healpixels and parallelize over bricks.
-        log.info(f'Gathering Tractor photometry for {len(miniphot):,d} objects')
+        # Divide the sample into nside healpixels.
+        allpixels = radec2pix(nside, miniphot[RACOLUMN].value, miniphot[DECCOLUMN].value)
+        upixels = sorted(set(allpixels))
 
-        pixels = radec2pix(nside, miniphot[RACOLUMN].data, miniphot[DECCOLUMN].data)
-    else:
-        pixels = np.array([])
+        pdb.set_trace()
+
 
     # broadcast the work to the other ranks
     if comm:
-        pixels = comm.bcast(pixels, root=0)
+        upixels = comm.bcast(upixels, root=0)
+    pdb.set_trace()
 
-    upixels = sorted(set(pixels))
     for ipix, pixel in enumerate(upixels):
 
         tractorphot_outfile = os.path.join(outdir, targets_subdir, 'tractorphot', f'tractorphot{suffix}-nside{nside}-hp{pixel:03d}-{specprod}.fits')
@@ -915,7 +954,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
         if rank == 0:
             P = pixel == pixels
             miniphot_pixel = miniphot[P]
-            ubricknames, nperbrick = np.unique(miniphot_pixel['BRICKNAME'].data, return_counts=True)
+            ubricknames, nperbrick = np.unique(miniphot_pixel['BRICKNAME'].value, return_counts=True)
             groups = weighted_partition(nperbrick, size)
         else:
             ubricknames = np.array([])
@@ -1030,8 +1069,8 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--specprod', type=str, required=True, help='Spectroscopic production; output file prefix.')
     parser.add_argument('--zcatdir', type=str, required=True, help='Redshift catalog base directory.')
-    parser.add_argument('--surveys', type=str, default='cmx,sv1,sv2,sv3,special,main', help='Comma-separated list of surveys to process.')
-    parser.add_argument('--programs', type=str, default='backup,bright,dark', help='Comma-separated list of programs to process.')
+    parser.add_argument('--surveys', type=str, default=','.join(ALLSURVEYS), help='Comma-separated list of surveys to process.')
+    parser.add_argument('--programs', type=str, default=','.join(ALLPROGRAMS), help='Comma-separated list of programs to process.')
     parser.add_argument('--outdir', default='$PSCRATCH/lsdr9', type=str, help='Base output data directory.')
 
     parser.add_argument('--targetphot', action='store_true', help='Build the observed targets targeting catalogs.')
@@ -1090,10 +1129,12 @@ def main():
 
     if args.tractorphot:
         tractorphot(args.specprod, args.outdir, comm=comm, potential=False,
+                    surveys=args.surveys, programs=args.programs,
                     nside=args.nside_tractorphot, overwrite=args.overwrite)
 
     if args.tractorphot_potential:
         tractorphot(args.specprod, args.outdir, comm=comm, potential=True,
+                    surveys=args.surveys, programs=args.programs,
                     nside=args.nside_tractorphot, overwrite=args.overwrite)
 
 if __name__ == '__main__':
