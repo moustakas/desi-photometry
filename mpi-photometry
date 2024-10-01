@@ -702,7 +702,7 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside=2,
 
                 # Optionally test with a smaller number of tiles.
                 if debug_ntiles is not None:
-                    print('Debugging with a smaller sample...')
+                    log.info('Debugging with a smaller sample...')
                     utiles = np.unique(zcat_program['TILEID'])
                     if len(utiles) > 1:
                         I = np.random.choice(len(utiles), debug_ntiles, replace=False)
@@ -1027,7 +1027,6 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                             tractorphot_onerank = []
                             for ichunk in range(nchunk):
                                 miniphot_rows = miniphot_rows_manybricks[ichunk]
-                                print(miniphot_rows)
                                 log.info(f'Rank {rank}: reading {len(miniphot_rows):,d} targets from {miniphot_filename}')
                                 miniphot_manybricks = Table(fitsio.read(miniphot_filename, rows=miniphot_rows))
                                 # now loop through unique bricks
