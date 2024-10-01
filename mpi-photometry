@@ -47,7 +47,7 @@ def get_tractorphot_filename(specprod, nside, healpix, outdir='.', potential=Fal
         subdir = 'observed-targets'
 
     tractorphot_outfile = os.path.join(outdir, subdir, 'tractorphot', f'tractorphot{prefix}-' + \
-                                       f'nside{nside}-hp{healpix:03d}-{specprod}.fits')
+                                       f'nside{nside}-hp{healpix:03}-{specprod}.fits')
 
     return tractorphot_outfile
 
@@ -455,6 +455,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
 
                 allpixels = radec2pix(nside, zcat_program['TARGET_RA'], zcat_program['TARGET_DEC'])
                 upixels = sorted(set(allpixels))
+                log.info(f'Dividing the sample info {len(upixels)} unique healpixels.')
 
                 # Loop on healpix
                 zcat_rows_bypixel = {}
@@ -472,8 +473,8 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                     # If using MPI-parallelization, set up the arrays we need...
                     if comm is not None and size > 1:
                         # Divide tiles ~equally among the available ranks.
-                        log.info(f'Pixel {pixel:03d}: distributing {len(zcat_pixel):,d} TARGETIDs and ' + \
-                                 f'{len(utiles_onepixel):,d} unique tiles from {survey}:{program} to {size-1} ranks.')
+                        log.info(f'Rank 000 pixel {pixel:03}: distributing {len(zcat_pixel):,d} TARGETIDs and ' + \
+                                 f'{len(utiles_onepixel):,d} unique tiles from {survey}:{program} to {size-1} ranks')
 
                         utiles_byrank = np.array_split(utiles_onepixel, size-1)
 
@@ -481,7 +482,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                         # the rows to the full redshift catalog.
                         zcat_rows_byrank = []
                         for onerank in range(size-1):
-                            log.debug(f'Rank 0: building index list for rank {onerank+1}')
+                            log.debug(f'Rank 000 pixel {pixel:03}: building index list for rank {onerank+1:03}')
                             # So we don't hit the disk as often, process
                             # ntiles_per_chunk at a time.
                             utiles = utiles_byrank[onerank]
@@ -497,7 +498,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                         zcat_rows_bypixel[pixel] = zcat_rows_byrank
                     else:
                         # ...otherwise just loop on the unique set of tiles and write out.
-                        log.info(f'Pixel {pixel:03d}: working on {len(zcat_pixel):,d} TARGETIDs and ' + \
+                        log.info(f'Pixel {pixel:03}: working on {len(zcat_pixel):,d} TARGETIDs and ' + \
                                  f'{len(utiles_onepixel):,d} unique tiles from {survey}:{program}.')
                         targetphot_pixel = []
                         for tileid in utiles_onepixel:
@@ -542,7 +543,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                                     targetphot_onerank = []
                                     for ichunk in range(nchunk):
                                         zcat_rows = zcat_rows_manytiles[ichunk]
-                                        log.info(f'Rank {rank}: reading {len(zcat_rows):,d} targets from {zcatfile}')
+                                        log.info(f'Rank {rank:03} pixel {pixel:03} reading {len(zcat_rows):,d} targets from {zcatfile}')
                                         zcat_manytiles = read_one_zcat(zcatfile, rows=zcat_rows)
                                         # now loop through unique tiles
                                         alltiles = zcat_manytiles['TILEID'].value
@@ -560,8 +561,8 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                             for onerank in range(1, size):
                                 targetphot_onerank = comm.recv(source=onerank)
                                 if len(targetphot_onerank) > 0:
-                                    log.info('Rank 0: received targeting photometry for ' + \
-                                             f'{len(targetphot_onerank):,d} targets from rank {onerank}')
+                                    log.info('Rank 000: received targeting photometry for ' + \
+                                             f'{len(targetphot_onerank):,d} targets from rank {onerank:03}')
                                     targetphot_pixel.append(targetphot_onerank)
                                     del targetphot_onerank
 
@@ -710,6 +711,7 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside=2,
 
                 allpixels = radec2pix(nside, zcat_program['TARGET_RA'], zcat_program['TARGET_DEC'])
                 upixels = sorted(set(allpixels))
+                log.info(f'Dividing the sample info {len(upixels)} unique healpixels.')
 
                 # Loop on healpix
                 utiles_bypixel = {}
@@ -728,14 +730,14 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside=2,
                     # If using MPI-parallelization, set up the arrays we need...
                     if comm is not None and size > 1:
                         # Divide tiles ~equally among the available ranks.
-                        log.info(f'Pixel {pixel:03}: distributing {len(utiles_onepixel):,d} unique ' + \
-                                 f'tiles from {survey}:{program} to {size-1} ranks.')
+                        log.info(f'Rank:pixel 000:{pixel:03}: distributing {len(utiles_onepixel):,d} unique ' + \
+                                 f'tiles from {survey}:{program} to {size-1} ranks')
 
                         utiles_byrank = np.array_split(utiles_onepixel, size-1)
                         utiles_bypixel[pixel] = utiles_byrank
                     else:
                         # ...otherwise just loop on the unique set of tiles and write out.
-                        log.info(f'Pixel {pixel:03}: working on {len(zcat_pixel):,d} TARGETIDs and ' + \
+                        log.info(f'Rank:pixel 000:{pixel:03}: working on {len(zcat_pixel):,d} TARGETIDs and ' + \
                                  f'{len(utiles_onepixel):,d} unique tiles from {survey}:{program}.')
                         targetphot_pixel = []
                         for tileid in utiles_onepixel:
@@ -779,7 +781,7 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside=2,
                                     targetphot_onerank.append(_targetphot_onetile)
 
                                 if len(targetphot_onerank) == 0:
-                                    errmsg = f'Rank {rank}: no potential targeting catalogs were generated for ' + \
+                                    errmsg = f'Rank {rank:03}: no potential targeting catalogs were generated for ' + \
                                         f'survey/program/pixel {survey}:{program}:{pixel:03}'
                                     log.critical(errmsg)
                                     raise ValueError(errmsg)
@@ -792,8 +794,8 @@ def targetphot_potential(specprod, outdir, comm=None, mp=1, nside=2,
                             # ...while rank 0 receives them.
                             for onerank in range(1, size):
                                 targetphot_onerank = comm.recv(source=onerank)
-                                log.info('Rank 0: received targeting photometry for ' + \
-                                         f'{len(targetphot_onerank):,d} targets from rank {onerank}')
+                                log.info('Rank 000: received targeting photometry for ' + \
+                                         f'{len(targetphot_onerank):,d} targets from rank {onerank:03}')
                                 targetphot_pixel.append(targetphot_onerank)
                             del targetphot_onerank
 
@@ -884,7 +886,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
         targets_subdir = 'observed-targets'
         suffix = ''
 
-    nbricks_per_chunk = 50
+    nbricks_per_chunk = 30
 
     # Initialize the variables we will be broadcasting.
     if comm is not None and size > 1:
@@ -909,18 +911,12 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                     miniphot.append(mini)
         miniphot = vstack(miniphot)
         nobj = len(miniphot)
-        miniphot['ROW'] = np.arange(nobj)
 
         # TARGETIDs can repeat in and between surveys, so select just unique
         # targets here; that's fine.
         _, uindx = np.unique(miniphot['TARGETID'], return_index=True)
         miniphot = miniphot[uindx]
         log.info(f'Gathering Tractor photometry for {len(miniphot):,d}/{nobj:,d} unique targets')
-
-        # write out a temp file
-        miniphot_filename = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-miniphot-{specprod}.fits')
-        log.info(f'Writing merged miniphot catalog {miniphot_filename}')
-        miniphot.write(miniphot_filename, overwrite=True)
 
         # Some secondary programs (e.g., 39632961435338613, 39632966921487347)
         # have BRICKNAME!='' & BRICKID!=0, but BRICK_OBJID==0. Unpack those here
@@ -939,9 +935,16 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                                                                 miniphot[DECCOLUMN][inobrickname])
         assert(np.all(miniphot['BRICKNAME'] != ''))
 
+        # write out a merged 'miniphot' catalog
+        miniphot['ROW'] = np.arange(len(miniphot))
+        miniphot_filename = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-miniphot-{specprod}.fits')
+        log.info(f'Writing {len(miniphot):,d} objects to the merged miniphot catalog {miniphot_filename}')
+        miniphot.write(miniphot_filename, overwrite=True)
+
         # Divide the sample into nside healpixels.
         allpixels = radec2pix(nside, miniphot[RACOLUMN].value, miniphot[DECCOLUMN].value)
         upixels = sorted(set(allpixels))
+        log.info(f'Dividing the sample info {len(upixels)} unique healpixels.')
 
         miniphot_rows_bypixel = {}
         for pixel in upixels:
@@ -953,40 +956,48 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
 
             P = np.where(pixel == allpixels)[0]
             miniphot_pixel = miniphot[P]
-            ubricks_onepixel, nperbrick = np.unique(miniphot_pixel['BRICKNAME'].value, return_counts=True)
+            ubricks_onepixel = np.unique(miniphot_pixel['BRICKNAME'].value)
+            #ubricks_onepixel, nperbrick = np.unique(miniphot_pixel['BRICKNAME'].value, return_counts=True)
 
             # If using MPI-parallelization, set up the arrays we need...
             if comm is not None and size > 1:
                 # Distribute a weighted distribution of bricks among the available ranks.
-                log.info(f'Pixel {pixel:03}: distributing {len(miniphot_pixel):,d} TARGETIDs and ' + \
-                         f'{len(ubricks_onepixel):,d} unique bricks to {size-1} ranks.')
+                log.info(f'Rank {rank:03} pixel {pixel:03}: distributing {len(miniphot_pixel):,d} TARGETIDs and ' + \
+                         f'{len(ubricks_onepixel):,d} unique bricks to {size-1} ranks')
 
-                #ubricks_byrank = np.array_split(ubricks_onepixel, size-1)
-                groups = weighted_partition(nperbrick, size-1)
-                ubricks_byrank = [ubricks_onepixel[group] for group in groups]
+                ubricks_byrank = np.array_split(ubricks_onepixel, size-1)
+                #groups = weighted_partition(nperbrick, size-1)
+                #ubricks_byrank = [ubricks_onepixel[group] for group in groups]
 
                 # For each rank, loop over bricks and store the rows to the
                 # full 'miniphot' catalog.
                 miniphot_rows_byrank = []
                 for onerank in range(size-1):
-                    log.debug(f'Rank 0: building index list for rank {onerank+1}')
                     # So we don't hit the disk as often, process
-                    # ntiles_per_chunk at a time.
+                    # nbricks_per_chunk at a time.
                     ubricks = ubricks_byrank[onerank]
-                    miniphot_rows_manybricks = []
-                    if len(ubricks) > 0: # no work
-                        nchunk = int(np.ceil(len(ubricks) / nbricks_per_chunk))
-                        for ichunk in range(nchunk):
-                            i1 = ichunk*nbricks_per_chunk
-                            i2 = (ichunk+1)*nbricks_per_chunk
-                            I = np.where(np.isin(miniphot_pixel['BRICKNAME'], ubricks[i1:i2]))[0]
-                            miniphot_rows_manybricks.append(miniphot_pixel[I]['ROW'].value)
-                    miniphot_rows_byrank.append(miniphot_rows_manybricks)
+                    if len(ubricks) == 0: # no work
+                        miniphot_rows = []
+                    else:
+                        I = np.where(np.isin(miniphot_pixel['BRICKNAME'], ubricks))[0]
+                        miniphot_rows = miniphot_pixel[I]['ROW'].value
+                    log.info(f'Rank {rank:03} pixel {pixel:03}: assigning {len(miniphot_rows):,d} targets from ' + \
+                             f'{len(ubricks):,d} unique bricks to rank {onerank+1:03}')
+                    miniphot_rows_byrank.append(miniphot_rows)
+                    #miniphot_rows_manybricks = []
+                    #if len(ubricks) > 0: # no work
+                    #    nchunk = int(np.ceil(len(ubricks) / nbricks_per_chunk))
+                    #    for ichunk in range(nchunk):
+                    #        i1 = ichunk*nbricks_per_chunk
+                    #        i2 = (ichunk+1)*nbricks_per_chunk
+                    #        I = np.where(np.isin(miniphot_pixel['BRICKNAME'], ubricks[i1:i2]))[0]
+                    #        miniphot_rows_manybricks.append(miniphot_pixel[I]['ROW'].value)
+                    #miniphot_rows_byrank.append(miniphot_rows_manybricks)
                 miniphot_rows_bypixel[pixel] = miniphot_rows_byrank
             else:
                 # ...otherwise just loop on the unique set of bricks and write out.
-                log.info(f'Pixel {pixel:03}: working on {len(miniphot_pixel):,d} TARGETIDs and ' + \
-                         f'{len(ubricks_onepixel):,d} unique bricks.')
+                log.info(f'Rank {rank:03} pixel {pixel:03}: working on {len(miniphot_pixel):,d} TARGETIDs ' + \
+                         f'and {len(ubricks_onepixel):,d} unique bricks.')
                 tractorphot_pixel = []
                 for brick in ubricks_onepixel:
                     I = np.where(brick == miniphot_pixel['BRICKNAME'].value)[0]
@@ -994,16 +1005,16 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                     tractorphot_pixel.append(_tractorphot_onebrick)
 
                 if len(tractorphot_pixel) == 0:
-                    errmsg = f'No Tractor catalogs were generated for pixel {pixel:03}'
+                    errmsg = f'Rank {rank:03} pixel {pixel:03}: no Tractor catalogs were generated!' # should never happen
                     log.critical(errmsg)
                     raise ValueError(errmsg)
 
                 tractorphot_pixel = vstack(tractorphot_pixel)
                 write_tractorphot(tractorphot_pixel, miniphot=miniphot_pixel, healpix=pixel,
-                                  nside=nside, outfile=tractorphot_outfile)
+                                  nside=nside, outfile=tractorphot_outfile, sort=True)
 
-    # If parralelizing, broadcast the per-pixel list of miniphot rows
-    # assigned to each rank and then loop.
+    # If parallelizing, broadcast the per-pixel list of miniphot rows assigned
+    # to each rank and then loop on bricks.
     if comm is not None and size > 1:
         upixels = comm.bcast(upixels, root=0)
         miniphot_rows_bypixel = comm.bcast(miniphot_rows_bypixel, root=0)
@@ -1019,34 +1030,52 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                     if not pixel in miniphot_rows_bypixel.keys(): # pixel is already done
                         comm.send(Table(), dest=0)
                     else:
-                        miniphot_rows_manybricks = miniphot_rows_bypixel[pixel][rank-1]
-                        nchunk = len(miniphot_rows_manybricks)
-                        if nchunk == 0: # not all ranks have work
+                        miniphot_rows = miniphot_rows_bypixel[pixel][rank-1]
+                        if len(miniphot_rows) == 0: # not all ranks have work
                             comm.send(Table(), dest=0)
                         else:
+                            log.info(f'Rank {rank:03}: reading {len(miniphot_rows):,d} targets from {miniphot_filename}')
+                            miniphot_manybricks = Table(fitsio.read(miniphot_filename, rows=miniphot_rows))
                             tractorphot_onerank = []
-                            for ichunk in range(nchunk):
-                                miniphot_rows = miniphot_rows_manybricks[ichunk]
-                                log.info(f'Rank {rank}: reading {len(miniphot_rows):,d} targets from {miniphot_filename}')
-                                miniphot_manybricks = Table(fitsio.read(miniphot_filename, rows=miniphot_rows))
-                                # now loop through unique bricks
-                                allbricks = miniphot_manybricks['BRICKNAME'].value
-                                for brick in np.unique(allbricks):
-                                    I = np.where(brick == allbricks)[0]
-                                    _tractorphot_onebrick = tractorphot_onebrick(miniphot_manybricks[I], RACOLUMN, DECCOLUMN)
-                                    tractorphot_onerank.append(_tractorphot_onebrick)
+                            # now loop through unique bricks
+                            allbricks = miniphot_manybricks['BRICKNAME'].value
+                            for brick in np.unique(allbricks):
+                                I = np.where(brick == allbricks)[0]
+                                _tractorphot_onebrick = tractorphot_onebrick(miniphot_manybricks[I], RACOLUMN, DECCOLUMN)
+                                tractorphot_onerank.append(_tractorphot_onebrick)
                             del miniphot_manybricks, _tractorphot_onebrick
                             tractorphot_onerank = vstack(tractorphot_onerank)
-                            log.info(f'Pixel {pixel:03}: rank {rank}: sending Tractor photometry for ' + \
-                                     f'{len(tractorphot_onerank):,d} targets back to rank 0')
+                            log.info(f'Rank {rank:03} pixel {pixel:03}: sending Tractor photometry for ' + \
+                                     f'{len(tractorphot_onerank):,d} targets back to rank 000')
                             comm.send(tractorphot_onerank, dest=0)
+
+                        #nchunk = len(miniphot_rows_manybricks)
+                        #if nchunk == 0: # not all ranks have work
+                        #    comm.send(Table(), dest=0)
+                        #else:
+                        #    tractorphot_onerank = []
+                        #    for ichunk in range(nchunk):
+                        #        miniphot_rows = miniphot_rows_manybricks[ichunk]
+                        #        log.info(f'Rank {rank:03}: reading {len(miniphot_rows):,d} targets from {miniphot_filename}')
+                        #        miniphot_manybricks = Table(fitsio.read(miniphot_filename, rows=miniphot_rows))
+                        #        # now loop through unique bricks
+                        #        allbricks = miniphot_manybricks['BRICKNAME'].value
+                        #        for brick in np.unique(allbricks):
+                        #            I = np.where(brick == allbricks)[0]
+                        #            _tractorphot_onebrick = tractorphot_onebrick(miniphot_manybricks[I], RACOLUMN, DECCOLUMN)
+                        #            tractorphot_onerank.append(_tractorphot_onebrick)
+                        #    del miniphot_manybricks, _tractorphot_onebrick
+                        #    tractorphot_onerank = vstack(tractorphot_onerank)
+                        #    log.info(f'Pixel {pixel:03}: rank {rank}: sending Tractor photometry for ' + \
+                        #             f'{len(tractorphot_onerank):,d} targets back to rank 000')
+                        #    comm.send(tractorphot_onerank, dest=0)
                 else:
                     # ...while rank 0 receives them.
                     for onerank in range(1, size):
                         tractorphot_onerank = comm.recv(source=onerank)
                         if len(tractorphot_onerank) > 0:
-                            log.info('Rank 0: received Tractor photometry for ' + \
-                                     f'{len(tractorphot_onerank):,d} targets from rank {onerank}')
+                            log.info(f'Rank {rank:03} pixel {pixel:03}: received Tractor photometry for ' + \
+                                     f'{len(tractorphot_onerank):,d} targets from rank {onerank:03}')
                             tractorphot_pixel.append(tractorphot_onerank)
                             del tractorphot_onerank
 
@@ -1101,7 +1130,9 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                 missing.append(miniphot[P])
 
         nmissing = len(missing)
-        if nmissing > 0:
+        if nmissing == 0:
+            log.info('No targets with missing Tractor photometry.')
+        else:
             missing = vstack(missing)
             missing_outfile = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-missing-{specprod}.fits')
             add_dependencies(missing.meta, envvar_names=['DESI_ROOT', 'DESI_ROOT_READONLY'],
@@ -1110,7 +1141,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
             log.info(f'Writing {len(missing):,d} objects to {missing_outfile}')
             missing.write(missing_outfile, overwrite=True)
 
-        log.info(f'Total time: {(time.time()-tmiss)/60.:.3f} min')
+        log.info(f'Total time for tractorphot: {(time.time()-tmiss)/60.:.3f} min')
 
 
 def main():
