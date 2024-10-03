@@ -886,13 +886,14 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
         targets_subdir = 'observed-targets'
         suffix = ''
 
-    nbricks_per_chunk = 30
+    miniphot_filename = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-miniphot-{specprod}.fits')
+    #nbricks_per_chunk = 30
 
     # Initialize the variables we will be broadcasting.
     if comm is not None and size > 1:
-        upixels = None
-        miniphot_rows_bypixel = None
-        miniphot_filename = None
+        pixels_todo = None
+        #miniphot_rows_bypixel = None
+        #miniphot_rows_bypixel = None
 
     if rank == 0:
         tall = time.time()
@@ -901,52 +902,55 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
             os.makedirs(os.path.join(outdir, targets_subdir, 'tractorphot'), exist_ok=True)
 
         # Gather up the miniphot catalogs across all surveys and programs.
-        miniphot = []
-        for survey in surveys:
-            for program in programs:
-                _, _, miniphot_file = get_targetphot_filenames(survey, program, specprod, outdir=outdir, potential=potential)
-                if os.path.isfile(miniphot_file): # not all survey-program combinations exist
-                    mini = Table(fitsio.read(miniphot_file))
-                    log.info(f'Read {len(mini):,d} objects from {miniphot_file}')
-                    miniphot.append(mini)
-        miniphot = vstack(miniphot)
-        nobj = len(miniphot)
+        if not os.path.isfile(miniphot_filename) or overwrite:
+            miniphot = []
+            for survey in surveys:
+                for program in programs:
+                    _, _, miniphot_file = get_targetphot_filenames(survey, program, specprod, outdir=outdir, potential=potential)
+                    if os.path.isfile(miniphot_file): # not all survey-program combinations exist
+                        mini = Table(fitsio.read(miniphot_file))
+                        log.info(f'Read {len(mini):,d} objects from {miniphot_file}')
+                        miniphot.append(mini)
+            miniphot = vstack(miniphot)
+            nobj = len(miniphot)
 
-        # TARGETIDs can repeat in and between surveys, so select just unique
-        # targets here; that's fine.
-        _, uindx = np.unique(miniphot['TARGETID'], return_index=True)
-        miniphot = miniphot[uindx]
-        log.info(f'Gathering Tractor photometry for {len(miniphot):,d}/{nobj:,d} unique targets')
+            # TARGETIDs can repeat in and between surveys, so select just unique
+            # targets here; that's fine.
+            _, uindx = np.unique(miniphot['TARGETID'], return_index=True)
+            miniphot = miniphot[uindx]
+            log.info(f'Gathering Tractor photometry for {len(miniphot):,d}/{nobj:,d} unique targets')
 
-        # Some secondary programs (e.g., 39632961435338613, 39632966921487347)
-        # have BRICKNAME!='' & BRICKID!=0, but BRICK_OBJID==0. Unpack those here
-        # using decode_targetid.
-        fix = np.where((miniphot['BRICKNAME'] != '') * (miniphot['BRICK_OBJID'] == 0))[0]
-        if len(fix) > 0:
-            log.info(f'Inferring BRICK_OBJID for {len(fix):,d} objects using decode_targetid')
-            fix_objid, fix_brickid, _, _, _, _ = decode_targetid(miniphot['TARGETID'][fix])
-            assert(np.all(fix_brickid == miniphot['BRICKID'][fix]))
-            miniphot['BRICK_OBJID'][fix] = fix_objid
+            # Some secondary programs (e.g., 39632961435338613, 39632966921487347)
+            # have BRICKNAME!='' & BRICKID!=0, but BRICK_OBJID==0. Unpack those here
+            # using decode_targetid.
+            fix = np.where((miniphot['BRICKNAME'] != '') * (miniphot['BRICK_OBJID'] == 0))[0]
+            if len(fix) > 0:
+                log.info(f'Inferring BRICK_OBJID for {len(fix):,d} objects using decode_targetid')
+                fix_objid, fix_brickid, _, _, _, _ = decode_targetid(miniphot['TARGETID'][fix])
+                assert(np.all(fix_brickid == miniphot['BRICKID'][fix]))
+                miniphot['BRICK_OBJID'][fix] = fix_objid
 
-        inobrickname = np.where(miniphot['BRICKNAME'] == '')[0]
-        if len(inobrickname) > 0:
-            log.info(f'Inferring brickname for {len(inobrickname):,d}/{len(miniphot):,d} objects')
-            miniphot['BRICKNAME'][inobrickname] = get_brickname(miniphot[RACOLUMN][inobrickname],
-                                                                miniphot[DECCOLUMN][inobrickname])
-        assert(np.all(miniphot['BRICKNAME'] != ''))
+            inobrickname = np.where(miniphot['BRICKNAME'] == '')[0]
+            if len(inobrickname) > 0:
+                log.info(f'Inferring brickname for {len(inobrickname):,d}/{len(miniphot):,d} objects')
+                miniphot['BRICKNAME'][inobrickname] = get_brickname(miniphot[RACOLUMN][inobrickname],
+                                                                    miniphot[DECCOLUMN][inobrickname])
+            assert(np.all(miniphot['BRICKNAME'] != ''))
 
-        # write out a merged 'miniphot' catalog
-        miniphot['ROW'] = np.arange(len(miniphot))
-        miniphot_filename = os.path.join(outdir, 'ancillary', f'targetphot{suffix}-miniphot-{specprod}.fits')
-        log.info(f'Writing {len(miniphot):,d} objects to the merged miniphot catalog {miniphot_filename}')
-        miniphot.write(miniphot_filename, overwrite=True)
+            # write out a merged 'miniphot' catalog
+            miniphot['ROW'] = np.arange(len(miniphot))
+            log.info(f'Writing {len(miniphot):,d} objects to the merged miniphot catalog {miniphot_filename}')
+            miniphot.write(miniphot_filename, overwrite=True)
+        else:
+            miniphot = Table(fitsio.read(miniphot_filename))
+            log.info(f'Read {len(miniphot):,d} objects from merged miniphot catalog {miniphot_filename}')
 
         # Divide the sample into nside healpixels.
         allpixels = radec2pix(nside, miniphot[RACOLUMN].value, miniphot[DECCOLUMN].value)
         upixels = sorted(set(allpixels))
         log.info(f'Dividing the sample info {len(upixels)} unique healpixels.')
 
-        miniphot_rows_bypixel = {}
+        pixels_todo = []
         for pixel in upixels:
             tractorphot_outfile = get_tractorphot_filename(
                 specprod, nside, pixel, outdir=outdir, potential=potential)
@@ -954,47 +958,14 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                 log.warning(f'Skipping existing tractorphot file {tractorphot_outfile}')
                 continue
 
-            P = np.where(pixel == allpixels)[0]
-            miniphot_pixel = miniphot[P]
-            ubricks_onepixel = np.unique(miniphot_pixel['BRICKNAME'].value)
-            #ubricks_onepixel, nperbrick = np.unique(miniphot_pixel['BRICKNAME'].value, return_counts=True)
-
             # If using MPI-parallelization, set up the arrays we need...
             if comm is not None and size > 1:
-                # Distribute a weighted distribution of bricks among the available ranks.
-                log.info(f'Rank {rank:03} pixel {pixel:03}: distributing {len(miniphot_pixel):,d} TARGETIDs and ' + \
-                         f'{len(ubricks_onepixel):,d} unique bricks to {size-1} ranks')
-
-                ubricks_byrank = np.array_split(ubricks_onepixel, size-1)
-                #groups = weighted_partition(nperbrick, size-1)
-                #ubricks_byrank = [ubricks_onepixel[group] for group in groups]
-
-                # For each rank, loop over bricks and store the rows to the
-                # full 'miniphot' catalog.
-                miniphot_rows_byrank = []
-                for onerank in range(size-1):
-                    # So we don't hit the disk as often, process
-                    # nbricks_per_chunk at a time.
-                    ubricks = ubricks_byrank[onerank]
-                    if len(ubricks) == 0: # no work
-                        miniphot_rows = []
-                    else:
-                        I = np.where(np.isin(miniphot_pixel['BRICKNAME'], ubricks))[0]
-                        miniphot_rows = miniphot_pixel[I]['ROW'].value
-                    log.info(f'Rank {rank:03} pixel {pixel:03}: assigning {len(miniphot_rows):,d} targets from ' + \
-                             f'{len(ubricks):,d} unique bricks to rank {onerank+1:03}')
-                    miniphot_rows_byrank.append(miniphot_rows)
-                    #miniphot_rows_manybricks = []
-                    #if len(ubricks) > 0: # no work
-                    #    nchunk = int(np.ceil(len(ubricks) / nbricks_per_chunk))
-                    #    for ichunk in range(nchunk):
-                    #        i1 = ichunk*nbricks_per_chunk
-                    #        i2 = (ichunk+1)*nbricks_per_chunk
-                    #        I = np.where(np.isin(miniphot_pixel['BRICKNAME'], ubricks[i1:i2]))[0]
-                    #        miniphot_rows_manybricks.append(miniphot_pixel[I]['ROW'].value)
-                    #miniphot_rows_byrank.append(miniphot_rows_manybricks)
-                miniphot_rows_bypixel[pixel] = miniphot_rows_byrank
+                pixels_todo.append(pixel)
             else:
+                P = np.where(pixel == allpixels)[0]
+                miniphot_pixel = miniphot[P]
+                ubricks_onepixel = np.unique(miniphot_pixel['BRICKNAME'].value)
+
                 # ...otherwise just loop on the unique set of bricks and write out.
                 log.info(f'Rank {rank:03} pixel {pixel:03}: working on {len(miniphot_pixel):,d} TARGETIDs ' + \
                          f'and {len(ubricks_onepixel):,d} unique bricks.')
@@ -1016,71 +987,56 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
     # If parallelizing, broadcast the per-pixel list of miniphot rows assigned
     # to each rank and then loop on bricks.
     if comm is not None and size > 1:
-        upixels = comm.bcast(upixels, root=0)
-        miniphot_rows_bypixel = comm.bcast(miniphot_rows_bypixel, root=0)
-        miniphot_filename = comm.bcast(miniphot_filename, root=0)
+        pixels_todo = comm.bcast(pixels_todo, root=0)
 
-        for pixel in upixels:
+        for pixel in pixels_todo:
+            # Rank 0 sends the list of rows each of the other ranks should be working on.
+            if rank == 0:
+                P = np.where(pixel == allpixels)[0]
+                miniphot_pixel = miniphot[P]
+                log.info(f'Rank {rank:03} pixel {pixel:03}: working on {len(miniphot_pixel):,d} targets')
+                miniphot_rows = miniphot_pixel['ROW'].value
+                rows_byrank = np.array_split(miniphot_rows, size-1)
+                for onerank, rows in zip(range(1, size), rows_byrank):
+                    ubricks = np.unique(miniphot_pixel[miniphot_rows]['BRICKNAME'].value)
+                    log.info(f'Rank {rank:03} pixel {pixel:03}: assigning {len(rows):,d} targets from ' + \
+                             f'{len(ubricks):,d} unique bricks to rank {onerank+1:03}')
+                    comm.send(rows, dest=onerank)
+
             tractorphot_pixel = []
-            if comm is not None and size > 1:
-                # Ranks >0 loop over their list of bricks, generate the per-brick
-                # tractorphot catalogs, and then send the stacked results back
-                # to rank 0...
-                if rank > 0:
-                    if not pixel in miniphot_rows_bypixel.keys(): # pixel is already done
-                        comm.send(Table(), dest=0)
-                    else:
-                        miniphot_rows = miniphot_rows_bypixel[pixel][rank-1]
-                        if len(miniphot_rows) == 0: # not all ranks have work
-                            comm.send(Table(), dest=0)
-                        else:
-                            log.info(f'Rank {rank:03}: reading {len(miniphot_rows):,d} targets from {miniphot_filename}')
-                            miniphot_manybricks = Table(fitsio.read(miniphot_filename, rows=miniphot_rows))
-                            tractorphot_onerank = []
-                            # now loop through unique bricks
-                            allbricks = miniphot_manybricks['BRICKNAME'].value
-                            for brick in np.unique(allbricks):
-                                I = np.where(brick == allbricks)[0]
-                                _tractorphot_onebrick = tractorphot_onebrick(miniphot_manybricks[I], RACOLUMN, DECCOLUMN)
-                                tractorphot_onerank.append(_tractorphot_onebrick)
-                            del miniphot_manybricks, _tractorphot_onebrick
-                            tractorphot_onerank = vstack(tractorphot_onerank)
-                            log.info(f'Rank {rank:03} pixel {pixel:03}: sending Tractor photometry for ' + \
-                                     f'{len(tractorphot_onerank):,d} targets back to rank 000')
-                            comm.send(tractorphot_onerank, dest=0)
-
-                        #nchunk = len(miniphot_rows_manybricks)
-                        #if nchunk == 0: # not all ranks have work
-                        #    comm.send(Table(), dest=0)
-                        #else:
-                        #    tractorphot_onerank = []
-                        #    for ichunk in range(nchunk):
-                        #        miniphot_rows = miniphot_rows_manybricks[ichunk]
-                        #        log.info(f'Rank {rank:03}: reading {len(miniphot_rows):,d} targets from {miniphot_filename}')
-                        #        miniphot_manybricks = Table(fitsio.read(miniphot_filename, rows=miniphot_rows))
-                        #        # now loop through unique bricks
-                        #        allbricks = miniphot_manybricks['BRICKNAME'].value
-                        #        for brick in np.unique(allbricks):
-                        #            I = np.where(brick == allbricks)[0]
-                        #            _tractorphot_onebrick = tractorphot_onebrick(miniphot_manybricks[I], RACOLUMN, DECCOLUMN)
-                        #            tractorphot_onerank.append(_tractorphot_onebrick)
-                        #    del miniphot_manybricks, _tractorphot_onebrick
-                        #    tractorphot_onerank = vstack(tractorphot_onerank)
-                        #    log.info(f'Pixel {pixel:03}: rank {rank}: sending Tractor photometry for ' + \
-                        #             f'{len(tractorphot_onerank):,d} targets back to rank 000')
-                        #    comm.send(tractorphot_onerank, dest=0)
+            # Ranks >0 receives their list of row, generate the per-brick
+            # tractorphot catalogs, and then send the stacked results back to
+            # rank 0...
+            if rank > 0:
+                miniphot_rows = comm.recv(source=0)
+                if len(miniphot_rows) == 0: # no work to do
+                    comm.send(Table(), dest=0)
                 else:
-                    # ...while rank 0 receives them.
-                    for onerank in range(1, size):
-                        tractorphot_onerank = comm.recv(source=onerank)
-                        if len(tractorphot_onerank) > 0:
-                            log.info(f'Rank {rank:03} pixel {pixel:03}: received Tractor photometry for ' + \
-                                     f'{len(tractorphot_onerank):,d} targets from rank {onerank:03}')
-                            tractorphot_pixel.append(tractorphot_onerank)
-                            del tractorphot_onerank
+                    log.info(f'Rank {rank:03}: reading {len(miniphot_rows):,d} targets from {miniphot_filename}')
+                    miniphot_manybricks = Table(fitsio.read(miniphot_filename, rows=miniphot_rows))
+                    tractorphot_onerank = []
+                    # now loop through unique bricks
+                    allbricks = miniphot_manybricks['BRICKNAME'].value
+                    for brick in np.unique(allbricks):
+                        I = np.where(brick == allbricks)[0]
+                        _tractorphot_onebrick = tractorphot_onebrick(miniphot_manybricks[I], RACOLUMN, DECCOLUMN)
+                        tractorphot_onerank.append(_tractorphot_onebrick)
+                    del miniphot_manybricks, _tractorphot_onebrick
+                    tractorphot_onerank = vstack(tractorphot_onerank)
+                    log.info(f'Rank {rank:03} pixel {pixel:03}: sending Tractor photometry for ' + \
+                             f'{len(tractorphot_onerank):,d} targets back to rank 000')
+                    comm.send(tractorphot_onerank, dest=0)
+            else:
+                # ...while rank 0 receives them.
+                for onerank in range(1, size):
+                    tractorphot_onerank = comm.recv(source=onerank)
+                    if len(tractorphot_onerank) > 0:
+                        log.info(f'Rank {rank:03} pixel {pixel:03}: received Tractor photometry for ' + \
+                                 f'{len(tractorphot_onerank):,d} targets from rank {onerank:03}')
+                        tractorphot_pixel.append(tractorphot_onerank)
+                        del tractorphot_onerank
 
-            if comm is not None and size > 1:
-                comm.barrier()
+            comm.barrier()
 
             # sort and write out on rank 0
             if rank == 0:
