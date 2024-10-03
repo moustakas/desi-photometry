@@ -1028,7 +1028,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                     comm.send(tractorphot_onerank, dest=0)
             else:
                 # ...while rank 0 receives them.
-                for onerank in np.arange(size)+1:
+                for onerank in np.arange(size-1)+1:
                     tractorphot_onerank = comm.recv(source=onerank)
                     if len(tractorphot_onerank) > 0:
                         log.info(f'Rank {rank:03} pixel {pixel:03}: received Tractor photometry for ' + \
