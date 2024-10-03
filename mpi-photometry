@@ -482,7 +482,7 @@ def targetphot_observed(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                         # the rows to the full redshift catalog.
                         zcat_rows_byrank = []
                         for onerank in range(size-1):
-                            log.debug(f'Rank 000 pixel {pixel:03}: building index list for rank {onerank+1:03}')
+                            log.debug(f'Rank 000 pixel {pixel:03}: building index list for rank {onerank:03}')
                             # So we don't hit the disk as often, process
                             # ntiles_per_chunk at a time.
                             utiles = utiles_byrank[onerank]
@@ -997,10 +997,10 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                 log.info(f'Rank {rank:03} pixel {pixel:03}: working on {len(miniphot_pixel):,d} targets')
                 miniphot_rows = miniphot_pixel['ROW'].value
                 rows_byrank = np.array_split(miniphot_rows, size-1)
-                for onerank, rows in zip(range(1, size), rows_byrank):
-                    ubricks = np.unique(miniphot_pixel[miniphot_rows]['BRICKNAME'].value)
+                for onerank, rows in zip(np.arange(size-1)+1, rows_byrank):
+                    ubricks = np.unique(miniphot[rows]['BRICKNAME'].value)
                     log.info(f'Rank {rank:03} pixel {pixel:03}: assigning {len(rows):,d} targets from ' + \
-                             f'{len(ubricks):,d} unique bricks to rank {onerank+1:03}')
+                             f'{len(ubricks):,d} unique bricks to rank {onerank:03}')
                     comm.send(rows, dest=onerank)
 
             tractorphot_pixel = []
@@ -1028,7 +1028,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                     comm.send(tractorphot_onerank, dest=0)
             else:
                 # ...while rank 0 receives them.
-                for onerank in range(1, size):
+                for onerank in np.arange(size)+1:
                     tractorphot_onerank = comm.recv(source=onerank)
                     if len(tractorphot_onerank) > 0:
                         log.info(f'Rank {rank:03} pixel {pixel:03}: received Tractor photometry for ' + \
@@ -1043,6 +1043,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                 # This is only empty if all the catalogs already exist,
                 # which is fine.
                 if len(tractorphot_pixel) > 0:
+                    log.info(f'Rank {rank:03} pixel {pixel:03}: stacking {len(tractorphot_pixel):,d} Tractor catalogs.')
                     tractorphot_pixel = vstack(tractorphot_pixel)
 
                     P = np.where(pixel == allpixels)[0]
