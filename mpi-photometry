@@ -169,11 +169,6 @@ def read_one_potential_targets(tileid, survey, program):
     return out
 
 
-def _tractorphot_onebrick(args):
-    """Multiprocessing wrapper."""
-    return tractorphot_onebrick(*args)
-
-
 def tractorphot_onebrick(cat, RACOLUMN='TARGET_RA', DECCOLUMN='TARGET_DEC'):
     """Wrapper on desispec.io.photo.gather_tractorphot with special handling of duplicates.
 
@@ -228,11 +223,6 @@ def tractorphot_onebrick(cat, RACOLUMN='TARGET_RA', DECCOLUMN='TARGET_DEC'):
     assert(np.all(tractorphot['TARGETID'] == cat['TARGETID']))
 
     return tractorphot
-
-
-def _targetphot_onetile(args):
-    """Multiprocessing wrapper."""
-    return targetphot_onetile(*args)
 
 
 def targetphot_onetile(input_cat, racolumn='TARGET_RA', deccolumn='TARGET_DEC'):
