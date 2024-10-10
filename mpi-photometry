@@ -15,7 +15,7 @@ Set up the software dependencies:
 srun --ntasks 128 $HOME/code/desihub/desi-photometry/mpi-photometry --outdir $PSCRATCH/lsdr9/kibo --zcatdir $DESI_ROOT_READONLY/spectro/redux/kibo/zcatalog/v1 --specprod kibo --targetphot
 
 """
-import os, sys, time, pdb
+import os, time, pdb
 import numpy as np
 import fitsio
 from glob import glob
@@ -506,7 +506,9 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
 
                 allpixels = radec2pix(nside, zcat_program['TARGET_RA'], zcat_program['TARGET_DEC'])
                 upixels = sorted(set(allpixels))
-                log.info(f'Dividing the sample info {len(upixels)} unique healpixels')
+                if survey == 'main':
+                    upixels = [0] # for testing
+                log.info(f'Dividing the sample into {len(upixels)} unique healpixels')
 
                 # Loop on healpix
                 pixels_todo = []
@@ -569,13 +571,14 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                     if rank == 0:
                         tone = time.time()
                         P = np.where(pixel == allpixels)[0]
-                        log.info(f'Rank {rank:03}: working on {len(P):,d} targets on healpix ' + \
-                                 f'{pixel:03} ({ipix+1:03}/{len(pixels_todo):03})')
 
                         zcat_pixel = zcat_program[P]
                         alltiles_pixel = zcat_pixel['TILEID'].value
                         utiles_pixel = np.unique(alltiles_pixel)
                         utiles_byrank = np.array_split(utiles_pixel, size-1)
+                        log.info(f'Rank {rank:03}: working on {len(P):,d} targets from {len(utiles_pixel):,d} unique tiles ' + \
+                                 f'on healpix {pixel:03} ({ipix+1:03}/{len(pixels_todo):03})')
+
 
                         for onerank, utiles in zip(np.arange(size-1)+1, utiles_byrank):
                             rows_pixel = np.where(np.isin(alltiles_pixel, utiles))[0]
@@ -782,7 +785,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
         # Divide the sample into nside healpixels.
         allpixels = radec2pix(nside, miniphot[RACOLUMN].value, miniphot[DECCOLUMN].value)
         upixels = sorted(set(allpixels))
-        log.info(f'Dividing the sample info {len(upixels)} unique healpixels')
+        log.info(f'Dividing the sample into {len(upixels)} unique healpixels')
 
         pixels_todo = []
         #for pixel in [2]:
