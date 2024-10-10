@@ -1007,8 +1007,8 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
         log.info(f'Dividing the sample info {len(upixels)} unique healpixels')
 
         pixels_todo = []
-        for pixel in [2]:
-        #for pixel in upixels:
+        #for pixel in [2]:
+        for pixel in upixels:
             tractorphot_outfile = get_tractorphot_filename(
                 specprod, nside, pixel, outdir=outdir, potential=potential)
             if os.path.isfile(tractorphot_outfile) and not overwrite:
@@ -1029,8 +1029,8 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                          f'and {len(ubricks_onepixel):,d} unique bricks.')
 
                 tractorphot_pixel = []
-                #for brick in ubricks_onepixel:
-                for brick in ['0339p295']: # ubricks_onepixel:
+                for brick in ubricks_onepixel:
+                #for brick in ['0339p295']: # ubricks_onepixel:
                     I = np.where(brick == miniphot_pixel['BRICKNAME'].value)[0]
                     _tractorphot_onebrick = tractorphot_onebrick(miniphot_pixel[I], RACOLUMN, DECCOLUMN)
                     tractorphot_pixel.append(_tractorphot_onebrick)
@@ -1038,7 +1038,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                 tractorphot_pixel = vstack(tractorphot_pixel)
                 write_tractorphot(tractorphot_pixel, miniphot=miniphot_pixel, healpix=pixel,
                                   nside=nside, outfile=tractorphot_outfile, sort=True)
-                pdb.set_trace()
+
 
     # If parallelizing, broadcast the list of pixels to process.
     if comm is not None and size > 1:
@@ -1187,9 +1187,10 @@ def main():
     parser.add_argument('--validate-targetphot', action='store_true', help='Validate the targetphot catalogs.')
     parser.add_argument('--validate-tractorphot', action='store_true', help='Validate the photo-tractor catalogs.')
 
-    parser.add_argument('--mp', type=int, default=1, help='Number of multiprocessing processes per MPI rank or node.')
+    parser.add_argument('--mp', type=int, default=1, help='Number of multiprocessing processes per MPI rank or node (deprecated).')
     parser.add_argument('--debug-ntiles', type=int, default=None, help='Debug with a smaller number of (test) tiles, e.g., --debug-ntiles=10.')
-    parser.add_argument('--nside-tractorphot', type=int, default=4, help='healpix nside for tractorphot catalogs.')
+    parser.add_argument('--nside-tractorphot-observed', type=int, default=4, help='healpix nside for tractorphot-observed catalogs.')
+    parser.add_argument('--nside-tractorphot-potential', type=int, default=8, help='healpix nside for tractorphot-potential catalogs.')
     parser.add_argument('--nside-targetphot-observed', type=int, default=1, help='healpix nside for targetphot-observed catalogs.')
     parser.add_argument('--nside-targetphot-potential', type=int, default=2, help='healpix nside for targetphot-potential catalogs.')
 
@@ -1231,9 +1232,14 @@ def main():
                    overwrite=args.overwrite, potential=args.targetphot_potential)
 
     if args.tractorphot or args.tractorphot_potential:
+        if args.tractorphot:
+            nside = args.nside_tractorphot_observed
+        elif args.tractorphot_potential:
+            nside = args.nside_tractorphot_potential
+
         tractorphot(args.specprod, args.outdir, comm=comm,
                     surveys=args.surveys, programs=args.programs,
-                    nside=args.nside_tractorphot, overwrite=args.overwrite,
+                    nside=nside, overwrite=args.overwrite,
                     potential=args.tractorphot_potential)
 
 if __name__ == '__main__':
