@@ -485,10 +485,10 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                 continue
 
             # Are we already done? All surveys/programs except
-            # main/{bright,dark} have merged catalogs.
+            # main/{bright,dark,backup} have merged catalogs.
             targetphot_outfile, _, _ = get_targetphot_filenames(
                 survey, program, specprod, outdir=outdir, potential=potential)
-            if survey == 'main' and (program == 'bright' or program == 'dark'):
+            if survey == 'main':
                 pass
             else:
                 if os.path.isfile(targetphot_outfile) and not overwrite:
@@ -672,7 +672,8 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                 for miniphot_file in miniphot_files:
                     miniphot_program.append(Table(fitsio.read(miniphot_file)))
                     os.remove(miniphot_file)
-                miniphot_program = vstack(miniphot_program)
+                if len(miniphot_program) > 0:
+                    miniphot_program = vstack(miniphot_program)
 
                 if potential:
                     zcat_program = None
@@ -681,31 +682,35 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                     for zcat_file in zcat_files:
                         zcat_program.append(Table(fitsio.read(zcat_file)))
                         os.remove(zcat_file)
-                    zcat_program = vstack(zcat_program)
+                    if len(zcat_program) > 0:
+                        zcat_program = vstack(zcat_program)
 
-                if survey == 'main' and (program == 'bright' or program == 'dark'):
+                if survey == 'main':
                     if potential:
                         log.info(f'Gathering individual miniphot catalogs took {time.time()-t0:.1f} sec')
                     else:
                         log.info(f'Gathering individual miniphot and zcat catalogs took {time.time()-t0:.1f} sec')
-                    write_targetphot(zcat=zcat_program, miniphot=miniphot_program,
-                                     zcat_outfile=zcat_outfile,
-                                     miniphot_outfile=miniphot_outfile,
-                                     survey=survey, program=program)
+                    if len(miniphot_program) > 0 and zcat_program is not None and len(zcat_program) > 0:
+                        write_targetphot(zcat=zcat_program, miniphot=miniphot_program,
+                                         zcat_outfile=zcat_outfile,
+                                         miniphot_outfile=miniphot_outfile,
+                                         survey=survey, program=program)
                 else:
                     targetphot_program = []
                     for targetphot_file in targetphot_files:
                         targetphot_program.append(Table(fitsio.read(targetphot_file)))
                         os.remove(targetphot_file)
-                    targetphot_program = vstack(targetphot_program)
+                    if len(targetphot_program) > 0:
+                        targetphot_program = vstack(targetphot_program)
 
                     log.info(f'Gathering individual targetphot, miniphot, and zcat catalogs took {time.time()-t0:.1f} sec')
-                    write_targetphot(targetphot_program, zcat=zcat_program,
-                                     miniphot=miniphot_program,
-                                     targetphot_outfile=targetphot_outfile,
-                                     zcat_outfile=zcat_outfile,
-                                     miniphot_outfile=miniphot_outfile,
-                                     survey=survey, program=program, sort=True)
+                    if len(targetphot_program) > 0 and len(miniphot_program) > 0 and zcat_program is not None and len(zcat_program) > 0:
+                        write_targetphot(targetphot_program, zcat=zcat_program,
+                                         miniphot=miniphot_program,
+                                         targetphot_outfile=targetphot_outfile,
+                                         zcat_outfile=zcat_outfile,
+                                         miniphot_outfile=miniphot_outfile,
+                                         survey=survey, program=program, sort=True)
 
                 log.info(f'Total time for {survey}:{program} ({targets_subdir}): {(time.time()-tprogram)/60.:.2f} min')
 
