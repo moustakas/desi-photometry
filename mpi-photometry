@@ -690,7 +690,7 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                         log.info(f'Gathering individual miniphot catalogs took {time.time()-t0:.1f} sec')
                     else:
                         log.info(f'Gathering individual miniphot and zcat catalogs took {time.time()-t0:.1f} sec')
-                    if len(miniphot_program) > 0 and zcat_program is not None and len(zcat_program) > 0:
+                    if len(miniphot_program) > 0:
                         write_targetphot(zcat=zcat_program, miniphot=miniphot_program,
                                          zcat_outfile=zcat_outfile,
                                          miniphot_outfile=miniphot_outfile,
@@ -704,7 +704,7 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                         targetphot_program = vstack(targetphot_program)
 
                     log.info(f'Gathering individual targetphot, miniphot, and zcat catalogs took {time.time()-t0:.1f} sec')
-                    if len(targetphot_program) > 0 and len(miniphot_program) > 0 and zcat_program is not None and len(zcat_program) > 0:
+                    if len(targetphot_program) > 0:
                         write_targetphot(targetphot_program, zcat=zcat_program,
                                          miniphot=miniphot_program,
                                          targetphot_outfile=targetphot_outfile,
