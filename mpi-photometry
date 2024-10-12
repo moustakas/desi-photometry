@@ -15,7 +15,7 @@ Set up the software dependencies:
 srun --ntasks 128 $HOME/code/desihub/desi-photometry/mpi-photometry --outdir $PSCRATCH/lsdr9/kibo --zcatdir $DESI_ROOT_READONLY/spectro/redux/kibo/zcatalog/v1 --specprod kibo --targetphot
 
 """
-import os, time, pdb
+import os, time
 import numpy as np
 import fitsio
 from glob import glob
@@ -207,16 +207,26 @@ def tractorphot_onebrick(cat, RACOLUMN='TARGET_RA', DECCOLUMN='TARGET_DEC'):
         ucat_dr9 = ucat_dr9[np.argsort(ucat_dr9['BRICK_OBJID'])]
         tractorphot_dr9 = gather_tractorphot(ucat_dr9, racolumn=RACOLUMN, deccolumn=DECCOLUMN)
 
-        # Handle duplicates across surveys/programs/tiles here...
-        if len(uindx) != len(cat_dr9):
-            cat_dr9_dup = cat_dr9[np.delete(np.arange(len(cat_dr9)), uindx)]
+        # Handle duplicates across surveys/programs/tiles.
+        cat_dr9_dup = cat_dr9[~np.isin(cat_dr9['TARGETID'], tractorphot_dr9['TARGETID'])]
+        if len(cat_dr9_dup) > 0:
             tractorphot_dr9_dup = []
             for objid, targetid in zip(cat_dr9_dup['BRICK_OBJID'].value, cat_dr9_dup['TARGETID'].value):
-                tractorphot_one = tractorphot_dr9[tractorphot_dr9['OBJID'] == objid]
+                I = np.where(tractorphot_dr9['OBJID'] == objid)[0]
+                if len(I) > 1:
+                    # Special case: BRICK_OBJID is unique on input but
+                    # duplicated on output, which can happen when multiple
+                    # TARGETIDs can point to the same BRICK_OBJID.
+
+                    # E.g., on brick 3556p282, objid 4384:
+                    #   sv1   bright  80616   39628446329999648
+                    #   main  bright  21243   39637242423021856
+                    #   main  backup  42570 2305843030558524910
+                    I = I[:1]
+                tractorphot_one = tractorphot_dr9[I]
                 tractorphot_one['TARGETID'] = targetid
                 tractorphot_dr9_dup.append(tractorphot_one)
             tractorphot_dr9_dup = vstack(tractorphot_dr9_dup)
-
             tractorphot = vstack((tractorphot_dr9, tractorphot_dr9_dup))
         else:
             # ...otherwise we are done.
@@ -225,6 +235,12 @@ def tractorphot_onebrick(cat, RACOLUMN='TARGET_RA', DECCOLUMN='TARGET_DEC'):
         # no DR9 targets at all
         if len(cat_pos) > 0:
             tractorphot = gather_tractorphot(cat_pos, racolumn=RACOLUMN, deccolumn=DECCOLUMN)
+
+    if len(tractorphot) != len(np.unique(tractorphot['TARGETID'])):
+        brickname = cat['BRICKNAME'][0]
+        errmsg = f'Unexpected duplicates in brick {brickname}'
+        log.critical(errmsg)
+        raise ValueError(errmsg)
 
     indx_tractor = geomask.match_to(tractorphot['TARGETID'].value, cat['TARGETID'].value)
     tractorphot = tractorphot[indx_tractor]
@@ -300,8 +316,7 @@ def write_tractorphot(tractorphot, miniphot=None, outfile=None,
 
     inone = np.where(tractorphot['BRICKNAME'] == '')[0]
     if len(inone) > 0:
-        log.info(f'No Tractor photometry found for {len(inone):,d}/{len(tractorphot):,d} targets ' + \
-                 f"from {len(np.unique(tractorphot[inone]['BRICKNAME'])):,d} unique brick(s)")
+        log.info(f'No Tractor photometry found for {len(inone):,d}/{len(tractorphot):,d} targets')
 
 
 def write_targetphot(targetphot=None, zcat=None, miniphot=None, survey=None,
@@ -816,7 +831,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
         # Divide the sample into nside healpixels.
         allpixels = radec2pix(nside, miniphot[RACOLUMN].value, miniphot[DECCOLUMN].value)
         upixels = sorted(set(allpixels))
-        #upixels = [0, 1] # for testing
+        #upixels = [1] # for testing
         log.info(f'Dividing the sample into {len(upixels)} nside={nside} healpixel(s)')
 
         pixels_todo = []
@@ -828,7 +843,7 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
                 continue
 
             # If using MPI-parallelization, just keep track of the healpix
-            # number.
+            # number...
             if comm is not None and size > 1:
                 pixels_todo.append(pixel)
             else:
