@@ -529,7 +529,7 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
 
                 allpixels = radec2pix(nside, zcat_program['TARGET_RA'], zcat_program['TARGET_DEC'])
                 upixels = sorted(set(allpixels))
-                #upixels = [0, 1] # for testing
+                #upixels = [8, 9, 30, 31] # for testing
                 log.info(f'Dividing the sample into {len(upixels)} nside={nside} healpixel(s)')
 
                 # Loop on healpix
@@ -558,6 +558,9 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                         for tileid in utiles_onepixel:
                             if potential:
                                 potential_targets = read_one_potential_targets(tileid, survey, program)
+                                # filter to the set of potential targets on this healpixel
+                                I = np.where(radec2pix(nside, potential_targets['RA'], potential_targets['DEC']) == pixel)[0]
+                                potential_targets = potential_targets[I]
                                 _targetphot_onetile = targetphot_onetile(potential_targets, RACOLUMN, DECCOLUMN)
                             else:
                                 I = np.where(tileid == zcat_pixel['TILEID'].value)[0]
@@ -625,6 +628,9 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                             for tileid in np.unique(alltiles):
                                 if potential:
                                     potential_targets = read_one_potential_targets(tileid, survey, program)
+                                    # filter to the set of potential targets on this healpixel
+                                    I = np.where(radec2pix(nside, potential_targets['RA'], potential_targets['DEC']) == pixel)[0]
+                                    potential_targets = potential_targets[I]
                                     _targetphot_onetile = targetphot_onetile(potential_targets, RACOLUMN, DECCOLUMN)
                                 else:
                                     I = np.where(tileid == alltiles)[0]
