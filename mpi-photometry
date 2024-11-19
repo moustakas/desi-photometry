@@ -514,6 +514,7 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
             # Initialize the variables we will be broadcasting.
             if comm is not None and size > 1:
                 pixels_todo = None
+                allpixels = None
 
             # Read the appropriate redshift catalog on rank 0.
             if rank == 0:
@@ -527,7 +528,7 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                         I = np.random.choice(len(utiles), debug_ntiles, replace=False)
                         zcat_program = zcat_program[np.isin(zcat_program['TILEID'], utiles[I])]
 
-                allpixels = radec2pix(nside, zcat_program['TARGET_RA'], zcat_program['TARGET_DEC'])
+                allpixels = radec2pix(nside, zcat_program['TARGET_RA'].value, zcat_program['TARGET_DEC'].value)
                 upixels = sorted(set(allpixels))
                 #upixels = [8, 9, 30, 31] # for testing
                 log.info(f'Dividing the sample into {len(upixels)} nside={nside} healpixel(s)')
@@ -559,7 +560,7 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                             if potential:
                                 potential_targets = read_one_potential_targets(tileid, survey, program)
                                 # filter to the set of potential targets on this healpixel
-                                I = np.where(radec2pix(nside, potential_targets['RA'], potential_targets['DEC']) == pixel)[0]
+                                I = np.where(radec2pix(nside, potential_targets['RA'].value, potential_targets['DEC'].value) == pixel)[0]
                                 potential_targets = potential_targets[I]
                                 _targetphot_onetile = targetphot_onetile(potential_targets, RACOLUMN, DECCOLUMN)
                             else:
@@ -583,7 +584,9 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
             # If parallelizing, broadcast the list of pixels to process.
             if comm is not None and size > 1:
                 pixels_todo = comm.bcast(pixels_todo, root=0)
+                allpixels = comm.bcast(allpixels, root=0)
 
+                redo_tiles = []
                 for ipix, pixel in enumerate(pixels_todo):
                     # Rank 0 sends the portion of the miniphot catalog that every other
                     # rank should be working on.
@@ -629,7 +632,17 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                                 if potential:
                                     potential_targets = read_one_potential_targets(tileid, survey, program)
                                     # filter to the set of potential targets on this healpixel
-                                    I = np.where(radec2pix(nside, potential_targets['RA'], potential_targets['DEC']) == pixel)[0]
+                                    potential_allpixels = radec2pix(nside, potential_targets['RA'].value, potential_targets['DEC'].value)
+                                    # some tiles contain potential targets which are outside the footprint defined
+                                    # by observed targets
+                                    M = ~np.isin(np.unique(potential_allpixels), np.unique(allpixels))
+                                    if np.any(M):
+                                        #print(tileid)
+                                        #print(allpixels)
+                                        #potential_targets.write('junk.fits', overwrite=True)
+                                        #raise ValueError()
+                                        redo_tiles.append(tileid)
+                                    I = np.where(potential_allpixels == pixel)[0]
                                     potential_targets = potential_targets[I]
                                     _targetphot_onetile = targetphot_onetile(potential_targets, RACOLUMN, DECCOLUMN)
                                 else:
@@ -675,6 +688,53 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                                     targetphot_pixel, zcat=zcat_pixel, targetphot_outfile=targetphot_outfile,
                                     zcat_outfile=zcat_outfile, miniphot_outfile=miniphot_outfile,
                                     survey=survey, program=program, healpix=pixel, nside=nside, sort=True)
+
+                # Post-process tiles with potential targets lying outside the
+                # footprint defined by the observed targets. Assume that the
+                # number of targets is relatively small and that we can perform
+                # all the calculations on rank 0.
+                if potential:
+                    if rank > 0:
+                        comm.send(redo_tiles, dest=0)
+                    else:
+                        for onerank in np.arange(size-1)+1:
+                            redo_tiles.append(comm.recv(source=onerank))
+                        if len(redo_tiles) > 0:
+                            redo_tiles = np.unique(np.hstack(redo_tiles)).astype(int)
+                            log.info(f'Post-processing {len(redo_tiles):,d} unique tiles outside the observed-target footprint.')
+                            log.info(redo_tiles)
+                            redo_targetphot = []
+                            for tileid in redo_tiles:
+                                potential_targets = read_one_potential_targets(tileid, survey, program)
+                                # only keep targets on healpixels that we haven't already processed
+                                potential_allpixels = radec2pix(nside, potential_targets['RA'].value, potential_targets['DEC'].value)
+                                I = np.where(~np.isin(potential_allpixels, np.unique(allpixels)))[0]
+                                print(I, tileid)
+                                potential_targets.write(f'junk-{tileid}.fits', overwrite=True)
+                                potential_targets[I].write(f'junk2-{tileid}.fits', overwrite=True)
+                                _targetphot_onetile = targetphot_onetile(potential_targets[I], RACOLUMN, DECCOLUMN)
+                                redo_targetphot.append(_targetphot_onetile)
+                            if len(redo_targetphot) > 0:
+                                redo_targetphot = vstack(redo_targetphot)
+                                # now loop on unique pixels
+                                _, uindx = np.unique(redo_targetphot['TARGETID'])
+                                redo_targetphot = redo_targetphot[uindx]
+                                redo_allpixels = radec2pix(nside, redo_targetphot[RACOLUMN].value, redo_targetphot[DECCOLUMN].value)
+                                print(np.unique(redo_allpixels))
+                                for ipix, redo_pixel in enumerate(np.unique(redo_allpixels)):
+                                    log.info(f'Working on supplemental healpix {redo_pixel:03} ({ipix+1:03}/{len(np.unique(redo_allpixels)):03}) ')
+                                    targetphot_outfile, zcat_outfile, miniphot_outfile = get_targetphot_filenames(
+                                        survey, program, specprod, outdir=outdir, healpix=redo_pixel, nside=nside,
+                                        potential=potential)
+                                    #if os.path.isfile(targetphot_outfile) and not overwrite:
+                                    #    log.warning(f'Skipping existing targetphot file {targetphot_outfile}')
+                                    #    continue
+                                    I = np.where(redo_allpixels == redo_pixel)[0]
+                                    targetphot_onepixel = redo_targetphot[I]
+                                    targetphot_pixel, _, miniphot_pixel = write_targetphot(
+                                        targetphot_onepixel, targetphot_outfile=targetphot_outfile,
+                                        miniphot_outfile=miniphot_outfile, survey=survey, program=program,
+                                        healpix=redo_pixel, nside=nside)
 
 
             if rank == 0:
