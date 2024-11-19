@@ -699,8 +699,8 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                     else:
                         for onerank in np.arange(size-1)+1:
                             redo_tiles.append(comm.recv(source=onerank))
+                        redo_tiles = np.unique(np.hstack(redo_tiles)).astype(int)
                         if len(redo_tiles) > 0:
-                            redo_tiles = np.unique(np.hstack(redo_tiles)).astype(int)
                             log.info(f'Post-processing {len(redo_tiles):,d} unique tiles outside the observed-target footprint.')
                             log.info(redo_tiles)
                             redo_targetphot = []
@@ -709,7 +709,6 @@ def targetphot(specprod, zcatdir, outdir, comm=None, mp=1, nside=1,
                                 # only keep targets on healpixels that we haven't already processed
                                 potential_allpixels = radec2pix(nside, potential_targets['RA'].value, potential_targets['DEC'].value)
                                 I = np.where(~np.isin(potential_allpixels, np.unique(allpixels)))[0]
-                                print(I, tileid)
                                 potential_targets.write(f'junk-{tileid}.fits', overwrite=True)
                                 potential_targets[I].write(f'junk2-{tileid}.fits', overwrite=True)
                                 _targetphot_onetile = targetphot_onetile(potential_targets[I], RACOLUMN, DECCOLUMN)
