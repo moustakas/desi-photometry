@@ -895,8 +895,8 @@ def tractorphot(specprod, outdir, comm=None, mp=1, nside=4, potential=False,
 
         # Divide the sample into nside healpixels.
         allpixels = radec2pix(nside, miniphot[RACOLUMN].value, miniphot[DECCOLUMN].value)
-        upixels = sorted(set(allpixels))
-        #upixels = [1] # for testing
+        upixels = np.array(sorted(set(allpixels)))
+        #upixels = upixels[upixels > 445]
         log.info(f'Dividing the sample into {len(upixels)} nside={nside} healpixel(s)')
 
         pixels_todo = []
